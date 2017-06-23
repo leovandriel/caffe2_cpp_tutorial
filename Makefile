@@ -12,3 +12,6 @@ purge:
 	@rm -rf res
 	@rm -rf tmp
 	@rm -rf include/res
+
+test: all
+	@find bin -type f -exec "./{}" \;
