@@ -47,6 +47,12 @@ void print(const OperatorDef &def) {
 }
 
 void print(const NetDef &def) {
+  // To just dump the whole thing, use protobuf directly:
+  // #include "google/protobuf/io/zero_copy_stream_impl.h"
+  // #include "google/protobuf/text_format.h"
+  // google::protobuf::io::OstreamOutputStream stream(&std::cout);
+  // google::protobuf::TextFormat::Print(init_net, &stream);
+
   std::cout << "name: " << '"' << def.name() << '"' << '\n';
   for (const auto &op: def.op()) {
     print(op);
