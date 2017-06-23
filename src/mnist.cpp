@@ -1,7 +1,7 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/operator_gradient.h"
 
-#include "shared.h"
+#include "util/print.h"
 
 CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb", "The given path to the training leveldb.");
 CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb", "The given path to the testing leveldb.");
