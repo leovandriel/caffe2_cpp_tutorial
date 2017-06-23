@@ -480,9 +480,9 @@ void run() {
 
   // >>> data, label = AddInput(train_model, batch_size=64, db=os.path.join(data_folder, 'mnist-train-nchw-leveldb'), db_type='leveldb')
   AddInput(initTrainModel, predictTrainModel, 64, FLAGS_train_db, "leveldb");
-  std::vector<OperatorDef *> gradient_ops;
 
   // >>> softmax = AddLeNetModel(train_model, data)
+  std::vector<OperatorDef *> gradient_ops;
   AddLeNetModel(initTrainModel, predictTrainModel, gradient_ops, true);
 
   // >>> AddTrainingOperators(train_model, softmax, label)
@@ -502,9 +502,9 @@ void run() {
 
   // >>> data, label = AddInput(test_model, batch_size=100, db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
   AddInput(initTestModel, predictTestModel, 100, FLAGS_test_db, "leveldb");
-  std::vector<OperatorDef *> gradient_ops_test;
 
   // >>> softmax = AddLeNetModel(test_model, data)
+  std::vector<OperatorDef *> gradient_ops_test;
   AddLeNetModel(initTestModel, predictTestModel, gradient_ops_test, false);
 
   // >>> AddAccuracy(test_model, softmax, label)
@@ -517,7 +517,8 @@ void run() {
   predictDeployModel.set_name("mnist_model_predict");
 
   // >>> AddLeNetModel(deploy_model, "data")
-  AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_test, false);
+  std::vector<OperatorDef *> gradient_ops_deploy;
+  AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_deploy, false);
 
   std::cout << '\n';
 
