@@ -89,6 +89,24 @@ void print(const Blob &blob, const string &name = "") {
   print(blob.Get<TensorCPU>(), name);
 }
 
+void printBest(const TensorCPU &tensor, const char **classes, const string &name = "") {
+    // sort top results
+  const auto &probs = tensor.data<float>();
+  std::vector<std::pair<int, int>> pairs;
+  for (auto i = 0; i < tensor.size(); i++) {
+    if (probs[i] > 0.01) {
+      pairs.push_back(std::make_pair(probs[i] * 100, i));
+    }
+  }
+  std:sort(pairs.begin(), pairs.end());
+
+  // show results
+  if (name.length() > 0) std::cout << name << ": " << '\n';
+  for (auto pair: pairs) {
+    std::cout << pair.first << "% '" << classes[pair.second] << "' (" << pair.second << ")" << '\n';
+  }
+}
+
 }  // namespace caffe2
 
 // TensorProto_DataType_UNDEFINED 0

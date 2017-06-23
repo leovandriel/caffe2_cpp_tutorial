@@ -34,3 +34,6 @@ target_link_libraries(squeeze ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GF
 
 add_executable(mnist src/mnist.cpp)
 target_link_libraries(mnist ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB})
+
+add_executable(alexnet src/alexnet.cpp)
+target_link_libraries(alexnet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
