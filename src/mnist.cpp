@@ -93,6 +93,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->add_ints(5);
     arg->add_ints(5);
     op->add_output("conv1_w");
+  } else {
+    initModel.add_external_input("conv1_w");
   }
   if (training) {
     auto op = initModel.add_op();
@@ -101,6 +103,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->set_name("shape");
     arg->add_ints(20);
     op->add_output("conv1_b");
+  } else {
+    initModel.add_external_input("conv1_b");
   }
 
   // >>> pool1 = brew.max_pool(model, conv1, 'pool1', kernel=2, stride=2)
@@ -141,6 +145,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->add_ints(5);
     arg->add_ints(5);
     op->add_output("conv2_w");
+  } else {
+    initModel.add_external_input("conv2_w");
   }
   if (training) {
     auto op = initModel.add_op();
@@ -149,6 +155,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->set_name("shape");
     arg->add_ints(50);
     op->add_output("conv2_b");
+  } else {
+    initModel.add_external_input("conv2_b");
   }
 
   // >>> pool2 = brew.max_pool(model, conv2, 'pool2', kernel=2, stride=2)
@@ -184,6 +192,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->add_ints(500);
     arg->add_ints(800);
     op->add_output("fc3_w");
+  } else {
+    initModel.add_external_input("fc3_w");
   }
   if (training) {
     auto op = initModel.add_op();
@@ -192,6 +202,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->set_name("shape");
     arg->add_ints(500);
     op->add_output("fc3_b");
+  } else {
+    initModel.add_external_input("fc3_b");
   }
 
   // >>> fc3 = brew.relu(model, fc3, fc3)
@@ -221,6 +233,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->add_ints(10);
     arg->add_ints(500);
     op->add_output("pred_w");
+  } else {
+    initModel.add_external_input("pred_w");
   }
   if (training) {
     auto op = initModel.add_op();
@@ -229,6 +243,8 @@ void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<Operator
     arg->set_name("shape");
     arg->add_ints(10);
     op->add_output("pred_b");
+  } else {
+    initModel.add_external_input("pred_b");
   }
 
   // >>> softmax = brew.softmax(model, pred, 'softmax')
@@ -496,9 +512,9 @@ void run() {
 
   // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy", arg_scope=arg_scope, init_params=False)
   NetDef initDeployModel;
-  initDeployModel.set_name("deploy_model_init");
+  initDeployModel.set_name("mnist_model_init");
   NetDef predictDeployModel;
-  predictDeployModel.set_name("deploy_model_predict");
+  predictDeployModel.set_name("mnist_model_predict");
 
   // >>> AddLeNetModel(deploy_model, "data")
   AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_test, false);
@@ -553,7 +569,28 @@ void run() {
 
   // with open(os.path.join(root_folder, "deploy_net.pbtxt"), 'w') as fid:
     // fid.write(str(deploy_model.net.Proto()))
-  WriteProtoToTextFile(predictDeployModel, "tmp/mnist_predict_net.pb.txt");
+  std::vector<string> external(initDeployModel.external_input().begin(), initDeployModel.external_input().end());
+  for (auto &param: external) {
+    auto &tensor = workspace.GetBlob(param)->Get<TensorCPU>();
+    auto op = initDeployModel.add_op();
+    op->set_type("GivenTensorFill");
+    auto arg1 = op->add_arg();
+    arg1->set_name("shape");
+    for (auto d: tensor.dims()) {
+      arg1->add_ints(d);
+    }
+    auto arg2 = op->add_arg();
+    arg2->set_name("values");
+    auto data = tensor.data<float>();
+    for (auto i = 0; i < tensor.size(); i++) {
+      arg2->add_floats(data[i]);
+    }
+  }
+  WriteProtoToTextFile(predictDeployModel, "tmp/mnist_predict_net.pbtxt");
+  WriteProtoToBinaryFile(initDeployModel, "tmp/mnist_init_net.pb");
+  WriteProtoToBinaryFile(predictDeployModel, "tmp/mnist_predict_net.pb");
+  // print(initDeployModel);
+  // print(predictDeployModel);
 }
 
 }  // namespace caffe2
