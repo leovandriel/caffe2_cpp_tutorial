@@ -3,6 +3,7 @@ Change Log
 
 ### master (untagged)
 
+* Add GoogleNet example
 * Add AlexNet example
 
 ### 0.0.1 (2017-06-23)
