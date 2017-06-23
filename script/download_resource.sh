@@ -16,6 +16,10 @@ test -f res/squeeze_init_net.pb || echo "downloading Squeezenet model (2)"
 test -f res/squeeze_predict_net.pb || curl --progress-bar --output res/squeeze_predict_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/predict_net.pb
 test -f res/squeeze_init_net.pb || curl --progress-bar --output res/squeeze_init_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb
 
+test -f res/googlenet_init_net.pb || echo "downloading GoogleNet model (2)"
+test -f res/googlenet_predict_net.pb || curl --progress-bar --output res/googlenet_predict_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/predict_net.pb
+test -f res/googlenet_init_net.pb || curl --progress-bar --output res/googlenet_init_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/init_net.pb
+
 test -d res/mnist-train-nchw-leveldb || echo "downloading MNIST train res (2)"
 test -f res/train-images-idx3-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > res/train-images-idx3-ubyte
 test -f res/train-labels-idx1-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz | gunzip > res/train-labels-idx1-ubyte
