@@ -19,8 +19,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 file(GLOB SOURCES "src/*.cpp")
 
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/include/imagenet_classes.h)
-    file(DOWNLOAD https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h ${CMAKE_SOURCE_DIR}/include/imagenet_classes.h)
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
+    file(DOWNLOAD https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
 endif()
 
 add_executable(intro src/intro.cpp)

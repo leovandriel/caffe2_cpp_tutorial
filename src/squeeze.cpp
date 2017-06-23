@@ -5,8 +5,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "shared.h"
-#include "imagenet_classes.h"
+#include "util/print.h"
+#include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(init_net, "res/init_net.pb", "The given path to the init protobuffer.");
 CAFFE2_DEFINE_string(predict_net, "res/predict_net.pb", "The given path to the predict protobuffer.");

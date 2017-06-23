@@ -1,5 +1,5 @@
-#ifndef SHARED_H
-#define SHARED_H
+#ifndef PRINT_H
+#define PRINT_H
 
 #include "caffe2/core/net.h"
 
@@ -105,4 +105,4 @@ void print(const Blob &blob, const string &name = "") {
 // TensorProto_DataType_FLOAT16  12
 // TensorProto_DataType_DOUBLE   13
 
-#endif  // SHARED_H
+#endif  // PRINT_H

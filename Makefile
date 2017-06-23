@@ -11,4 +11,4 @@ purge:
 	@rm -rf bin
 	@rm -rf res
 	@rm -rf tmp
-	@rm include/imagenet_classes.h
+	@rm -rf include/res

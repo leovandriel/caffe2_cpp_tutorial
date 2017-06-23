@@ -2,4 +2,4 @@ build
 bin
 res
 tmp
-include/imagenet_classes.h
+include/res
