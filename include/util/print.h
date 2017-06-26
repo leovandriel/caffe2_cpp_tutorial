@@ -62,9 +62,9 @@ void print(const NetDef &def) {
   }
 }
 
-template<typename T>
-void printType(const TensorCPU &tensor, const string &name = "") {
-  const auto& data = tensor.data<T>();
+template<typename T, typename C>
+void printType(const Tensor<C> &tensor, const string &name = "") {
+  const auto& data = tensor.template data<T>();
   if (name.length() > 0) std::cout << name << ": ";
   for (auto i = 0; i < tensor.size(); ++i) {
     std::cout << data[i] << ' ';
@@ -72,7 +72,8 @@ void printType(const TensorCPU &tensor, const string &name = "") {
   if (name.length() > 0) std::cout << '\n';
 }
 
-void print(const TensorCPU &tensor, const string &name = "") {
+template<typename C>
+void print(const Tensor<C> &tensor, const string &name = "") {
   if (tensor.template IsType<float>()) {
     return printType<float>(tensor, name);
   }
@@ -86,12 +87,13 @@ void print(const TensorCPU &tensor, const string &name = "") {
 }
 
 void print(const Blob &blob, const string &name = "") {
-  print(blob.Get<TensorCPU>(), name);
+  print(blob.Get<Tensor<CPUContext>>(), name);
 }
 
-void printBest(const TensorCPU &tensor, const char **classes, const string &name = "") {
+template<typename C>
+void printBest(const Tensor<C> &tensor, const char **classes, const string &name = "") {
     // sort top results
-  const auto &probs = tensor.data<float>();
+  const auto &probs = tensor.template data<float>();
   std::vector<std::pair<int, int>> pairs;
   for (auto i = 0; i < tensor.size(); i++) {
     if (probs[i] > 0.01) {
