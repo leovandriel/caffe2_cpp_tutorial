@@ -18,7 +18,7 @@ namespace caffe2 {
 
 void run() {
   std::cout << '\n';
-  std::cout << "## Caffe2 Squeezenet Tutorial ##" << '\n';
+  std::cout << "## Caffe2 Loading Pre-Trained Models Tutorial ##" << '\n';
   std::cout << "https://caffe2.ai/docs/zoo.html" << '\n';
   std::cout << "https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html" << '\n';
   std::cout << '\n';

@@ -4,6 +4,7 @@ Change Log
 ### master (untagged)
 
 * Add VGG 16 example
+* Add SqueezeNet example
 * Add GoogleNet example
 * Add AlexNet example
 
@@ -11,7 +12,7 @@ Change Log
 
 * Add toy tutorial
 * Add intro tutorial
-* Add Squeezenet tutorial
+* Add Pre-trained tutorial
 * Add MNist tutorial
 * Add CMake build system
 

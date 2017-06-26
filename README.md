@@ -47,13 +47,14 @@ The following tutorials have been transcribed:
 
 * `intro`: [Intro Tutorial](https://caffe2.ai/docs/intro-tutorial.html)
 * `toy`: [Toy Regression](https://caffe2.ai/docs/tutorial-toy-regression.html)
-* `squeeze`: [Squeezenet](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
-* `mnist`: [MNIST](https://caffe2.ai/docs/tutorial-MNIST.html)
+* `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
+* `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html)
 
 There's also examples of other common architectures:
 
 * `alexnet`: [AlexNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_alexnet)
 * `googlenet`: [GoogleNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet)
+* `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
 * `vgg16`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 
 

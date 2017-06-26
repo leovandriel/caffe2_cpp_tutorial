@@ -12,13 +12,13 @@ test -f res/alexnet_init_net.pb || echo "downloading AlexNet model (2)"
 test -f res/alexnet_predict_net.pb || curl --progress-bar --output res/alexnet_predict_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/predict_net.pb
 test -f res/alexnet_init_net.pb || curl --progress-bar --output res/alexnet_init_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/init_net.pb
 
-test -f res/squeeze_init_net.pb || echo "downloading Squeezenet model (2)"
-test -f res/squeeze_predict_net.pb || curl --progress-bar --output res/squeeze_predict_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/predict_net.pb
-test -f res/squeeze_init_net.pb || curl --progress-bar --output res/squeeze_init_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb
-
 test -f res/googlenet_init_net.pb || echo "downloading GoogleNet model (2)"
 test -f res/googlenet_predict_net.pb || curl --progress-bar --output res/googlenet_predict_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/predict_net.pb
 test -f res/googlenet_init_net.pb || curl --progress-bar --output res/googlenet_init_net.pb https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/init_net.pb
+
+test -f res/squeeze_init_net.pb || echo "downloading Squeezenet model (2)"
+test -f res/squeeze_predict_net.pb || curl --progress-bar --output res/squeeze_predict_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/predict_net.pb
+test -f res/squeeze_init_net.pb || curl --progress-bar --output res/squeeze_init_net.pb https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb
 
 test -f res/vgg16_init_net.pb || echo "downloading VGG 16 model (2)"
 test -f res/vgg16_predict_net.pb || curl --location --progress-bar --output res/vgg16_predict_net.pb https://www.dropbox.com/s/hl31atsecaozs9c/vgg16_predict_net.pb?dl=0
