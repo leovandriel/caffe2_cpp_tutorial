@@ -23,23 +23,28 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
     file(DOWNLOAD https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
 endif()
 
+
 add_executable(intro src/intro.cpp)
 target_link_libraries(intro ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB})
 
 add_executable(toy src/toy.cpp)
 target_link_libraries(toy ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB})
 
-add_executable(squeeze src/squeeze.cpp)
-target_link_libraries(squeeze ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
+add_executable(pretrained src/pretrained.cpp)
+target_link_libraries(pretrained ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
 
 add_executable(mnist src/mnist.cpp)
 target_link_libraries(mnist ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB})
+
 
 add_executable(alexnet src/alexnet.cpp)
 target_link_libraries(alexnet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
 
 add_executable(googlenet src/googlenet.cpp)
 target_link_libraries(googlenet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
+
+add_executable(squeezenet src/squeezenet.cpp)
+target_link_libraries(squeezenet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
 
 add_executable(vgg16 src/vgg16.cpp)
 target_link_libraries(vgg16 ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
