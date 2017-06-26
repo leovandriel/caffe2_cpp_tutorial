@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 project (caffe2_cpp_tutorial)
 
-find_package(opencv REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -40,3 +40,6 @@ target_link_libraries(alexnet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GF
 
 add_executable(googlenet src/googlenet.cpp)
 target_link_libraries(googlenet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})
+
+add_executable(vgg16 src/vgg16.cpp)
+target_link_libraries(vgg16 ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS})

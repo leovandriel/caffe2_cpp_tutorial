@@ -3,6 +3,7 @@ Change Log
 
 ### master (untagged)
 
+* Add VGG 16 example
 * Add GoogleNet example
 * Add AlexNet example
 

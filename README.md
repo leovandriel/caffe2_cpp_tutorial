@@ -50,6 +50,13 @@ The following tutorials have been transcribed:
 * `squeeze`: [Squeezenet](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
 * `mnist`: [MNIST](https://caffe2.ai/docs/tutorial-MNIST.html)
 
+There's also examples of other common architectures:
+
+* `alexnet`: [AlexNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_alexnet)
+* `googlenet`: [GoogleNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet)
+* `vgg16`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
+
+
 ## Troubleshooting
 
 See [http://rpg.ifi.uzh.ch/docs/glog.html](http://rpg.ifi.uzh.ch/docs/glog.html) for more info on logging. Try running the tools and examples with `--logtostderr=1`, `--caffe2_log_level=1`, and `--v=1`.
