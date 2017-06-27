@@ -43,7 +43,7 @@ bool ZeroOneOp<float, CPUContext>::RunOnDevice() {
     }
     std::cout << correct;
   }
-  std::cout << '\n';
+  std::cout << std::endl;
 
   return true;
 }
