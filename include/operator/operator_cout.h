@@ -22,10 +22,11 @@ class CoutOp final : public Operator<Context> {
   bool RunOnDevice() override {
     auto index = 0;
     for (auto &title: titles) {
-      std::cout << title << ": ";
-      print(Input(index++));
+      auto tensor = Input(index++);
+      std::cout << title << " (" << tensor.size() << "): ";
+      print(tensor);
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return true;
   }
 

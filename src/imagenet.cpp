@@ -19,24 +19,24 @@ CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 namespace caffe2 {
 
 void run() {
-  std::cout << '\n';
-  std::cout << "## ImageNet Example ##" << '\n';
-  std::cout << '\n';
+  std::cout << std::endl;
+  std::cout << "## ImageNet Example ##" << std::endl;
+  std::cout << std::endl;
 
   if (!FLAGS_model.size()) {
-    std::cerr << "specify a model name using --model <name>" << '\n';
+    std::cerr << "specify a model name using --model <name>" << std::endl;
     for (auto const &pair: model_lookup) {
-      std::cerr << "  " << pair.first << '\n';
+      std::cerr << "  " << pair.first << std::endl;
     }
     return;
   }
 
-  std::cout << "model_name: " << FLAGS_model << '\n';
-  std::cout << "image_file: " << FLAGS_image_file << '\n';
-  std::cout << "size_to_fit: " << FLAGS_size_to_fit << '\n';
-  std::cout << "image_mean: " << FLAGS_image_mean << '\n';
+  std::cout << "model: " << FLAGS_model << std::endl;
+  std::cout << "image_file: " << FLAGS_image_file << std::endl;
+  std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // read image as tensor
   auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit, -FLAGS_image_mean);
@@ -67,9 +67,9 @@ void run() {
 
   printBest(*(outputVec[0]), imagenet_classes);
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
-  std::cout << std::setprecision(3) << "load: " << ((float)(predict_time - read_time) / CLOCKS_PER_SEC) << "s  predict: " << ((float)(finish_time - predict_time) / CLOCKS_PER_SEC) << "s  model: " << ((float)model_size / 1000000) << "MB" << '\n';
+  std::cout << std::setprecision(3) << "load: " << ((float)(predict_time - read_time) / CLOCKS_PER_SEC) << "s  predict: " << ((float)(finish_time - predict_time) / CLOCKS_PER_SEC) << "s  model: " << ((float)model_size / 1000000) << "MB" << std::endl;
 }
 
 }  // namespace caffe2

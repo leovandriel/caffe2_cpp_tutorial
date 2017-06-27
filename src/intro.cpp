@@ -6,10 +6,10 @@
 namespace caffe2 {
 
 void run() {
-  std::cout << '\n';
-  std::cout << "## Caffe2 Intro Tutorial ##" << '\n';
-  std::cout << "https://caffe2.ai/docs/intro-tutorial.html" << '\n';
-  std::cout << '\n';
+  std::cout << std::endl;
+  std::cout << "## Caffe2 Intro Tutorial ##" << std::endl;
+  std::cout << "https://caffe2.ai/docs/intro-tutorial.html" << std::endl;
+  std::cout << std::endl;
 
   // >>> from caffe2.python import workspace, model_helper
   // >>> import numpy as np
@@ -25,7 +25,6 @@ void run() {
   print(x, "x");
 
   // >>> workspace.FeedBlob("my_x", x)
-  CPUContext context;
   auto blob = workspace.CreateBlob("my_x");
   auto tensor = blob->GetMutable<TensorCPU>();
   tensor->Resize(4, 3, 2);
@@ -148,11 +147,11 @@ void run() {
   }
 
   // >>> print(str(m.net.Proto()))
-  // std::cout << '\n';
+  // std::cout << std::endl;
   // print(predictModel);
 
   // >>> print(str(m.param_init_net.Proto()))
-  // std::cout << '\n';
+  // std::cout << std::endl;
   // print(initModel);
 
   // >>> workspace.RunNetOnce(m.param_init_net)
@@ -194,16 +193,16 @@ void run() {
       predictNet->Run();
       // std::cout << "step: " << i << " loss: ";
       // print(*(workspace.GetBlob("loss")));
-      // std::cout << '\n';
+      // std::cout << std::endl;
     }
   }
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // >>> print(workspace.FetchBlob("softmax"))
   print(*(workspace.GetBlob("softmax")), "softmax");
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // >>> print(workspace.FetchBlob("loss"))
   print(*(workspace.GetBlob("loss")), "loss");

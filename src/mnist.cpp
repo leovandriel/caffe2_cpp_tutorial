@@ -11,7 +11,7 @@ CAFFE2_DEFINE_int(test_runs, 100, "The of test runs.");
 namespace caffe2 {
 
 // >> def AddInput(model, batch_size, db, db_type):
-void AddInput(NetDef &initModel, NetDef &predictModel, int batch_size, const string &db, const string& db_type) {
+void AddInput(NetDef &initModel, NetDef &predictModel, int batch_size, const std::string &db, const std::string& db_type) {
   // Setup database connection
   {
     auto op = initModel.add_op();
@@ -456,15 +456,15 @@ void AddBookkeepingOperators(NetDef &initModel, NetDef &predictModel, std::vecto
 }
 
 void run() {
-  std::cout << '\n';
-  std::cout << "## Caffe2 MNIST Tutorial ##" << '\n';
-  std::cout << "https://caffe2.ai/docs/tutorial-MNIST.html" << '\n';
-  std::cout << '\n';
+  std::cout << std::endl;
+  std::cout << "## Caffe2 MNIST Tutorial ##" << std::endl;
+  std::cout << "https://caffe2.ai/docs/tutorial-MNIST.html" << std::endl;
+  std::cout << std::endl;
 
-  std::cout << "train_db: " << FLAGS_train_db << '\n';
-  std::cout << "test_db: " << FLAGS_test_db << '\n';
-  std::cout << "train_runs: " << FLAGS_train_runs << '\n';
-  std::cout << "test_runs: " << FLAGS_test_runs << '\n';
+  std::cout << "train_db: " << FLAGS_train_db << std::endl;
+  std::cout << "test_db: " << FLAGS_test_db << std::endl;
+  std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize, brew
   // >>> workspace.ResetWorkspace(root_folder)
@@ -520,7 +520,7 @@ void run() {
   std::vector<OperatorDef *> gradient_ops_deploy;
   AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_deploy, false);
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(train_model.param_init_net)
   auto initTrainNet = CreateNet(initTrainModel, &workspace);
@@ -529,7 +529,7 @@ void run() {
   // >>> workspace.CreateNet(train_model.net)
   auto predictTrainNet = CreateNet(predictTrainModel, &workspace);
 
-  std::cout << "training.." << '\n';
+  std::cout << "training.." << std::endl;
 
   // >>> for i in range(total_iters):
   for (auto i = 1; i <= FLAGS_train_runs; i++) {
@@ -541,11 +541,11 @@ void run() {
     if (i % 10 == 0) {
       auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
       auto loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
-      std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << '\n';
+      std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
     }
   }
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(test_model.param_init_net)
   auto initTestNet = CreateNet(initTestModel, &workspace);
@@ -554,7 +554,7 @@ void run() {
   // >>> workspace.CreateNet(test_model.net)
   auto predictTestNet = CreateNet(predictTestModel, &workspace);
 
-  std::cout << "testing.." << '\n';
+  std::cout << "testing.." << std::endl;
 
   // >>> for i in range(100):
   for (auto i = 1; i <= FLAGS_test_runs; i++) {
@@ -564,7 +564,7 @@ void run() {
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
       auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
-      std::cout << "step: " << i << " accuracy: " << accuracy << '\n';
+      std::cout << "step: " << i << " accuracy: " << accuracy << std::endl;
     }
   }
 

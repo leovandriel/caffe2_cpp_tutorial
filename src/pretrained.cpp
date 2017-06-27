@@ -17,37 +17,37 @@ CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 namespace caffe2 {
 
 void run() {
-  std::cout << '\n';
-  std::cout << "## Caffe2 Loading Pre-Trained Models Tutorial ##" << '\n';
-  std::cout << "https://caffe2.ai/docs/zoo.html" << '\n';
-  std::cout << "https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html" << '\n';
-  std::cout << '\n';
+  std::cout << std::endl;
+  std::cout << "## Caffe2 Loading Pre-Trained Models Tutorial ##" << std::endl;
+  std::cout << "https://caffe2.ai/docs/zoo.html" << std::endl;
+  std::cout << "https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html" << std::endl;
+  std::cout << std::endl;
 
-  std::cout << "init_net: " << FLAGS_init_net << '\n';
-  std::cout << "predict_net: " << FLAGS_predict_net << '\n';
-  std::cout << "image_file: " << FLAGS_image_file << '\n';
-  std::cout << "size_to_fit: " << FLAGS_size_to_fit << '\n';
-  std::cout << "image_mean: " << FLAGS_image_mean << '\n';
+  std::cout << "init_net: " << FLAGS_init_net << std::endl;
+  std::cout << "predict_net: " << FLAGS_predict_net << std::endl;
+  std::cout << "image_file: " << FLAGS_image_file << std::endl;
+  std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // >>> img = skimage.img_as_float(skimage.io.imread(IMAGE_LOCATION)).astype(np.float32)
   auto image = cv::imread(FLAGS_image_file); // CV_8UC3
-  std::cout << "image size: " << image.size() << '\n';
+  std::cout << "image size: " << image.size() << std::endl;
 
   // scale image to fit
   cv::Size scale(std::max(FLAGS_size_to_fit * image.cols / image.rows, FLAGS_size_to_fit), std::max(FLAGS_size_to_fit, FLAGS_size_to_fit * image.rows / image.cols));
   cv::resize(image, image, scale);
-  std::cout << "scaled size: " << image.size() << '\n';
+  std::cout << "scaled size: " << image.size() << std::endl;
 
   // crop image to fit
   cv::Rect crop((image.cols - FLAGS_size_to_fit) / 2, (image.rows - FLAGS_size_to_fit) / 2, FLAGS_size_to_fit, FLAGS_size_to_fit);
   image = image(crop);
-  std::cout << "cropped size: " << image.size() << '\n';
+  std::cout << "cropped size: " << image.size() << std::endl;
 
   // convert to float, normalize to mean 128
   image.convertTo(image, CV_32FC3, 1.0, -FLAGS_image_mean);
-  std::cout << "value range: (" << *std::min_element((float *)image.datastart, (float *)image.dataend) << ", " << *std::max_element((float *)image.datastart, (float *)image.dataend) << ")" << '\n';
+  std::cout << "value range: (" << *std::min_element((float *)image.datastart, (float *)image.dataend) << ", " << *std::max_element((float *)image.datastart, (float *)image.dataend) << ")" << std::endl;
 
   // convert NHWC to NCHW
   vector<cv::Mat> channels(3);
@@ -89,12 +89,12 @@ void run() {
   }
   std:sort(pairs.begin(), pairs.end());
 
-  std::cout << '\n';
+  std::cout << std::endl;
 
   // show results
-  std::cout << "output: " << '\n';
+  std::cout << "output: " << std::endl;
   for (auto pair: pairs) {
-    std::cout << "  " << pair.first << "% '" << imagenet_classes[pair.second] << "' (" << pair.second << ")" << '\n';
+    std::cout << "  " << pair.first << "% '" << imagenet_classes[pair.second] << "' (" << pair.second << ")" << std::endl;
   }
 }
 

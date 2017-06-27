@@ -6,10 +6,10 @@
 namespace caffe2 {
 
 void run() {
-  std::cout << '\n';
-  std::cout << "## Caffe2 Toy Regression Tutorial ##" << '\n';
-  std::cout << "https://caffe2.ai/docs/tutorial-toy-regression.html" << '\n';
-  std::cout << '\n';
+  std::cout << std::endl;
+  std::cout << "## Caffe2 Toy Regression Tutorial ##" << std::endl;
+  std::cout << "https://caffe2.ai/docs/tutorial-toy-regression.html" << std::endl;
+  std::cout << std::endl;
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize
   Workspace workspace;
@@ -307,7 +307,7 @@ void run() {
       float w = workspace.GetBlob("W")->Get<TensorCPU>().data<float>()[0];
       float b = workspace.GetBlob("B")->Get<TensorCPU>().data<float>()[0];
       float loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
-      std::cout << "step: " << i << " W: " << w << " B: " << b << " loss: " << loss << '\n';
+      std::cout << "step: " << i << " W: " << w << " B: " << b << " loss: " << loss << std::endl;
     }
   }
 
