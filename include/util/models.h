@@ -21,12 +21,24 @@ const std::map<std::string, std::map<std::string, std::string>> model_lookup {
     { "res/squeezenet_init_net.pb", "https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb" },
   }},
   { "vgg16", {
-    { "res/vgg16_predict_net.pb", "https://github.com/leonardvandriel/caffe2_vgg/raw/master/model/vgg16_predict_net.pb" },
-    { "res/vgg16_init_net.pb", "https://github.com/leonardvandriel/caffe2_vgg/raw/master/model/vgg16_init_net.pb" }
+    { "res/vgg16_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg16_predict_net.pb" },
+    { "res/vgg16_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg16_init_net.pb" }
   }},
   { "vgg19", {
-    { "res/vgg19_predict_net.pb", "https://github.com/leonardvandriel/caffe2_vgg/raw/master/model/vgg19_predict_net.pb" },
-    { "res/vgg19_init_net.pb", "https://github.com/leonardvandriel/caffe2_vgg/raw/master/model/vgg19_init_net.pb" }
+    { "res/vgg19_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg19_predict_net.pb" },
+    { "res/vgg19_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg19_init_net.pb" }
+  }},
+  { "resnet50", {
+    { "res/resnet50_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet50_predict_net.pb" },
+    { "res/resnet50_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet50_init_net.pb" }
+  }},
+  { "resnet101", {
+    { "res/resnet101_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet101_predict_net.pb" },
+    { "res/resnet101_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet101_init_net.pb" }
+  }},
+  { "resnet152", {
+    { "res/resnet152_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet152_predict_net.pb" },
+    { "res/resnet152_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet152_init_net.pb" }
   }}
 };
 
