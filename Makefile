@@ -14,4 +14,9 @@ purge:
 	@rm -rf include/res
 
 test: all
-	@find bin -type f -exec "./{}" \;
+	@find bin -regex "bin/[a-z]*" -type f -exec ./{} \;
+
+# for filename in bin/*; do;./${filename}|diff test/$(echo ${filename} | cut -d/ -f2).log -;done
+
+output: all
+	@find bin -regex "bin/[a-z]*" -type f -exec bash -c './{} > test/$(echo {} | cut -d/ -f2).log' \;

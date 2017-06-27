@@ -1,0 +1,20 @@
+
+## Caffe2 Toy Regression Tutorial ##
+https://caffe2.ai/docs/tutorial-toy-regression.html
+
+W before: 0.653317 0.993488 
+B before: 0 
+step: 10 W: 1.55076 B: 0.327361 loss: 0.532574
+step: 20 W: 1.81798 B: 0.507165 loss: 0.443021
+step: 30 W: 1.9396 B: 0.509223 loss: 0.813812
+step: 40 W: 1.97596 B: 0.526279 loss: 0.337013
+step: 50 W: 2.02153 B: 0.511743 loss: 0.402681
+step: 60 W: 2.03485 B: 0.504019 loss: 0.518277
+step: 70 W: 2.04659 B: 0.510826 loss: 0.536796
+step: 80 W: 2.02658 B: 0.537313 loss: 0.54582
+step: 90 W: 1.96418 B: 0.513399 loss: 0.476253
+step: 100 W: 1.98655 B: 0.486414 loss: 0.445099
+W after: 1.98655 1.5246 
+B after: 0.486414 
+W ground truth: 2 1.5 
+B ground truth: 0.5 

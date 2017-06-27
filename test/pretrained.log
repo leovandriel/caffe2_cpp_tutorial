@@ -1,0 +1,20 @@
+
+## Caffe2 Loading Pre-Trained Models Tutorial ##
+https://caffe2.ai/docs/zoo.html
+https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html
+
+init_net: res/squeezenet_init_net.pb
+predict_net: res/squeezenet_predict_net.pb
+image_file: res/image_file.jpg
+size_to_fit: 227
+image_mean: 128
+
+image size: [1280 x 751]
+scaled size: [386 x 227]
+cropped size: [227 x 227]
+value range: (-128, 127)
+
+output: 
+  1% 'bee' (309)
+  1% 'cardoon' (946)
+  96% 'daisy' (985)
