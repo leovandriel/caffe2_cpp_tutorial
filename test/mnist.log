@@ -1,0 +1,42 @@
+
+## Caffe2 MNIST Tutorial ##
+https://caffe2.ai/docs/tutorial-MNIST.html
+
+train_db: res/mnist-train-nchw-leveldb
+test_db: res/mnist-test-nchw-leveldb
+train_runs: 200
+test_runs: 100
+
+training..
+step: 10 loss: 1.51171 accuracy: 0.46875
+step: 20 loss: 0.669923 accuracy: 0.828125
+step: 30 loss: 0.41291 accuracy: 0.859375
+step: 40 loss: 0.252899 accuracy: 0.9375
+step: 50 loss: 0.191479 accuracy: 0.96875
+step: 60 loss: 0.257238 accuracy: 0.9375
+step: 70 loss: 0.227734 accuracy: 0.921875
+step: 80 loss: 0.248819 accuracy: 0.921875
+step: 90 loss: 0.2408 accuracy: 0.921875
+step: 100 loss: 0.129839 accuracy: 0.953125
+step: 110 loss: 0.525118 accuracy: 0.875
+step: 120 loss: 0.193371 accuracy: 0.921875
+step: 130 loss: 0.253379 accuracy: 0.9375
+step: 140 loss: 0.202208 accuracy: 0.953125
+step: 150 loss: 0.200297 accuracy: 0.9375
+step: 160 loss: 0.273608 accuracy: 0.875
+step: 170 loss: 0.163504 accuracy: 0.96875
+step: 180 loss: 0.11438 accuracy: 0.953125
+step: 190 loss: 0.0461768 accuracy: 1
+step: 200 loss: 0.199852 accuracy: 0.921875
+
+testing..
+step: 10 accuracy: 0.94
+step: 20 accuracy: 0.94
+step: 30 accuracy: 0.91
+step: 40 accuracy: 0.89
+step: 50 accuracy: 0.93
+step: 60 accuracy: 0.93
+step: 70 accuracy: 0.97
+step: 80 accuracy: 0.95
+step: 90 accuracy: 1
+step: 100 accuracy: 0.93
