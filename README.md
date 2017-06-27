@@ -50,12 +50,16 @@ The following tutorials have been transcribed:
 * `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
 * `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html)
 
-There's also examples of other common architectures:
+There's also examples of other common architectures using ImageNet:
+
+    make && ./bin/imagenet --model <name-of-model>
+
+Names of available models:
 
 * `alexnet`: [AlexNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_alexnet)
 * `googlenet`: [GoogleNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet)
 * `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
-* `vgg16`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
+* `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 
 
 ## Troubleshooting
