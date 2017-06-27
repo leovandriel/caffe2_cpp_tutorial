@@ -60,7 +60,9 @@ Names of available models:
 * `googlenet`: [GoogleNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet)
 * `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
 * `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
+* `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
 
+These models are taken from the [Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo) and [Caffe2 Models](https://github.com/leonardvandriel/caffe2_models).
 
 ## Troubleshooting
 
