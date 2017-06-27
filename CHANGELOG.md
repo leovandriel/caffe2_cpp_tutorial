@@ -3,8 +3,11 @@ Change Log
 
 ### master (untagged)
 
-* Add ImageNet example
+* Add ResNet 50 model
+* Add ResNet 101 model
+* Add ResNet 152 model
 * Add VGG 19 model
+* Add ImageNet example
 * Add VGG 16 model
 * Add SqueezeNet model
 * Add GoogleNet model
