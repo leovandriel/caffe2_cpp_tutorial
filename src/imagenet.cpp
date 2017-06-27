@@ -38,6 +38,9 @@ void run() {
 
   std::cout << '\n';
 
+  // read image as tensor
+  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit, -FLAGS_image_mean);
+
   // load model
   NetDef init_net, predict_net;
 
@@ -46,18 +49,27 @@ void run() {
   std::string init_filename = "res/" + FLAGS_model + "_init_net.pb";
   std::string predict_filename = "res/" + FLAGS_model + "_predict_net.pb";
 
+  auto init_size = std::ifstream(init_filename, std::ifstream::ate | std::ifstream::binary).tellg();
+  auto predict_size = std::ifstream(predict_filename, std::ifstream::ate | std::ifstream::binary).tellg();
+  auto model_size = init_size + predict_size;
+
+  auto read_time = clock();
+
   CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_net));
   CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_net));
-
-  // read image as tensor
-  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit, -FLAGS_image_mean);
 
   // run net
   Predictor predictor(init_net, predict_net);
   Predictor::TensorVector inputVec({ &input }), outputVec;
+  auto predict_time = clock();
   predictor.run(inputVec, &outputVec);
+  auto finish_time = clock();
 
   printBest(*(outputVec[0]), imagenet_classes);
+
+  std::cout << '\n';
+
+  std::cout << std::setprecision(3) << "load: " << ((float)(predict_time - read_time) / CLOCKS_PER_SEC) << "s  predict: " << ((float)(finish_time - predict_time) / CLOCKS_PER_SEC) << "s  model: " << ((float)model_size / 1000000) << "MB" << '\n';
 }
 
 }  // namespace caffe2
