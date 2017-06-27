@@ -8,8 +8,8 @@
 #include "util/print.h"
 #include "res/imagenet_classes.h"
 
-CAFFE2_DEFINE_string(init_net, "res/squeeze_init_net.pb", "The given path to the init protobuffer.");
-CAFFE2_DEFINE_string(predict_net, "res/squeeze_predict_net.pb", "The given path to the predict protobuffer.");
+CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb", "The given path to the init protobuffer.");
+CAFFE2_DEFINE_string(predict_net, "res/squeezenet_predict_net.pb", "The given path to the predict protobuffer.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_int(size_to_fit, 227, "The image file.");
 CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
