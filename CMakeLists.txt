@@ -43,3 +43,6 @@ target_link_libraries(mnist ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLA
 
 add_executable(imagenet src/imagenet.cpp)
 target_link_libraries(imagenet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS} ${CURL_LIBRARIES})
+
+add_executable(retrain src/retrain.cpp)
+target_link_libraries(retrain ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS} ${CURL_LIBRARIES})
