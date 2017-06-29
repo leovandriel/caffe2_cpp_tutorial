@@ -4,6 +4,10 @@
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
 
+#ifdef WITH_CUDA
+  #include "caffe2/core/context_gpu.h"
+#endif
+
 #include "util/models.h"
 #include "util/print.h"
 #include "util/image.h"
@@ -23,6 +27,7 @@ CAFFE2_DEFINE_int(train_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_double(learning_rate, 0.003, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
+CAFFE2_DEFINE_bool(use_cudnn, true, "Train on gpu.");
 
 enum {
   kRunTrain = 0,
@@ -355,7 +360,18 @@ void run() {
   std::cout << "image_dir: " << FLAGS_image_dir << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
   std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
+  std::cout << "use_cudnn: " << FLAGS_use_cudnn << std::endl;
   auto path_prefix = FLAGS_image_dir + '/' + '_' + FLAGS_model + '_' + FLAGS_blob_name + '_';
+
+  if (FLAGS_use_cudnn) {
+#ifdef WITH_CUDA
+    DeviceOption option;
+    option.set_device_type(CUDA);
+    CUDAContext context(option);
+#else
+    LOG(FATAL) << "use_cudnn set but CUDA not available.";
+#endif
+  }
 
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
@@ -465,6 +481,18 @@ void run() {
   AddAccuracyOps(predict_model[kRunValidate]);
   AddAccuracyOps(predict_model[kRunTest]);
 
+  if (FLAGS_use_cudnn) {
+    for (int i = 0; i < kRunNum; i++) {
+      DeviceOption option;
+      option.set_device_type(CUDA);
+      *predict_model[i].mutable_device_option() = option;
+      for (auto op: predict_model[i].op()) {
+          op.set_engine("CUDNN");
+          op.mutable_device_option()->set_device_type(CUDA);
+      }
+    }
+  }
+
   // std::cout << "full_init_model -------------" << std::endl;
   // print(full_init_model);
   // std::cout << "full_predict_model -------------" << std::endl;
@@ -492,7 +520,7 @@ void run() {
     predict_net[kRunTrain]->Run();
 
     if (i % 10 == 0) {
-      auto iter = workspace.GetBlob("ITER")->Get<TensorCPU>().data<long long>()[0];
+      auto iter = workspace.GetBlob("ITER")->Get<TensorCPU>().data<int64_t>()[0];
       auto lr = workspace.GetBlob("LR")->Get<TensorCPU>().data<float>()[0];
       auto train_accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
       auto train_loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
