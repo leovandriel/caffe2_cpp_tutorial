@@ -40,6 +40,15 @@ void print(const OperatorDef &def) {
       std::cout << "  }" << std::endl;
     }
   }
+  if (def.engine() != "") {
+    std::cout << "  engine: " << '"' << def.engine() << '"' << std::endl;
+  }
+  if (def.has_device_option()) {
+    std::cout << "device_option {" << std::endl;
+    std::cout << "  device_type: " << '"' << def.device_option().device_type() << '"' << std::endl;
+    std::cout << "  cuda_gpu_id: " << '"' << def.device_option().cuda_gpu_id() << '"' << std::endl;
+    std::cout << "}" << std::endl;
+  }
   if (def.is_gradient_op()) {
     std::cout << "  is_gradient_op: true" << std::endl;
   }
