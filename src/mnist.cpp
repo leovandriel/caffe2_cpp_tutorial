@@ -1,5 +1,10 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/operator_gradient.h"
+#include "caffe2/core/operator.h"
+
+#ifdef WITH_CUDA
+  #include "caffe2/core/context_gpu.h"
+#endif
 
 #include "util/print.h"
 
@@ -7,6 +12,7 @@ CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb", "The given path t
 CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb", "The given path to the testing leveldb.");
 CAFFE2_DEFINE_int(train_runs, 200, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 100, "The of test runs.");
+CAFFE2_DEFINE_bool(use_cudnn, true, "Train on gpu.");
 
 namespace caffe2 {
 
@@ -465,6 +471,17 @@ void run() {
   std::cout << "test_db: " << FLAGS_test_db << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
+  std::cout << "use_cudnn: " << FLAGS_use_cudnn << std::endl;
+
+  if (FLAGS_use_cudnn) {
+#ifdef WITH_CUDA
+    DeviceOption option;
+    option.set_device_type(CUDA);
+    CUDAContext context(option);
+#else
+    LOG(FATAL) << "use_cudnn set but CUDA not available.";
+#endif
+  }
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize, brew
   // >>> workspace.ResetWorkspace(root_folder)
@@ -491,8 +508,22 @@ void run() {
   // >>> AddBookkeepingOperators(train_model)
   AddBookkeepingOperators(initTrainModel, predictTrainModel, params);
 
-  // print(initTrainModel);
-  // print(predictTrainModel);
+  if (FLAGS_use_cudnn) {
+    for (auto net: { initTrainModel, predictTrainModel }) {
+      DeviceOption option;
+      option.set_device_type(CUDA);
+      *net.mutable_device_option() = option;
+    }
+    for (auto op: predictTrainModel.op()) {
+        op.set_engine("CUDNN");
+        op.mutable_device_option()->set_device_type(CUDA);
+    }
+  }
+
+//   std::cout << "initTrainModel -------------" << std::endl;
+//   print(initTrainModel);
+//   std::cout << "predictTrainModel -------------" << std::endl;
+//   print(predictTrainModel);
 
   // >>> test_model = model_helper.ModelHelper(name="mnist_test", arg_scope=arg_scope, init_params=False)
   NetDef initTestModel;
