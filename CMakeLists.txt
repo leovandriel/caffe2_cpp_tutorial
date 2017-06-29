@@ -19,6 +19,8 @@ find_library(CAFFE2_LIB Caffe2_CPU)
 find_library(CAFFE2_GPU_LIB Caffe2_GPU)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
+find_library(NCCL_LIB nccl)
+find_library(CURAND_LIB curand)
 
 if(NOT CAFFE2_LIB)
   message(FATAL_ERROR "Caffe2 lib not found")
@@ -57,7 +59,7 @@ target_link_libraries(pretrained ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} $
 add_executable(mnist src/mnist.cpp)
 target_link_libraries(mnist ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB})
 if(CUDA_LIBRARIES)
-  target_link_libraries(mnist ${CAFFE2_GPU_LIB} ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY})
+  target_link_libraries(mnist ${CAFFE2_GPU_LIB} ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${NCCL_LIB} ${CURAND_LIB})
 endif()
 
 add_executable(imagenet src/imagenet.cpp)
