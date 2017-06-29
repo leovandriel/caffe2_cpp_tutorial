@@ -1,7 +1,9 @@
 #ifndef MODELS_H
 #define MODELS_H
 
-#include <curl/curl.h>
+#ifdef WITH_CURL
+  #include <curl/curl.h>
+#endif
 
 namespace caffe2 {
 
@@ -54,6 +56,7 @@ int progress_func(const char* filename, double total_down, double current_down, 
 }
 
 bool download(const std::string &filename, const std::string &url) {
+#ifdef WITH_CURL
   FILE *fp = fopen(filename.c_str(), "wb");
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -71,6 +74,10 @@ bool download(const std::string &filename, const std::string &url) {
   fclose(fp);
   std::cerr << '\r' << std::string(filename.length() + bar_length + 7, ' ') << '\r';
   return result == CURLE_OK;
+#else
+  std::cout << "model download not supported, install cURL" << std::endl;
+  return false;
+#endif
 }
 
 bool ensureFile(const std::string &filename, const std::string &url) {

@@ -86,9 +86,6 @@ void print(const Tensor<C> &tensor, const std::string &name = "") {
   if (tensor.template IsType<int>()) {
     return printType<int>(tensor, name);
   }
-  if (tensor.template IsType<long long>()) {
-    return printType<long long>(tensor, name);
-  }
   std::cout << name << "?" << std::endl;
 }
 
