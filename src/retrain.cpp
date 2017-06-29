@@ -4,13 +4,11 @@
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
 
-#ifdef WITH_CUDA
-  #include "caffe2/core/context_gpu.h"
-#endif
-
 #include "util/models.h"
+#include "util/cuda.h"
 #include "util/print.h"
 #include "util/image.h"
+#include "util/build.h"
 #include "operator/operator_cout.h"
 #include "res/imagenet_classes.h"
 
@@ -23,11 +21,12 @@ CAFFE2_DEFINE_string(image_dir, "retrain", "Folder with subfolders with images")
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
-CAFFE2_DEFINE_int(train_runs, 50, "The of training runs.");
+CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
+CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 0.003, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
-CAFFE2_DEFINE_bool(use_cudnn, true, "Train on gpu.");
+CAFFE2_DEFINE_bool(use_cudnn, false, "Train on gpu.");
 
 enum {
   kRunTrain = 0,
@@ -36,13 +35,13 @@ enum {
   kRunNum = 3
 };
 
-std::map<int, std::string> name_for_run({
+static std::map<int, std::string> name_for_run({
   { kRunTrain, "train" },
   { kRunValidate, "validate" },
   { kRunTest, "test" },
 });
 
-std::map<int, int> percentage_for_run({
+static std::map<int, int> percentage_for_run({
   { kRunTest, 10 },
   { kRunValidate, 20 },
   { kRunTrain, 70 },
@@ -65,7 +64,7 @@ void LoadLabels(const std::string &path_prefix, std::vector<std::string> &class_
 
   std::cout << "load image folder.." << std::endl;
   auto directory = opendir(FLAGS_image_dir.c_str());
-  CAFFE_ENFORCE(directory);
+  CHECK(directory) << "~ no image folder " << FLAGS_image_dir;
   if (directory) {
     struct stat s;
     struct dirent *entry;
@@ -93,8 +92,10 @@ void LoadLabels(const std::string &path_prefix, std::vector<std::string> &class_
     }
     closedir(directory);
   }
+  CHECK(image_files.size()) << "~ no images found in " << FLAGS_image_dir;
   std::random_shuffle(image_files.begin(), image_files.end());
   std::cout << class_labels.size() << " labels found" << std::endl;
+  std::cout << image_files.size() << " images found" << std::endl;
 
   std::cout << "write class labels.." << std::endl;
   std::ofstream class_file(classes_text_path);
@@ -180,166 +181,10 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
       }
     }
   }
+  for (int i = 0; i < kRunNum; i++) {
+    CHECK(database[i]->NewCursor()->Valid()) << "~ database " << name_for_run[i] << " is empty";
+  }
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size() << " images processed" << std::endl;
-}
-
-void AddInitOps(NetDef &init_model, NetDef &predict_model, const std::string &name, const std::string &db, const std::string &db_type, int batch_size) {
-  auto reader_name = name + "_dbreader";
-  {
-    auto op = init_model.add_op();
-    op->set_type("CreateDB");
-    auto arg1 = op->add_arg();
-    arg1->set_name("db_type");
-    arg1->set_s(db_type);
-    auto arg2 = op->add_arg();
-    arg2->set_name("db");
-    arg2->set_s(db);
-    op->add_output(reader_name);
-    predict_model.add_external_input(reader_name);
-  }
-  {
-    auto op = predict_model.add_op();
-    op->set_type("TensorProtosDBInput");
-    auto arg = op->add_arg();
-    arg->set_name("batch_size");
-    arg->set_i(batch_size);
-    op->add_input(reader_name);
-    op->add_output(FLAGS_blob_name);
-    op->add_output("label");
-  }
-  {
-    // auto op = predict_model.add_op();
-    // op->set_type("Cout");
-    // auto arg = op->add_arg();
-    // op->add_input(FLAGS_blob_name);
-  }
-}
-
-void AddAccuracyOps(NetDef &predict_model) {
-  {
-    auto op = predict_model.add_op();
-    op->set_type("Accuracy");
-    op->add_input("prob");
-    op->add_input("label");
-    op->add_output("accuracy");
-  }
-}
-
-void AddTrainingOps(NetDef &init_model, NetDef &predict_model) {
-  std::vector<std::string> params;
-  std::vector<const OperatorDef *> gradient_ops;
-  for (const auto &op: predict_model.op()) {
-    if (op.type() == "FC") {
-      params.push_back(op.input(1));
-      params.push_back(op.input(2));
-      gradient_ops.push_back(&op);
-    } else if (op.type() == "Relu" || op.type() == "Softmax") {
-      gradient_ops.push_back(&op);
-    }
-  }
-
-  {
-    auto op = predict_model.add_op();
-    op->set_type("LabelCrossEntropy");
-    op->add_input("prob");
-    op->add_input("label");
-    op->add_output("xent");
-    gradient_ops.push_back(op);
-  }
-  {
-    auto op = predict_model.add_op();
-    op->set_type("AveragedLoss");
-    op->add_input("xent");
-    op->add_output("loss");
-    gradient_ops.push_back(op);
-  }
-
-  AddAccuracyOps(predict_model);
-
-  {
-    auto op = init_model.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_i(0);
-    auto arg3 = op->add_arg();
-    arg3->set_name("dtype");
-    arg3->set_i(TensorProto_DataType_INT64);
-    op->add_output("ITER");
-    predict_model.add_external_input("ITER");
-  }
-  {
-    auto op = predict_model.add_op();
-    op->set_type("Iter");
-    op->add_input("ITER");
-    op->add_output("ITER");
-  }
-
-  {
-    auto op = predict_model.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("value");
-    arg->set_f(1.0);
-    op->add_input("loss");
-    op->add_output("loss_grad");
-    op->set_is_gradient_op(true);
-  }
-  std::reverse(gradient_ops.begin(), gradient_ops.end());
-  for (auto op: gradient_ops) {
-    vector<GradientWrapper> output(op->output_size());
-    for (auto i = 0; i < output.size(); i++) {
-      output[i].dense_ = op->output(i) + "_grad";
-    }
-    GradientOpsMeta meta = GetGradientForOp(*op, output);
-    auto grad = predict_model.add_op();
-    grad->CopyFrom(meta.ops_[0]);
-    grad->set_is_gradient_op(true);
-  }
-
-  {
-    auto op = predict_model.add_op();
-    op->set_type("LearningRate");
-    auto arg1 = op->add_arg();
-    arg1->set_name("policy");
-    arg1->set_s("step");
-    auto arg2 = op->add_arg();
-    arg2->set_name("stepsize");
-    arg2->set_i(1);
-    auto arg3 = op->add_arg();
-    arg3->set_name("base_lr");
-    arg3->set_f(-FLAGS_learning_rate);
-    auto arg4 = op->add_arg();
-    arg4->set_name("gamma");
-    arg4->set_f(FLAGS_learning_gamma);
-    op->add_input("ITER");
-    op->add_output("LR");
-  }
-  {
-    auto op = init_model.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_f(1.0);
-    op->add_output("ONE");
-    predict_model.add_external_input("ONE");
-  }
-
-  for (auto param: params) {
-    auto op = predict_model.add_op();
-    op->set_type("WeightedSum");
-    op->add_input(param);
-    op->add_input("ONE");
-    op->add_input(param + "_grad");
-    op->add_input("LR");
-    op->add_output(param);
-  }
 }
 
 void run() {
@@ -358,21 +203,19 @@ void run() {
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "blob_name: " << FLAGS_blob_name << std::endl;
   std::cout << "image_dir: " << FLAGS_image_dir << std::endl;
+  std::cout << "db_type: " << FLAGS_db_type << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
   std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
+  std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
+  std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
+  std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "learning_gamma: " << FLAGS_learning_gamma << std::endl;
   std::cout << "use_cudnn: " << FLAGS_use_cudnn << std::endl;
+
+  CHECK(!FLAGS_use_cudnn || setupCUDA()) << "~ use_cudnn set but CUDA not available.";
+
   auto path_prefix = FLAGS_image_dir + '/' + '_' + FLAGS_model + '_' + FLAGS_blob_name + '_';
-
-  if (FLAGS_use_cudnn) {
-#ifdef WITH_CUDA
-    DeviceOption option;
-    option.set_device_type(CUDA);
-    CUDAContext context(option);
-#else
-    LOG(FATAL) << "use_cudnn set but CUDA not available.";
-#endif
-  }
-
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
@@ -380,12 +223,13 @@ void run() {
 
   std::cout << std::endl;
 
+  auto load_time = -clock();
   std::vector<std::string> class_labels;
   std::vector<std::pair<std::string, int>> image_files;
   LoadLabels(path_prefix, class_labels, image_files);
 
   std::cout << "load model.." << std::endl;
-  CAFFE_ENFORCE(ensureModel(FLAGS_model), "model ", FLAGS_model, " not found");
+  CHECK(ensureModel(FLAGS_model)) << "~ model " << FLAGS_model << " not found";
   NetDef full_init_model; // the original imagenet initialization model
   NetDef full_predict_model; // the original imagenet prediction model
   NetDef pre_predict_model; // predict model for pre-processing
@@ -398,14 +242,13 @@ void run() {
   }
   std::string init_filename = "res/" + FLAGS_model + "_init_net.pb";
   std::string predict_filename = "res/" + FLAGS_model + "_predict_net.pb";
-  CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &full_init_model));
-  CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model));
+  CHECK(ReadProtoFromFile(init_filename.c_str(), &full_init_model)) << "~ empty init model " << init_filename;
+  CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
   deploy_init_model.set_name("retrain_" + full_init_model.name());
   pre_predict_model.set_name("pre_predict_model");
 
   for (int i = 0; i < kRunNum; i++) {
-    auto batch_size = (i == kRunTest ? 100 : 64);
-    AddInitOps(init_model[i], predict_model[i], name_for_run[i], db_paths[i], FLAGS_db_type, batch_size);
+    add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_blob_name, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
 
   std::cout << "split model.." << std::endl;
@@ -477,19 +320,14 @@ void run() {
       predict_model[i].add_external_output(output);
     }
   }
-  AddTrainingOps(init_model[kRunTrain], predict_model[kRunTrain]);
-  AddAccuracyOps(predict_model[kRunValidate]);
-  AddAccuracyOps(predict_model[kRunTest]);
+  add_train_ops(init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_learning_gamma);
+  add_test_ops(predict_model[kRunValidate]);
+  add_test_ops(predict_model[kRunTest]);
 
   if (FLAGS_use_cudnn) {
     for (int i = 0; i < kRunNum; i++) {
-      DeviceOption option;
-      option.set_device_type(CUDA);
-      *predict_model[i].mutable_device_option() = option;
-      for (auto op: predict_model[i].op()) {
-          op.set_engine("CUDNN");
-          op.mutable_device_option()->set_device_type(CUDA);
-      }
+      set_device_cuda_model(init_model[i]);
+      set_device_cuda_model(predict_model[i]);
     }
   }
 
@@ -501,11 +339,14 @@ void run() {
   // print(pre_predict_model);
 
   PreProcess(image_files, db_paths, full_init_model, pre_predict_model);
+  load_time += clock();
 
   // std::cout << "init_model[kRunTrain] -------------" << std::endl;
   // print(init_model[kRunTrain]);
   // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
   // print(predict_model[kRunTrain]);
+
+  std::cout << std::endl;
 
   Workspace workspace("tmp");
   unique_ptr<caffe2::NetBase> predict_net[kRunNum];
@@ -515,25 +356,37 @@ void run() {
     predict_net[i] = CreateNet(predict_model[i], &workspace);
   }
 
+  clock_t train_time = 0;
+  clock_t validate_time = 0;
+  clock_t test_time = 0;
+
   std::cout << "training.." << std::endl;
   for (auto i = 1; i <= FLAGS_train_runs; i++) {
+    train_time -= clock();
     predict_net[kRunTrain]->Run();
+    train_time += clock();
 
     if (i % 10 == 0) {
-      auto iter = workspace.GetBlob("ITER")->Get<TensorCPU>().data<int64_t>()[0];
+      auto iter = workspace.GetBlob("iter")->Get<TensorCPU>().data<int64_t>()[0];
       auto lr = workspace.GetBlob("LR")->Get<TensorCPU>().data<float>()[0];
       auto train_accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
       auto train_loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
+      validate_time -= clock();
       predict_net[kRunValidate]->Run();
+      validate_time += clock();
       auto validate_accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
       auto validate_loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
       std::cout << "step: " << iter << "  rate: " << lr << "  loss: " << train_loss << " | " << validate_loss << "  accuracy: " << train_accuracy << " | " << validate_accuracy << std::endl;
     }
   }
 
+  std::cout << std::endl;
+
   std::cout << "testing.." << std::endl;
   for (auto i = 1; i <= FLAGS_test_runs; i++) {
+    test_time -= clock();
     predict_net[kRunTest]->Run();
+    test_time += clock();
 
     if (i % 10 == 0) {
       auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
@@ -573,21 +426,13 @@ void run() {
 
   WriteProtoToBinaryFile(deploy_init_model, path_prefix + "init_net.pb");
   WriteProtoToBinaryFile(full_predict_model, path_prefix + "predict_net.pb");
-
-  // load model
-
-  // run net
-  // Predictor predictor(init_model, predict_model);
-  // Predictor::TensorVector inputVec({ &input }), outputVec;
-  // auto predict_time = clock();
-  // predictor.run(inputVec, &outputVec);
-  // auto finish_time = clock();
-
-  // printBest(*(outputVec[0]), imagenet_classes);
+  auto init_size = std::ifstream(path_prefix + "init_net.pb", std::ifstream::ate | std::ifstream::binary).tellg();
+  auto predict_size = std::ifstream(path_prefix + "predict_net.pb", std::ifstream::ate | std::ifstream::binary).tellg();
+  auto model_size = init_size + predict_size;
 
   std::cout << std::endl;
 
-  // std::cout << std::setprecision(3) << "load: " << ((float)(predict_time - read_time) / CLOCKS_PER_SEC) << "s  predict: " << ((float)(finish_time - predict_time) / CLOCKS_PER_SEC) << "s  model: " << ((float)model_size / 1000000) << "MB" << std::endl;
+  std::cout << std::setprecision(3) << "load: " << ((float)load_time / CLOCKS_PER_SEC) << "s  train: " << ((float)train_time / CLOCKS_PER_SEC) << "s  validate: " << ((float)validate_time / CLOCKS_PER_SEC) << "s  test: " << ((float)test_time / CLOCKS_PER_SEC) << "s  model: " << ((float)model_size / 1000000) << "MB" << std::endl;
 }
 
 }  // namespace caffe2
