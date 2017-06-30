@@ -26,7 +26,7 @@ CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
-CAFFE2_DEFINE_bool(use_cudnn, false, "Train on gpu.");
+CAFFE2_DEFINE_bool(use_cuda, true, "Train on gpu if possible.");
 
 enum {
   kRunTrain = 0,
@@ -231,9 +231,11 @@ void run() {
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "learning_gamma: " << FLAGS_learning_gamma << std::endl;
-  std::cout << "use_cudnn: " << FLAGS_use_cudnn << std::endl;
+  std::cout << "use_cuda: " << FLAGS_use_cuda << std::endl;
 
-  CHECK(!FLAGS_use_cudnn || setupCUDA()) << "~ use_cudnn set but CUDA not available.";
+  if(FLAGS_use_cuda && setupCUDA()) {
+    std::cout << "using CUDA" << std::endl;
+  }
 
   auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_' + FLAGS_blob + '_';
   std::string db_paths[kRunNum];
@@ -266,7 +268,7 @@ void run() {
   CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
   deploy_init_model.set_name("retrain_" + full_init_model.name());
   pre_predict_model.set_name("pre_predict_model");
-  if (FLAGS_use_cudnn) {
+  if (FLAGS_use_cuda) {
     set_device_cuda_model(full_init_model);
     set_device_cuda_model(full_predict_model);
     set_device_cuda_model(pre_predict_model);
@@ -294,7 +296,7 @@ void run() {
     if (in_static) {
       auto new_op = pre_predict_model.add_op();
       new_op->CopyFrom(op);
-      if (FLAGS_use_cudnn) {
+      if (FLAGS_use_cuda) {
         set_engine_cudnn_op(*new_op);
       }
       for (const auto &input: op.input()) {
@@ -305,7 +307,7 @@ void run() {
       for (int i = 0; i < (train_only ? 1 : kRunNum); i++) {
         auto new_op = predict_model[i].add_op();
         new_op->CopyFrom(op);
-        if (FLAGS_use_cudnn) {
+        if (FLAGS_use_cuda) {
           set_engine_cudnn_op(*new_op);
         }
       }
