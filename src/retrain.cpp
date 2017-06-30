@@ -290,26 +290,17 @@ void run() {
   }
 
   std::cout << "split model.." << std::endl;
-  bool in_static = true;
   std::set<std::string> static_inputs;
   std::string last_w, last_b;
-  std::vector<std::string> available_blobs;
+  std::vector<std::pair<std::string, std::string>> available_blobs;
+  auto blob_found = false;
   std::set<std::string> strip_op_types({ "Dropout" });
   for (const auto &op: full_predict_model.op()) {
-    available_blobs.push_back(op.input(0));
-    if (op.input(0) == FLAGS_blob && op.output(0) != FLAGS_blob) {
-      in_static = false;
+    if (op.input(0) != op.output(0)) {
+      available_blobs.push_back({ op.input(0), op.type() });
+      blob_found |= (op.input(0) == FLAGS_blob);
     }
-    if (in_static) {
-      auto new_op = pre_predict_model.add_op();
-      new_op->CopyFrom(op);
-      if (FLAGS_use_cuda) {
-        set_engine_cudnn_op(*new_op);
-      }
-      for (const auto &input: op.input()) {
-        static_inputs.insert(input);
-      }
-    } else {
+    if (blob_found) {
       auto train_only = (strip_op_types.find(op.type()) != strip_op_types.end());
       for (int i = 0; i < (train_only ? 1 : kRunNum); i++) {
         auto new_op = predict_model[i].add_op();
@@ -322,13 +313,21 @@ void run() {
         last_w = op.input(1);
         last_b = op.input(2);
       }
+    } else {
+      auto new_op = pre_predict_model.add_op();
+      new_op->CopyFrom(op);
+      if (FLAGS_use_cuda) {
+        set_engine_cudnn_op(*new_op);
+      }
+      for (const auto &input: op.input()) {
+        static_inputs.insert(input);
+      }
     }
   }
-  if (std::find(available_blobs.begin(), available_blobs.end(), FLAGS_blob) == available_blobs.end()) {
+  if (!blob_found) {
     std::cout << "available blobs:" << std::endl;
-    available_blobs.erase(std::unique(available_blobs.begin(), available_blobs.end()), available_blobs.end());
     for (auto &blob: available_blobs) {
-      std::cout << "  " << blob << std::endl;
+      std::cout << "  " << blob.first << " (" << blob.second << ")" << std::endl;
     }
     LOG(FATAL) << "~ no blob with name " << FLAGS_blob << " in model.";
   }
