@@ -26,7 +26,7 @@ CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
-CAFFE2_DEFINE_bool(use_cuda, true, "Train on gpu if possible.");
+CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 enum {
   kRunTrain = 0,
@@ -231,11 +231,9 @@ void run() {
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "learning_gamma: " << FLAGS_learning_gamma << std::endl;
-  std::cout << "use_cuda: " << FLAGS_use_cuda << std::endl;
+  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
 
-  if(FLAGS_use_cuda && setupCUDA()) {
-    std::cout << "using CUDA" << std::endl;
-  }
+  if (!FLAGS_force_cpu) setupCUDA();
 
   std::string blob_safe = FLAGS_blob;
   std::string::size_type index = 0;
@@ -275,7 +273,7 @@ void run() {
   CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
   deploy_init_model.set_name("retrain_" + full_init_model.name());
   pre_predict_model.set_name("pre_predict_model");
-  if (FLAGS_use_cuda) {
+  if (!FLAGS_force_cpu) {
     set_device_cuda_model(full_init_model);
     set_device_cuda_model(full_predict_model);
     set_device_cuda_model(pre_predict_model);
@@ -305,7 +303,7 @@ void run() {
       for (int i = 0; i < (train_only ? 1 : kRunNum); i++) {
         auto new_op = predict_model[i].add_op();
         new_op->CopyFrom(op);
-        if (FLAGS_use_cuda) {
+        if (!FLAGS_force_cpu) {
           set_engine_cudnn_op(*new_op);
         }
       }
@@ -316,7 +314,7 @@ void run() {
     } else {
       auto new_op = pre_predict_model.add_op();
       new_op->CopyFrom(op);
-      if (FLAGS_use_cuda) {
+      if (!FLAGS_force_cpu) {
         set_engine_cudnn_op(*new_op);
       }
       for (const auto &input: op.input()) {

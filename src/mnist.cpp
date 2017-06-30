@@ -7,9 +7,9 @@
 
 CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb", "The given path to the training leveldb.");
 CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb", "The given path to the testing leveldb.");
-CAFFE2_DEFINE_int(train_runs, 200, "The of training runs.");
-CAFFE2_DEFINE_int(test_runs, 100, "The of test runs.");
-CAFFE2_DEFINE_bool(use_cudnn, false, "Train on gpu.");
+CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
+CAFFE2_DEFINE_int(test_runs, 50, "The of test runs.");
+CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
 
@@ -471,9 +471,9 @@ void run() {
   std::cout << "test_db: " << FLAGS_test_db << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
-  std::cout << "use_cudnn: " << FLAGS_use_cudnn << std::endl;
+  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
 
-  CHECK(!FLAGS_use_cudnn || setupCUDA()) << "~ use_cudnn set but CUDA not available.";
+  if (!FLAGS_force_cpu) setupCUDA();
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize, brew
   // >>> workspace.ResetWorkspace(root_folder)
@@ -531,7 +531,7 @@ void run() {
   std::vector<OperatorDef *> gradient_ops_deploy;
   AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_deploy, false);
 
-  if (FLAGS_use_cudnn) {
+  if (!FLAGS_force_cpu) {
     set_device_cuda_model(initTrainModel);
     set_device_cuda_model(predictTrainModel);
     set_device_cuda_model(initTestModel);
@@ -556,9 +556,9 @@ void run() {
 
     // >>> accuracy[i] = workspace.FetchBlob('accuracy')
     // >>> loss[i] = workspace.FetchBlob('loss')
-    if (i % 10 == 0) {
-      auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
-      auto loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
+    if (i % (10 * cuda_multipier) == 0) {
+      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
       std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -581,7 +581,7 @@ void run() {
 
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
-      auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
+      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
       std::cout << "step: " << i << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -590,7 +590,7 @@ void run() {
     // fid.write(str(deploy_model.net.Proto()))
   std::vector<string> external(initDeployModel.external_input().begin(), initDeployModel.external_input().end());
   for (auto &param: external) {
-    auto &tensor = workspace.GetBlob(param)->Get<TensorCPU>();
+    auto tensor = get_tensor_blob(*workspace.GetBlob(param));
     auto op = initDeployModel.add_op();
     op->set_type("GivenTensorFill");
     auto arg1 = op->add_arg();
