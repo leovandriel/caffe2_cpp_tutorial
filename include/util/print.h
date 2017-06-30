@@ -66,6 +66,9 @@ void print(const NetDef &def) {
   for (const auto &op: def.op()) {
     print(op);
   }
+  if (def.has_num_workers()) {
+    std::cout << "num_workers: " << def.num_workers() << std::endl;
+  }
   for (const auto &input: def.external_input()) {
     std::cout << "external_input: " << '"' << input << '"' << std::endl;
   }
@@ -77,7 +80,19 @@ void print(const NetDef &def) {
 template<typename T, typename C>
 void printType(const Tensor<C> &tensor, const std::string &name = "") {
   const auto& data = tensor.template data<T>();
-  if (name.length() > 0) std::cout << name << ": ";
+  if (name.length() > 0) {
+    std::cout << name << "(";
+    auto b = true;
+    for (auto dim: tensor.dims()) {
+      if (b) {
+        b = false;
+      } else {
+        std::cout << " ";
+      }
+      std::cout << dim;
+    }
+    std::cout << "): ";
+  }
   for (auto i = 0; i < (tensor.size() > 100 ? 100 : tensor.size()); ++i) {
     std::cout << data[i] << ' ';
   }

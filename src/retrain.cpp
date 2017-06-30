@@ -1,5 +1,4 @@
 #include "caffe2/core/init.h"
-#include "caffe2/core/predictor.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
@@ -15,16 +14,17 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-CAFFE2_DEFINE_string(model, "alexnet", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(blob_name, "fc6", "Name of the blob on which to split the model.");
-CAFFE2_DEFINE_string(image_dir, "retrain", "Folder with subfolders with images");
+CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
+CAFFE2_DEFINE_string(blob, "", "Name of the blob on which to split the model.");
+CAFFE2_DEFINE_string(folder, "", "Folder with subfolders with images");
+
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
-CAFFE2_DEFINE_double(learning_rate, 0.003, "Learning rate.");
+CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
 CAFFE2_DEFINE_bool(use_cudnn, false, "Train on gpu.");
 
@@ -63,14 +63,14 @@ void LoadLabels(const std::string &path_prefix, std::vector<std::string> &class_
   }
 
   std::cout << "load image folder.." << std::endl;
-  auto directory = opendir(FLAGS_image_dir.c_str());
-  CHECK(directory) << "~ no image folder " << FLAGS_image_dir;
+  auto directory = opendir(FLAGS_folder.c_str());
+  CHECK(directory) << "~ no image folder " << FLAGS_folder;
   if (directory) {
     struct stat s;
     struct dirent *entry;
     while ((entry = readdir(directory))) {
       auto class_name = entry->d_name;
-      auto class_path = FLAGS_image_dir + '/' + class_name;
+      auto class_path = FLAGS_folder + '/' + class_name;
       if (class_name[0] != '.' && class_name[0] != '_' && !stat(class_path.c_str(), &s) && (s.st_mode & S_IFDIR)) {
         auto subdir = opendir(class_path.c_str());
         if (subdir) {
@@ -86,13 +86,13 @@ void LoadLabels(const std::string &path_prefix, std::vector<std::string> &class_
               image_files.push_back({ image_path, class_index });
             }
           }
+          closedir(subdir);
         }
-        closedir(subdir);
       }
     }
     closedir(directory);
   }
-  CHECK(image_files.size()) << "~ no images found in " << FLAGS_image_dir;
+  CHECK(image_files.size()) << "~ no images found in " << FLAGS_folder;
   std::random_shuffle(image_files.begin(), image_files.end());
   std::cout << class_labels.size() << " labels found" << std::endl;
   std::cout << image_files.size() << " images found" << std::endl;
@@ -142,7 +142,12 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
   auto insert_count = 0;
   auto image_count = 0;
   std::string value;
-  Predictor predictor(full_init_model, pre_predict_model);
+  Workspace workspace;
+  auto init_net = CreateNet(full_init_model, &workspace);
+  init_net->Run();
+  auto predict_net = CreateNet(pre_predict_model, &workspace);
+  auto input_name = pre_predict_model.external_input_size() ? pre_predict_model.external_input(0) : "";
+  auto output_name = pre_predict_model.external_output_size() ? pre_predict_model.external_output(0) : "";
   TensorSerializer<CPUContext> serializer;
   for (auto &pair: image_files) {
     auto &filename = pair.first;
@@ -157,13 +162,18 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
       auto input = readImageTensor(filename, FLAGS_size_to_fit, -FLAGS_image_mean);
       if (input.size() > 0) {
         std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. " << image_count << '/' << image_files.size() << " " << std::setprecision(3) << ((float)100 * image_count / image_files.size()) << "%" << std::flush;
-        Predictor::TensorVector inputVec({ &input }), outputVec;
-        predictor.run(inputVec, &outputVec);
-        auto &output = *(outputVec[0]);
-        label->set_int32_data(0, class_index);
         data->Clear();
-        serializer.Serialize(output, "", data, 0, kDefaultChunkSize);
+        if (pre_predict_model.op_size()) {
+          set_tensor_blob(*workspace.GetBlob(input_name), input);
+          predict_net->Run();
+          auto output = get_tensor_blob(*workspace.GetBlob(output_name));
+          serializer.Serialize(output, "", data, 0, kDefaultChunkSize);
+        } else {
+          serializer.Serialize(input, "", data, 0, kDefaultChunkSize);
+        }
+        label->set_int32_data(0, class_index);
         protos.SerializeToString(&value);
+        CHECK(value.size() < 65536) << "~ unfortunately caffe2's leveldb has block_size 65536, which is too small for our tensor data of size " << value.size();
         int percentage = 0;
         for (auto pair: percentage_for_run) {
           percentage += pair.second;
@@ -200,9 +210,19 @@ void run() {
     return;
   }
 
+  if (!FLAGS_folder.size()) {
+    std::cerr << "specify a image folder using --folder <name>" << std::endl;
+    return;
+  }
+
+  if (!FLAGS_blob.size()) {
+    std::cerr << "specify a layer blob using --blob <name>" << std::endl;
+    return;
+  }
+
   std::cout << "model: " << FLAGS_model << std::endl;
-  std::cout << "blob_name: " << FLAGS_blob_name << std::endl;
-  std::cout << "image_dir: " << FLAGS_image_dir << std::endl;
+  std::cout << "blob_name: " << FLAGS_blob << std::endl;
+  std::cout << "image_dir: " << FLAGS_folder << std::endl;
   std::cout << "db_type: " << FLAGS_db_type << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
   std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
@@ -215,7 +235,7 @@ void run() {
 
   CHECK(!FLAGS_use_cudnn || setupCUDA()) << "~ use_cudnn set but CUDA not available.";
 
-  auto path_prefix = FLAGS_image_dir + '/' + '_' + FLAGS_model + '_' + FLAGS_blob_name + '_';
+  auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_' + FLAGS_blob + '_';
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
@@ -246,35 +266,62 @@ void run() {
   CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
   deploy_init_model.set_name("retrain_" + full_init_model.name());
   pre_predict_model.set_name("pre_predict_model");
+  if (FLAGS_use_cudnn) {
+    set_device_cuda_model(full_init_model);
+    set_device_cuda_model(full_predict_model);
+    set_device_cuda_model(pre_predict_model);
+    for (int i = 0; i < kRunNum; i++) {
+      set_device_cuda_model(init_model[i]);
+      set_device_cuda_model(predict_model[i]);
+    }
+  }
 
   for (int i = 0; i < kRunNum; i++) {
-    add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_blob_name, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
+    add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_blob, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
 
   std::cout << "split model.." << std::endl;
   bool in_static = true;
   std::set<std::string> static_inputs;
   std::string last_w, last_b;
+  std::vector<std::string> available_blobs;
+  std::set<std::string> strip_op_types({ "Dropout" });
   for (const auto &op: full_predict_model.op()) {
-    if (op.input(0) == FLAGS_blob_name && op.output(0) != FLAGS_blob_name) {
+    available_blobs.push_back(op.input(0));
+    if (op.input(0) == FLAGS_blob && op.output(0) != FLAGS_blob) {
       in_static = false;
     }
     if (in_static) {
-      pre_predict_model.add_op()->CopyFrom(op);
+      auto new_op = pre_predict_model.add_op();
+      new_op->CopyFrom(op);
+      if (FLAGS_use_cudnn) {
+        set_engine_cudnn_op(*new_op);
+      }
       for (const auto &input: op.input()) {
         static_inputs.insert(input);
       }
     } else {
-      predict_model[kRunTrain].add_op()->CopyFrom(op);
-      if (op.type() != "Dropout") {
-        predict_model[kRunValidate].add_op()->CopyFrom(op);
-        predict_model[kRunTest].add_op()->CopyFrom(op);
+      auto train_only = (strip_op_types.find(op.type()) != strip_op_types.end());
+      for (int i = 0; i < (train_only ? 1 : kRunNum); i++) {
+        auto new_op = predict_model[i].add_op();
+        new_op->CopyFrom(op);
+        if (FLAGS_use_cudnn) {
+          set_engine_cudnn_op(*new_op);
+        }
       }
       if (op.type() == "FC") {
         last_w = op.input(1);
         last_b = op.input(2);
       }
     }
+  }
+  if (std::find(available_blobs.begin(), available_blobs.end(), FLAGS_blob) == available_blobs.end()) {
+    std::cout << "available blobs:" << std::endl;
+    available_blobs.erase(std::unique(available_blobs.begin(), available_blobs.end()), available_blobs.end());
+    for (auto &blob: available_blobs) {
+      std::cout << "  " << blob << std::endl;
+    }
+    LOG(FATAL) << "~ no blob with name " << FLAGS_blob << " in model.";
   }
   for (const auto &op: full_init_model.op()) {
     auto &output = op.output(0);
@@ -304,7 +351,7 @@ void run() {
   auto arg = op->add_arg();
   arg->set_name("shape");
   arg->add_ints(1);
-  op->add_output(FLAGS_blob_name);
+  op->add_output(FLAGS_blob);
   for (const auto &input: full_predict_model.external_input()) {
     if (static_inputs.find(input) != static_inputs.end()) {
       pre_predict_model.add_external_input(input);
@@ -314,7 +361,9 @@ void run() {
       predict_model[kRunTest].add_external_input(input);
     }
   }
-  pre_predict_model.add_external_output(FLAGS_blob_name);
+  if (pre_predict_model.op().size()) {
+    pre_predict_model.add_external_output(FLAGS_blob);
+  }
   for (const auto &output: full_predict_model.external_output()) {
     for (int i = 0; i < kRunNum; i++) {
       predict_model[i].add_external_output(output);
@@ -324,27 +373,20 @@ void run() {
   add_test_ops(predict_model[kRunValidate]);
   add_test_ops(predict_model[kRunTest]);
 
-  if (FLAGS_use_cudnn) {
-    for (int i = 0; i < kRunNum; i++) {
-      set_device_cuda_model(init_model[i]);
-      set_device_cuda_model(predict_model[i]);
-    }
-  }
-
   // std::cout << "full_init_model -------------" << std::endl;
   // print(full_init_model);
   // std::cout << "full_predict_model -------------" << std::endl;
   // print(full_predict_model);
   // std::cout << "pre_predict_model -------------" << std::endl;
   // print(pre_predict_model);
-
-  PreProcess(image_files, db_paths, full_init_model, pre_predict_model);
-  load_time += clock();
-
   // std::cout << "init_model[kRunTrain] -------------" << std::endl;
   // print(init_model[kRunTrain]);
   // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
   // print(predict_model[kRunTrain]);
+
+  PreProcess(image_files, db_paths, full_init_model, pre_predict_model);
+  load_time += clock();
+
 
   std::cout << std::endl;
 
@@ -367,15 +409,15 @@ void run() {
     train_time += clock();
 
     if (i % 10 == 0) {
-      auto iter = workspace.GetBlob("iter")->Get<TensorCPU>().data<int64_t>()[0];
-      auto lr = workspace.GetBlob("LR")->Get<TensorCPU>().data<float>()[0];
-      auto train_accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
-      auto train_loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
+      auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
+      auto lr = get_tensor_blob(*workspace.GetBlob("LR")).data<float>()[0];
+      auto train_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto train_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
       validate_time -= clock();
       predict_net[kRunValidate]->Run();
       validate_time += clock();
-      auto validate_accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
-      auto validate_loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
+      auto validate_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto validate_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
       std::cout << "step: " << iter << "  rate: " << lr << "  loss: " << train_loss << " | " << validate_loss << "  accuracy: " << train_accuracy << " | " << validate_accuracy << std::endl;
     }
   }
@@ -389,8 +431,8 @@ void run() {
     test_time += clock();
 
     if (i % 10 == 0) {
-      auto accuracy = workspace.GetBlob("accuracy")->Get<TensorCPU>().data<float>()[0];
-      auto loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
+      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
       std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -398,7 +440,7 @@ void run() {
   for (const auto &op: full_init_model.op()) {
     auto &output = op.output(0);
     if (static_inputs.find(output) == static_inputs.end()) {
-      auto tensor = workspace.GetBlob(output)->Get<TensorCPU>();
+      auto tensor = get_tensor_blob(*workspace.GetBlob(output));
       auto init_op = deploy_init_model.add_op();
       init_op->set_type("GivenTensorFill");
       auto arg1 = init_op->add_arg();
