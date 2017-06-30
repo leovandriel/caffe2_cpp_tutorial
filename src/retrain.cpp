@@ -27,6 +27,8 @@ CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
+static const int caffe2_leveldb_block_size = 65536; // TODO: find a better way
+
 enum {
   kRunTrain = 0,
   kRunValidate = 1,
@@ -172,7 +174,7 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
         }
         label->set_int32_data(0, class_index);
         protos.SerializeToString(&value);
-        CHECK(value.size() < 65536) << "~ unfortunately caffe2's leveldb has block_size 65536, which is too small for our tensor data of size " << value.size();
+        CHECK(value.size() < caffe2_leveldb_block_size) << "~ unfortunately caffe2's leveldb has block_size " << caffe2_leveldb_block_size << ", which is too small for our tensor data of size " << value.size();
         int percentage = 0;
         for (auto pair: percentage_for_run) {
           percentage += pair.second;
