@@ -94,7 +94,7 @@ void printType(const Tensor<C> &tensor, const std::string &name = "") {
     std::cout << "): ";
   }
   for (auto i = 0; i < (tensor.size() > 100 ? 100 : tensor.size()); ++i) {
-    std::cout << data[i] << ' ';
+    std::cout << (float)data[i] << ' ';
   }
   if (tensor.size() > 100) {
     std::cout << "...";
@@ -109,6 +109,12 @@ void print(const Tensor<C> &tensor, const std::string &name = "") {
   }
   if (tensor.template IsType<int>()) {
     return printType<int>(tensor, name);
+  }
+  if (tensor.template IsType<uint8_t>()) {
+    return printType<uint8_t>(tensor, name);
+  }
+  if (tensor.template IsType<int8_t>()) {
+    return printType<int8_t>(tensor, name);
   }
   std::cout << name << "?" << std::endl;
 }

@@ -20,7 +20,6 @@ CAFFE2_DEFINE_string(folder, "", "Folder with subfolders with images");
 
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
@@ -159,7 +158,7 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
       in_db |= (cursor[i]->Valid() && cursor[i]->key() == filename);
     }
     if (!in_db) {
-      auto input = readImageTensor(filename, FLAGS_size_to_fit, -FLAGS_image_mean);
+      auto input = readImageTensor(filename, FLAGS_size_to_fit);
       if (input.size() > 0) {
         std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. " << image_count << '/' << image_files.size() << " " << std::setprecision(3) << ((float)100 * image_count / image_files.size()) << "%" << std::flush;
         data->Clear();
@@ -225,7 +224,6 @@ void run() {
   std::cout << "image_dir: " << FLAGS_folder << std::endl;
   std::cout << "db_type: " << FLAGS_db_type << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;

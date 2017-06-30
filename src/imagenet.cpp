@@ -15,7 +15,6 @@
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
@@ -36,7 +35,6 @@ void run() {
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
 
   if (!FLAGS_force_cpu) setupCUDA();
@@ -44,7 +42,7 @@ void run() {
   std::cout << std::endl;
 
   // read image as tensor
-  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit, -FLAGS_image_mean);
+  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
