@@ -21,7 +21,7 @@ CAFFE2_DEFINE_string(folder, "", "Folder with subfolders with images");
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
-CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
+CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
@@ -416,7 +416,7 @@ void run() {
     predict_net[kRunTrain]->Run();
     train_time += clock();
 
-    if (i % 10 == 0) {
+    if (i % (10 * cuda_multipier) == 0) {
       auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
       auto lr = get_tensor_blob(*workspace.GetBlob("LR")).data<float>()[0];
       auto train_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
