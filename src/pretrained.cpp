@@ -12,7 +12,6 @@ CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb", "The given path to 
 CAFFE2_DEFINE_string(predict_net, "res/squeezenet_predict_net.pb", "The given path to the predict protobuffer.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_int(size_to_fit, 227, "The image file.");
-CAFFE2_DEFINE_int(image_mean, 128, "The mean to adjust values to.");
 
 namespace caffe2 {
 
@@ -27,7 +26,6 @@ void run() {
   std::cout << "predict_net: " << FLAGS_predict_net << std::endl;
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "image_mean: " << FLAGS_image_mean << std::endl;
 
   std::cout << std::endl;
 
@@ -46,7 +44,7 @@ void run() {
   std::cout << "cropped size: " << image.size() << std::endl;
 
   // convert to float, normalize to mean 128
-  image.convertTo(image, CV_32FC3, 1.0, -FLAGS_image_mean);
+  image.convertTo(image, CV_32FC3, 1.0, -128);
   std::cout << "value range: (" << *std::min_element((float *)image.datastart, (float *)image.dataend) << ", " << *std::max_element((float *)image.datastart, (float *)image.dataend) << ")" << std::endl;
 
   // convert NHWC to NCHW

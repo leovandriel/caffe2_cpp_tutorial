@@ -88,13 +88,35 @@ OperatorDef *add_weighted_sum_op(NetDef &model, const std::vector<std::string> &
   return op;
 }
 
+OperatorDef *add_scale_op(NetDef &model, const std::string &input, const std::string &output, float scale) {
+  auto op = model.add_op();
+  op->set_type("Scale");
+  auto arg = op->add_arg();
+  arg->set_name("scale");
+  arg->set_f(scale);
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_cast_op(NetDef &model, const std::string &input, const std::string &output, TensorProto::DataType type) {
+  auto op = model.add_op();
+  op->set_type("Cast");
+  auto arg = op->add_arg();
+  arg->set_name("to");
+  arg->set_i(type);
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
 OperatorDef *add_constant_fill_op(NetDef &model, const std::vector<int> &shape, const std::string &param) {
   auto op = model.add_op();
   op->set_type("ConstantFill");
-  auto arg1 = op->add_arg();
-  arg1->set_name("shape");
+  auto arg = op->add_arg();
+  arg->set_name("shape");
   for (auto dim: shape) {
-    arg1->add_ints(dim);
+    arg->add_ints(dim);
   }
   op->add_output(param);
   return op;
