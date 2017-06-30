@@ -3,6 +3,8 @@ Change Log
 
 ### master (untagged)
 
+* Add Retrain example
+
 ### 0.0.2 (2017-06-26)
 
 * Add ResNet 50 model

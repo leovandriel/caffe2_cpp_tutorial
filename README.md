@@ -1,6 +1,6 @@
-# Caffe2 C++ Tutorial
+# Caffe2 C++ Tutorials and Examples
 
-*C++ transcripts of the Caffe2 Python tutorials*
+*C++ transcripts of the Caffe2 Python tutorials and other C++ example code.*
 
 
 ## About
@@ -33,7 +33,7 @@ Check out the actual tutorials at [https://caffe2.ai/docs/tutorials.html](https:
 Note: sources are developed and tested on macOS, but should be fairly OS-agnostic.
 
 
-## Usage
+## Tutorials
 
 Specific tutorials can be compiled and run with:
 
@@ -50,6 +50,8 @@ The following tutorials have been transcribed:
 * `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
 * `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html)
 
+## ImageNet
+
 There's also examples of other common architectures using ImageNet:
 
     make && ./bin/imagenet --model <name-of-model>
@@ -63,6 +65,20 @@ Names of available models:
 * `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
 
 These models are taken from the [Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo) and [Caffe2 Models](https://github.com/leonardvandriel/caffe2_models).
+
+## Retrain
+
+The above models are all trained on ImageNet data, which means they will only be able to classify ImageNet labels. However, they can be retrained on other image sets, so called transfer learning. If the image data similar characteristics, it's possible to get good results by only retraining the final layers.
+
+First divide all images in subfolders with the label a folder name. Then to retrain the final layer of GoogleNet:
+
+    make && ./bin/imagenet --model googlenet --folder <image-folder> --blob pool5/7x7_s1
+
+Or if you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
+
+    make && ./bin/imagenet --model vgg16 --folder <image-folder> --blob fc6
+
+See [DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition](https://arxiv.org/pdf/1310.1531v1.pdf) for more information.
 
 ## Troubleshooting
 
