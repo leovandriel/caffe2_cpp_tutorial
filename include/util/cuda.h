@@ -18,6 +18,7 @@ bool setupCUDA() {
   option.set_device_type(CUDA);
 #ifdef WITH_CUDA
   new CUDAContext(option);
+  std::cout << std::endl << "using CUDA" << std::endl;
   return true;
 #else
   return false;
