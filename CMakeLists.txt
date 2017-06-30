@@ -68,6 +68,9 @@ target_link_libraries(imagenet ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${G
 if(CURL_LIBRARIES)
   target_link_libraries(imagenet ${CURL_LIBRARIES})
 endif()
+if(CUDA_LIBRARIES)
+  target_link_libraries(imagenet ${CAFFE2_GPU_LIB} ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${NCCL_LIB} ${CURAND_LIB})
+endif()
 
 add_executable(retrain src/retrain.cpp)
 target_link_libraries(retrain ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
