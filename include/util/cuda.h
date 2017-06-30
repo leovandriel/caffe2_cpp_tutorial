@@ -7,6 +7,12 @@
 
 namespace caffe2 {
 
+#ifdef WITH_CUDA
+static const int cuda_multipier = 10;
+#else
+static const int cuda_multipier = 1;
+#endif
+
 bool setupCUDA() {
   DeviceOption option;
   option.set_device_type(CUDA);
