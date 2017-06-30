@@ -237,7 +237,14 @@ void run() {
     std::cout << "using CUDA" << std::endl;
   }
 
-  auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_' + FLAGS_blob + '_';
+  std::string blob_safe = FLAGS_blob;
+  std::string::size_type index = 0;
+  while ((index = blob_safe.find("/", index)) != std::string::npos) {
+    blob_safe.replace(index, 3, "_");
+    index += 1;
+  }
+
+  auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_' + blob_safe + '_';
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
