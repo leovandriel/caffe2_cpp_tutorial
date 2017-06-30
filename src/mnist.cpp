@@ -285,6 +285,7 @@ void AddAccuracy(NetDef &initModel, NetDef &predictModel) {
     arg3->set_name("dtype");
     arg3->set_i(TensorProto_DataType_INT64);
     op->add_output("ITER");
+    op->mutable_device_option()->set_device_type(CPU);
   }
   // >>> ITER = model.Iter("iter")
   {
@@ -340,6 +341,8 @@ void AddTrainingOperators(NetDef &initModel, NetDef &predictModel, std::vector<s
     auto grad = predictModel.add_op();
     grad->CopyFrom(meta.ops_[0]);
     grad->set_is_gradient_op(true);
+    op->set_engine("CUDNN");
+    grad->set_engine("CUDNN");
   }
 
   // >>> LR = model.LearningRate(ITER, "LR", base_lr=-0.1, policy="step", stepsize=1, gamma=0.999 )

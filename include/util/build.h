@@ -161,6 +161,14 @@ OperatorDef *add_learning_rate_op(NetDef &model, const std::string &iter, const 
 
 // Helpers
 
+void set_device_cpu_op(OperatorDef &op) {
+  op.mutable_device_option()->set_device_type(CPU);
+}
+
+void set_engine_cudnn_op(OperatorDef &op) {
+  op.set_engine("CUDNN");
+}
+
 OperatorDef *add_gradient_op(NetDef &model, const OperatorDef *op) {
   vector<GradientWrapper> output(op->output_size());
   for (auto i = 0; i < output.size(); i++) {
@@ -178,7 +186,7 @@ void add_database_ops(NetDef &init_model, NetDef &predict_model, const std::stri
   add_create_db_op(init_model, reader, db_type, db);
   predict_model.add_external_input(reader);
   add_tensor_protos_db_input_op(predict_model, reader, data, "label", batch_size);
-  // add_cout_op(predict_model, output);
+  // add_cout_op(predict_model, data);
 }
 
 void add_test_ops(NetDef &predict_model) {
