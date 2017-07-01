@@ -5,14 +5,29 @@
 
 namespace caffe2 {
 
-static const std::set<std::string> backprop_ops({
+static const std::set<std::string> trainable_ops({
+  "Add",
+  "AveragedLoss",
+  "Concat",
+  "Conv",
   "FC",
+  "LabelCrossEntropy",
+  "LRN",
+  "MaxPool",
+  "Mul",
   "Relu",
   "Softmax",
-  "Conv",
-  "MaxPool",
-  "LabelCrossEntropy",
-  "AveragedLoss"
+  "SpatialBN",
+  "Sum",
+});
+
+static const std::set<std::string> non_trainable_ops({
+  "Accuracy",
+  "AveragePool",
+  "Cout",
+  "ConstantFill",
+  "Dropout",
+  "TensorProtosDBInput",
 });
 
 static const std::string gradient_suffix("_grad");
@@ -203,54 +218,64 @@ OperatorDef *add_gradient_op(NetDef &model, const OperatorDef *op) {
   return grad;
 }
 
+void add_gradient_ops(NetDef &model) {
+  std::set<std::string> external_inputs(model.external_input().begin(), model.external_input().end());
+  auto x = model.op();
+  for (auto i = x.rbegin(); i != x.rend(); ++i) {
+    if (trainable_ops.find(i->type()) != trainable_ops.end()) {
+      add_gradient_op(model, &*i);
+      // std::cout << "type: " << op.type() << std::endl;
+    } else if (non_trainable_ops.find(i->type()) == non_trainable_ops.end()) {
+      std::cout << "unknown backprop operator type: " << i->type() << std::endl;
+    }
+  }
+}
+
 void add_database_ops(NetDef &init_model, NetDef &predict_model, const std::string &name, const std::string &data, const std::string &db, const std::string &db_type, int batch_size) {
   auto reader = name + "_dbreader";
   add_create_db_op(init_model, reader, db_type, db);
   predict_model.add_external_input(reader);
   add_tensor_protos_db_input_op(predict_model, reader, data, "label", batch_size);
   // add_cout_op(predict_model, data);
+  // add_cout_op(predict_model, "label");
 }
 
-void add_test_ops(NetDef &predict_model) {
-  add_accuracy_op(predict_model, "prob", "label", "accuracy");
+void add_test_ops(NetDef &model) {
+  add_accuracy_op(model, "prob", "label", "accuracy");
 }
 
-void add_train_ops(NetDef &init_model, NetDef &predict_model, float learning_rate, float learning_gamma) {
-  add_label_cross_entropy_op(predict_model, "prob", "label", "xent");
-  add_averaged_loss(predict_model, "xent", "loss");
-  add_accuracy_op(predict_model, "prob", "label", "accuracy");
-  auto iter_fill_op = add_constant_fill_int64_op(init_model, 0, "iter");
-  set_device_cpu_op(*iter_fill_op);
+void add_xent_ops(NetDef &model) {
+  add_label_cross_entropy_op(model, "prob", "label", "xent");
+  add_averaged_loss(model, "xent", "loss");
+  add_accuracy_op(model, "prob", "label", "accuracy");
+  add_constant_fill_with_op(model, 1.0, "loss", "loss" + gradient_suffix);
+}
+
+void add_learning_ops(NetDef &init_model, NetDef &predict_model, float learning_rate, float learning_gamma) {
+  set_device_cpu_op(*add_constant_fill_int64_op(init_model, 0, "iter"));
+  add_constant_fill_float_op(init_model, 1.0, "ONE");
   predict_model.add_external_input("iter");
-  add_constant_fill_with_op(predict_model, 1.0, "loss", "loss" + gradient_suffix);
+  predict_model.add_external_input("ONE");
+  add_iter_op(predict_model, "iter");
+  add_learning_rate_op(predict_model, "iter", "LR", learning_rate, learning_gamma);
 
-  // collect gradient inputs and gradient operators
-  std::vector<std::string> gradient_inputs;
-  std::vector<const OperatorDef *> gradient_ops;
   std::set<std::string> external_inputs(predict_model.external_input().begin(), predict_model.external_input().end());
   for (const auto &op: predict_model.op()) {
-    if (backprop_ops.find(op.type()) != backprop_ops.end()) {
+    if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       for (const auto &input: op.input()) {
         if (external_inputs.find(input) != external_inputs.end()) {
-          gradient_inputs.push_back(input);
+          add_weighted_sum_op(predict_model, { input, "ONE", input + gradient_suffix, "LR" }, input);
           // std::cout << "input :" << input << std::endl;
         }
       }
-      gradient_ops.push_back(&op);
-      // std::cout << "type: " << op.type() << std::endl;
     }
   }
+}
 
-  for (auto i = gradient_ops.rbegin(); i != gradient_ops.rend(); ++i) {
-    add_gradient_op(predict_model, *i);
-  }
-  add_iter_op(predict_model, "iter");
-  add_learning_rate_op(predict_model, "iter", "LR", learning_rate, learning_gamma);
-  add_constant_fill_float_op(init_model, 1.0, "ONE");
-  predict_model.add_external_input("ONE");
-  for (auto param: gradient_inputs) {
-    add_weighted_sum_op(predict_model, { param, "ONE", param + gradient_suffix, "LR" }, param);
-  }
+void add_train_ops(NetDef &init_model, NetDef &predict_model, float learning_rate, float learning_gamma) {
+  add_xent_ops(predict_model);
+  add_gradient_ops(predict_model);
+  add_learning_ops(init_model, predict_model, learning_rate, learning_gamma);
 }
 
 }  // namespace caffe2
