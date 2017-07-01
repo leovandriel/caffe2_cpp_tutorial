@@ -23,7 +23,7 @@ class CoutOp final : public Operator<Context> {
     auto index = 0;
     for (auto &title: titles) {
       auto tensor = Input(index++);
-      std::cout << title << " (" << tensor.size() << "): ";
+      std::cout << title << " (" << tensor.dims() << "): ";
       print(tensor);
     }
     std::cout << std::endl;

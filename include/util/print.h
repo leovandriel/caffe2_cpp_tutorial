@@ -80,19 +80,7 @@ void print(const NetDef &def) {
 template<typename T, typename C>
 void printType(const Tensor<C> &tensor, const std::string &name = "") {
   const auto& data = tensor.template data<T>();
-  if (name.length() > 0) {
-    std::cout << name << "(";
-    auto b = true;
-    for (auto dim: tensor.dims()) {
-      if (b) {
-        b = false;
-      } else {
-        std::cout << " ";
-      }
-      std::cout << dim;
-    }
-    std::cout << "): ";
-  }
+  if (name.length() > 0) std::cout << name << "(" << tensor.dims() << "): ";
   for (auto i = 0; i < (tensor.size() > 100 ? 100 : tensor.size()); ++i) {
     std::cout << (float)data[i] << ' ';
   }
