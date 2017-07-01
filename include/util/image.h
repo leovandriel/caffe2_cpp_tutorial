@@ -8,55 +8,78 @@
 namespace caffe2 {
 
 template <typename T>
-TensorCPU imageToTensor(const cv::Mat image) {
-  // std::cout << "value range: (" << *std::min_element((T *)image.datastart, (T *)image.dataend) << ", " << *std::max_element((T *)image.datastart, (T *)image.dataend) << ")" << std::endl;
-
-  // convert NHWC to NCHW
-  vector<cv::Mat> channels(3);
-  cv::split(image, channels);
+TensorCPU readImageTensorImp(const std::vector<std::string> &filenames, int size, std::vector<int> &indices, float mean, TensorProto::DataType type) {
   std::vector<T> data;
-  for (auto &c: channels) {
-    data.insert(data.end(), (T *)c.datastart, (T *)c.dataend);
+  data.reserve(filenames.size() * 3 * size * size);
+  auto count = 0;
+
+  for (auto &filename: filenames) {
+    // load image
+    auto image = cv::imread(filename); // CV_8UC3 uchar
+    // std::cout << "image size: " << image.size() << std::endl;
+
+    if (!image.cols || !image.rows) {
+      count++;
+      continue;
+    }
+
+    // scale image to fit
+    cv::Size scale(std::max(size * image.cols / image.rows, size), std::max(size, size * image.rows / image.cols));
+    cv::resize(image, image, scale);
+    // std::cout << "scaled size: " << image.size() << std::endl;
+
+    // crop image to fit
+    cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
+    image = image(crop);
+    // std::cout << "cropped size: " << image.size() << std::endl;
+
+    switch (type) {
+    case TensorProto_DataType_FLOAT:
+      image.convertTo(image, CV_32FC3, 1.0, -mean);
+      break;
+    case TensorProto_DataType_INT8:
+      image.convertTo(image, CV_8SC3, 1.0, -mean);
+      break;
+    default:
+      break;
+    }
+    // std::cout << "value range: (" << *std::min_element((T *)image.datastart, (T *)image.dataend) << ", " << *std::max_element((T *)image.datastart, (T *)image.dataend) << ")" << std::endl;
+
+    CHECK(image.channels() == 3);
+    CHECK(image.rows == size);
+    CHECK(image.cols == size);
+
+    // convert NHWC to NCHW
+    vector<cv::Mat> channels(3);
+    cv::split(image, channels);
+    for (auto &c: channels) {
+      data.insert(data.end(), (T *)c.datastart, (T *)c.dataend);
+    }
+
+    indices.push_back(count++);
   }
 
   // create tensor
-  std::vector<TIndex> dims({ 1, image.channels(), image.rows, image.cols });
+  std::vector<TIndex> dims({ (TIndex)indices.size(), 3, size, size });
   return TensorCPU(dims, data, NULL);
 }
 
-TensorCPU readImageTensor(const string &filename, int size, float mean = 128, TensorProto::DataType data_type = TensorProto_DataType_FLOAT) {
-  // load image
-  auto image = cv::imread(filename); // CV_8UC3 uchar
-  // std::cout << "image size: " << image.size() << std::endl;
+TensorCPU readImageTensor(const std::vector<std::string> &filenames, int size, std::vector<int> &indices, float mean = 128, TensorProto::DataType type = TensorProto_DataType_FLOAT) {
+    switch (type) {
+    case TensorProto_DataType_FLOAT:
+      return readImageTensorImp<float>(filenames, size, indices, mean, type);
+    case TensorProto_DataType_INT8:
+      return readImageTensorImp<int8_t>(filenames, size, indices, mean, type);
+    case TensorProto_DataType_UINT8:
+      return readImageTensorImp<uint8_t>(filenames, size, indices, mean, type);
+    default:
+      LOG(FATAL) << "datatype " << type << " not implemented";
+    }
+}
 
-  if (!image.cols || !image.rows) {
-    return TensorCPU();
-  }
-
-  // scale image to fit
-  cv::Size scale(std::max(size * image.cols / image.rows, size), std::max(size, size * image.rows / image.cols));
-  cv::resize(image, image, scale);
-  // std::cout << "scaled size: " << image.size() << std::endl;
-
-  // crop image to fit
-  cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
-  image = image(crop);
-  // std::cout << "cropped size: " << image.size() << std::endl;
-
-  std::vector<float> data;
-  switch (data_type) {
-  case TensorProto_DataType_FLOAT:
-    image.convertTo(image, CV_32FC3, 1.0, -mean);
-    return imageToTensor<float>(image);
-  case TensorProto_DataType_INT8:
-    image.convertTo(image, CV_8SC3, 1.0, -mean);
-    return imageToTensor<int8_t>(image);
-  case TensorProto_DataType_UINT8:
-    return imageToTensor<uint8_t>(image);
-  default:
-    LOG(FATAL) << "datatype " << data_type << " not implemented";
-    // convert to float, normalize to mean 128
-  }
+TensorCPU readImageTensor(const std::string &filename, int size) {
+  std::vector<int> indices;
+  return readImageTensor({ filename }, size, indices);
 }
 
 }  // namespace caffe2

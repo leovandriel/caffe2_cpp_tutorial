@@ -27,8 +27,6 @@ CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
 CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
-static const int caffe2_leveldb_block_size = 65536; // TODO: find a better way
-
 enum {
   kRunTrain = 0,
   kRunValidate = 1,
@@ -124,32 +122,79 @@ void LoadLabels(const std::string &path_prefix, std::vector<std::string> &class_
   }
 }
 
-void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, NetDef &full_init_model, NetDef &pre_predict_model) {
-  std::cout << "store partial prediction.." << std::endl;
-  std::unique_ptr<db::DB> database[kRunNum];
+void WriteBatch(Workspace &workspace, NetBase *predict_net, std::string &input_name, std::string &output_name, std::vector<std::pair<std::string, int>> &batch_files, std::unique_ptr<db::DB> *database) {
   std::unique_ptr<db::Transaction> transaction[kRunNum];
-  std::unique_ptr<db::Cursor> cursor[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
-    database[i] = db::CreateDB(FLAGS_db_type, db_paths[i], db::WRITE);
     transaction[i] = database[i]->NewTransaction();
-    cursor[i] = database[i]->NewCursor();
   }
+
+  std::vector<std::string> filenames;
+  for (auto &pair: batch_files) {
+    filenames.push_back(pair.first);
+  }
+  std::vector<int> indices;
+  auto input = readImageTensor(filenames, FLAGS_size_to_fit, indices);
+  TensorCPU output;
+  if (predict_net) {
+    set_tensor_blob(*workspace.GetBlob(input_name), input);
+    predict_net->Run();
+    auto tensor = get_tensor_blob(*workspace.GetBlob(output_name));
+    output.ResizeLike(tensor);
+    output.ShareData(tensor);
+  } else {
+    output.ResizeLike(input);
+    output.ShareData(input);
+  }
+
   TensorProtos protos;
   TensorProto* data = protos.add_protos();
   TensorProto* label = protos.add_protos();
   data->set_data_type(TensorProto::FLOAT);
   label->set_data_type(TensorProto::INT32);
   label->add_int32_data(0);
-  auto insert_count = 0;
-  auto image_count = 0;
-  std::string value;
-  Workspace workspace;
-  auto init_net = CreateNet(full_init_model, &workspace);
-  init_net->Run();
-  auto predict_net = CreateNet(pre_predict_model, &workspace);
-  auto input_name = pre_predict_model.external_input_size() ? pre_predict_model.external_input(0) : "";
-  auto output_name = pre_predict_model.external_output_size() ? pre_predict_model.external_output(0) : "";
   TensorSerializer<CPUContext> serializer;
+  std::string value;
+  std::vector<TIndex> dims(output.dims().begin() + 1, output.dims().end());
+  auto size = output.size() / output.dim(0);
+  auto output_data = output.data<float>();
+  for (auto i: indices) {
+    auto single = TensorCPU(dims, std::vector<float>(output_data, output_data + size), NULL);
+    output_data += size;
+    data->Clear();
+    serializer.Serialize(single, "", data, 0, kDefaultChunkSize);
+    label->set_int32_data(0, batch_files[i].second);
+    protos.SerializeToString(&value);
+    int percentage = 0;
+    for (auto pair: percentage_for_run) {
+      percentage += pair.second;
+      if (rand() % 100 < percentage) {
+        transaction[pair.first]->Put(batch_files[i].first, value);
+        break;
+      }
+    }
+  }
+
+  for (int i = 0; i < kRunNum; i++) {
+    transaction[i]->Commit();
+  }
+}
+
+void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, NetDef &init_model, NetDef &predict_model, int batch_size) {
+  std::cout << "store partial prediction.." << std::endl;
+  std::unique_ptr<db::DB> database[kRunNum];
+  std::unique_ptr<db::Cursor> cursor[kRunNum];
+  for (int i = 0; i < kRunNum; i++) {
+    database[i] = db::CreateDB(FLAGS_db_type, db_paths[i], db::WRITE);
+    cursor[i] = database[i]->NewCursor();
+  }
+  auto image_count = 0;
+  Workspace workspace;
+  auto init_net = CreateNet(init_model, &workspace);
+  init_net->Run();
+  auto predict_net = predict_model.external_input_size() ? CreateNet(predict_model, &workspace) : NULL;
+  auto input_name = predict_model.external_input_size() ? predict_model.external_input(0) : "";
+  auto output_name = predict_model.external_output_size() ? predict_model.external_output(0) : "";
+  std::vector<std::pair<std::string, int>> batch_files;
   for (auto &pair: image_files) {
     auto &filename = pair.first;
     auto class_index = pair.second;
@@ -160,37 +205,16 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
       in_db |= (cursor[i]->Valid() && cursor[i]->key() == filename);
     }
     if (!in_db) {
-      auto input = readImageTensor(filename, FLAGS_size_to_fit);
-      if (input.size() > 0) {
-        std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. " << image_count << '/' << image_files.size() << " " << std::setprecision(3) << ((float)100 * image_count / image_files.size()) << "%" << std::flush;
-        data->Clear();
-        if (pre_predict_model.op_size()) {
-          set_tensor_blob(*workspace.GetBlob(input_name), input);
-          predict_net->Run();
-          auto output = get_tensor_blob(*workspace.GetBlob(output_name));
-          serializer.Serialize(output, "", data, 0, kDefaultChunkSize);
-        } else {
-          serializer.Serialize(input, "", data, 0, kDefaultChunkSize);
-        }
-        label->set_int32_data(0, class_index);
-        protos.SerializeToString(&value);
-        CHECK(value.size() < caffe2_leveldb_block_size) << "~ unfortunately caffe2's leveldb has block_size " << caffe2_leveldb_block_size << ", which is too small for our tensor data of size " << value.size();
-        int percentage = 0;
-        for (auto pair: percentage_for_run) {
-          percentage += pair.second;
-          if (image_count % 100 < percentage) {
-            transaction[pair.first]->Put(filename, value);
-            break;
-          }
-        }
-        if (++insert_count % 100 == 0) {
-          for (int i = 0; i < kRunNum && !in_db; i++) {
-            transaction[i]->Commit();
-          }
-        }
-        // std::cout << label->int32_data(0) << " " << value.size() << " " << output.size() << " " << filename << std::endl;
-      }
+      batch_files.push_back({ filename, class_index });
     }
+    if (batch_files.size() == batch_size) {
+      std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. " << image_count << '/' << image_files.size() << " " << std::setprecision(3) << ((float)100 * image_count / image_files.size()) << "%" << std::flush;
+      WriteBatch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database);
+      batch_files.clear();
+    }
+  }
+  if (batch_files.size() > 0) {
+    WriteBatch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database);
   }
   for (int i = 0; i < kRunNum; i++) {
     CHECK(database[i]->NewCursor()->Valid()) << "~ database " << name_for_run[i] << " is empty";
@@ -361,7 +385,7 @@ void run() {
   for (const auto &input: full_predict_model.external_input()) {
     if (static_inputs.find(input) != static_inputs.end()) {
       pre_predict_model.add_external_input(input);
-    } else {
+    } else if (input != FLAGS_blob) {
       predict_model[kRunTrain].add_external_input(input);
       predict_model[kRunValidate].add_external_input(input);
       predict_model[kRunTest].add_external_input(input);
@@ -390,7 +414,7 @@ void run() {
   // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
   // print(predict_model[kRunTrain]);
 
-  PreProcess(image_files, db_paths, full_init_model, pre_predict_model);
+  PreProcess(image_files, db_paths, full_init_model, pre_predict_model, FLAGS_batch_size);
   load_time += clock();
 
 
