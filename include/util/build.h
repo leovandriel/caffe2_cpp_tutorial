@@ -30,6 +30,18 @@ static const std::set<std::string> non_trainable_ops({
   "TensorProtosDBInput",
 });
 
+static const std::set<std::string> filler_ops({
+  "UniformFill",
+  "UniformIntFill",
+  "UniqueUniformFill",
+  "ConstantFill",
+  "GaussianFill",
+  "XavierFill",
+  "MSRAFill",
+  "RangeFill",
+  "LengthsRangeFill",
+});
+
 static const std::string gradient_suffix("_grad");
 
 // Operators
@@ -103,6 +115,21 @@ OperatorDef *add_weighted_sum_op(NetDef &model, const std::vector<std::string> &
   return op;
 }
 
+OperatorDef *add_adam_op(NetDef &model, const std::string &param, const std::string &m1, const std::string &m2, const std::string &grad, const std::string &lr, const std::string &iter) {
+  auto op = model.add_op();
+  op->set_type("Adam");
+  op->add_input(param);
+  op->add_input(m1);
+  op->add_input(m2);
+  op->add_input(grad);
+  op->add_input(lr);
+  op->add_input(iter);
+  op->add_output(param);
+  op->add_output(m1);
+  op->add_output(m2);
+  return op;
+}
+
 OperatorDef *add_scale_op(NetDef &model, const std::string &input, const std::string &output, float scale) {
   auto op = model.add_op();
   op->set_type("Scale");
@@ -137,16 +164,16 @@ OperatorDef *add_constant_fill_op(NetDef &model, const std::vector<int> &shape, 
   return op;
 }
 
-OperatorDef *add_constant_fill_float_op(NetDef &model, float value, const std::string &param) {
-  auto op = add_constant_fill_op(model, { 1 }, param);
+OperatorDef *add_constant_fill_float_op(NetDef &model, const std::vector<int> &shape, float value, const std::string &param) {
+  auto op = add_constant_fill_op(model, shape, param);
   auto arg = op->add_arg();
   arg->set_name("value");
   arg->set_f(value);
   return op;
 }
 
-OperatorDef *add_constant_fill_int64_op(NetDef &model, int64_t value, const std::string &param) {
-  auto op = add_constant_fill_op(model, { 1 }, param);
+OperatorDef *add_constant_fill_int64_op(NetDef &model, const std::vector<int> &shape, int64_t value, const std::string &param) {
+  auto op = add_constant_fill_op(model, shape, param);
   auto arg1 = op->add_arg();
   arg1->set_name("value");
   arg1->set_i(value);
@@ -176,7 +203,7 @@ OperatorDef *add_iter_op(NetDef &model, const std::string &iter) {
   return op;
 }
 
-OperatorDef *add_learning_rate_op(NetDef &model, const std::string &iter, const std::string &rate, float base, float gamma) {
+OperatorDef *add_learning_rate_op(NetDef &model, const std::string &iter, const std::string &rate, float base_rate) {
   auto op = model.add_op();
   op->set_type("LearningRate");
   auto arg1 = op->add_arg();
@@ -187,10 +214,10 @@ OperatorDef *add_learning_rate_op(NetDef &model, const std::string &iter, const 
   arg2->set_i(1);
   auto arg3 = op->add_arg();
   arg3->set_name("base_lr");
-  arg3->set_f(-base);
+  arg3->set_f(-base_rate);
   auto arg4 = op->add_arg();
   arg4->set_name("gamma");
-  arg4->set_f(gamma);
+  arg4->set_f(0.999);
   op->add_input(iter);
   op->add_output(rate);
   return op;
@@ -251,31 +278,81 @@ void add_xent_ops(NetDef &model) {
   add_constant_fill_with_op(model, 1.0, "loss", "loss" + gradient_suffix);
 }
 
-void add_learning_ops(NetDef &init_model, NetDef &predict_model, float learning_rate, float learning_gamma) {
-  set_device_cpu_op(*add_constant_fill_int64_op(init_model, 0, "iter"));
-  add_constant_fill_float_op(init_model, 1.0, "ONE");
-  predict_model.add_external_input("iter");
-  predict_model.add_external_input("ONE");
-  add_iter_op(predict_model, "iter");
-  add_learning_rate_op(predict_model, "iter", "LR", learning_rate, learning_gamma);
-
-  std::set<std::string> external_inputs(predict_model.external_input().begin(), predict_model.external_input().end());
-  for (const auto &op: predict_model.op()) {
-    if (trainable_ops.find(op.type()) != trainable_ops.end()) {
-      for (const auto &input: op.input()) {
-        if (external_inputs.find(input) != external_inputs.end()) {
-          add_weighted_sum_op(predict_model, { input, "ONE", input + gradient_suffix, "LR" }, input);
-          // std::cout << "input :" << input << std::endl;
+std::map<std::string, int> collect_param_sizes(NetDef &model) {
+  std::map<std::string, int> sizes;
+  for (const auto &op: model.op()) {
+    if (filler_ops.find(op.type()) != filler_ops.end()) {
+      for (const auto &arg: op.arg()) {
+        if (arg.name() == "shape") {
+          auto size = 1;
+          for (auto i: arg.ints()) {
+            size *= i;
+          }
+          sizes[op.output(0)] = size;
         }
       }
     }
   }
+  return sizes;
 }
 
-void add_train_ops(NetDef &init_model, NetDef &predict_model, float learning_rate, float learning_gamma) {
+std::vector<std::string> collect_params(NetDef &model) {
+  std::vector<std::string> params;
+  std::set<std::string> external_inputs(model.external_input().begin(), model.external_input().end());
+  for (const auto &op: model.op()) {
+    if (trainable_ops.find(op.type()) != trainable_ops.end()) {
+      for (const auto &input: op.input()) {
+        if (external_inputs.find(input) != external_inputs.end()) {
+          params.push_back(input);
+        }
+      }
+    }
+  }
+  return params;
+}
+
+void add_iter_lr_ops(NetDef &init_model, NetDef &predict_model, float base_rate) {
+  set_device_cpu_op(*add_constant_fill_int64_op(init_model, { 1 }, 0, "iter"));
+  predict_model.add_external_input("iter");
+  add_iter_op(predict_model, "iter");
+  add_learning_rate_op(predict_model, "iter", "LR", base_rate);
+}
+
+void add_sgd_ops(NetDef &init_model, NetDef &predict_model) {
+  add_constant_fill_float_op(init_model, { 1 }, 1.0, "ONE");
+  predict_model.add_external_input("ONE");
+  for (auto &param: collect_params(predict_model)) {
+    add_weighted_sum_op(predict_model, { param, "ONE", param + gradient_suffix, "LR" }, param);
+  }
+}
+
+void add_adam_ops(NetDef &init_model, NetDef &predict_model) {
+  auto sizes = collect_param_sizes(init_model);
+  for (auto &param: collect_params(predict_model)) {
+    auto size = sizes[param];
+    add_constant_fill_float_op(init_model, { size }, 0.0, param + "_m1");
+    add_constant_fill_float_op(init_model, { size }, 0.0, param + "_m2");
+    predict_model.add_external_input(param + "_m1");
+    predict_model.add_external_input(param + "_m2");
+    add_adam_op(predict_model, param, param + "_m1", param + "_m2", param + gradient_suffix, "LR", "iter");
+  }
+}
+
+void add_optimizer_ops(NetDef &init_model, NetDef &predict_model, std::string &optimizer) {
+  if (optimizer == "sgd") {
+    add_sgd_ops(init_model, predict_model);
+  } else if (optimizer == "adam") {
+    add_adam_ops(init_model, predict_model);
+  } else {
+    LOG(FATAL) << "~ optimizer type not supported: " << optimizer;
+  }
+}
+
+void add_train_ops(NetDef &init_model, NetDef &predict_model, float base_rate, std::string &optimizer) {
   add_xent_ops(predict_model);
   add_gradient_ops(predict_model);
-  add_learning_ops(init_model, predict_model, learning_rate, learning_gamma);
+  add_iter_lr_ops(init_model, predict_model, base_rate);
+  add_optimizer_ops(init_model, predict_model, optimizer);
 }
 
 }  // namespace caffe2

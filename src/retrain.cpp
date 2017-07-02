@@ -23,8 +23,8 @@ CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
-CAFFE2_DEFINE_double(learning_rate, 0.001, "Learning rate.");
-CAFFE2_DEFINE_double(learning_gamma, 0.999, "Learning gamma.");
+CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
+CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/adam");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 enum {
@@ -254,7 +254,7 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "learning_gamma: " << FLAGS_learning_gamma << std::endl;
+  std::cout << "optimizer: " << FLAGS_optimizer << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
 
   if (!FLAGS_force_cpu) setupCUDA();
@@ -399,7 +399,7 @@ void run() {
       predict_model[i].add_external_output(output);
     }
   }
-  add_train_ops(init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_learning_gamma);
+  add_train_ops(init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
   add_test_ops(predict_model[kRunValidate]);
   add_test_ops(predict_model[kRunTest]);
 
