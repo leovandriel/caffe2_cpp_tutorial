@@ -2,12 +2,14 @@
 #define BUILD_H
 
 #include "caffe2/core/net.h"
+#include "caffe2/core/operator_gradient.h"
 
 namespace caffe2 {
 
 static const std::set<std::string> trainable_ops({
   "Add",
   "AveragedLoss",
+  "AveragePool",
   "Concat",
   "Conv",
   "FC",
@@ -23,7 +25,6 @@ static const std::set<std::string> trainable_ops({
 
 static const std::set<std::string> non_trainable_ops({
   "Accuracy",
-  "AveragePool",
   "Cout",
   "ConstantFill",
   "Dropout",
@@ -43,6 +44,10 @@ static const std::set<std::string> filler_ops({
 });
 
 static const std::string gradient_suffix("_grad");
+static const std::string moment_suffix("_moment");
+static const std::string iter_name("iter");
+static const std::string lr_name("lr");
+static const std::string one_name("one");
 
 // Operators
 
@@ -115,18 +120,45 @@ OperatorDef *add_weighted_sum_op(NetDef &model, const std::vector<std::string> &
   return op;
 }
 
-OperatorDef *add_adam_op(NetDef &model, const std::string &param, const std::string &m1, const std::string &m2, const std::string &grad, const std::string &lr, const std::string &iter) {
+OperatorDef *add_momentum_sgd_op(NetDef &model, const std::string &param, const std::string &moment, const std::string &grad, const std::string &lr) {
+  auto op = model.add_op();
+  op->set_type("MomentumSGDUpdate");
+  op->add_input(grad);
+  op->add_input(moment);
+  op->add_input(lr);
+  op->add_input(param);
+  op->add_output(grad);
+  op->add_output(moment);
+  op->add_output(param);
+  return op;
+}
+
+OperatorDef *add_adagrad_op(NetDef &model, const std::string &param, const std::string &moment, const std::string &grad, const std::string &lr) {
+  auto op = model.add_op();
+  op->set_type("Adagrad");
+  op->add_input(param);
+  op->add_input(moment);
+  op->add_input(grad);
+  op->add_input(lr);
+  op->add_output(param);
+  op->add_output(moment);
+  return op;
+}
+
+OperatorDef *add_adam_op(NetDef &model, const std::string &param, const std::vector<std::string> &moments, const std::string &grad, const std::string &lr, const std::string &iter) {
   auto op = model.add_op();
   op->set_type("Adam");
   op->add_input(param);
-  op->add_input(m1);
-  op->add_input(m2);
+  for (auto &moment: moments) {
+    op->add_input(moment);
+  }
   op->add_input(grad);
   op->add_input(lr);
   op->add_input(iter);
   op->add_output(param);
-  op->add_output(m1);
-  op->add_output(m2);
+  for (auto &moment: moments) {
+    op->add_output(moment);
+  }
   return op;
 }
 
@@ -183,6 +215,17 @@ OperatorDef *add_constant_fill_int64_op(NetDef &model, const std::vector<int> &s
   return op;
 }
 
+OperatorDef *add_constant_fill_int32_op(NetDef &model, const std::vector<int> &shape, int32_t value, const std::string &param) {
+  auto op = add_constant_fill_op(model, shape, param);
+  auto arg1 = op->add_arg();
+  arg1->set_name("value");
+  arg1->set_i(value);
+  auto arg2 = op->add_arg();
+  arg2->set_name("dtype");
+  arg2->set_i(TensorProto_DataType_INT32);
+  return op;
+}
+
 OperatorDef *add_constant_fill_with_op(NetDef &model, float value, const std::string &input, const std::string &output) {
   auto op = model.add_op();
   op->set_type("ConstantFill");
@@ -191,7 +234,24 @@ OperatorDef *add_constant_fill_with_op(NetDef &model, float value, const std::st
   arg->set_f(value);
   op->add_input(input);
   op->add_output(output);
-  op->set_is_gradient_op(true);
+  return op;
+}
+
+OperatorDef *add_given_tensor_fill_op(NetDef &model, const TensorCPU &tensor, const std::string &name) {
+  auto op = model.add_op();
+  op->set_type("GivenTensorFill");
+  auto arg1 = op->add_arg();
+  arg1->set_name("shape");
+  for (auto dim: tensor.dims()) {
+    arg1->add_ints(dim);
+  }
+  auto arg2 = op->add_arg();
+  arg2->set_name("values");
+  const auto& data = tensor.data<float>();
+  for (auto i = 0; i < tensor.size(); ++i) {
+    arg2->add_floats(data[i]);
+  }
+  op->add_output(name);
   return op;
 }
 
@@ -268,13 +328,13 @@ void add_database_ops(NetDef &init_model, NetDef &predict_model, const std::stri
 }
 
 void add_test_ops(NetDef &model) {
-  add_accuracy_op(model, "prob", "label", "accuracy");
+  add_accuracy_op(model, model.external_output(0), "label", "accuracy");
 }
 
 void add_xent_ops(NetDef &model) {
-  add_label_cross_entropy_op(model, "prob", "label", "xent");
+  add_label_cross_entropy_op(model, model.external_output(0), "label", "xent");
   add_averaged_loss(model, "xent", "loss");
-  add_accuracy_op(model, "prob", "label", "accuracy");
+  add_accuracy_op(model, model.external_output(0), "label", "accuracy");
   add_constant_fill_with_op(model, 1.0, "loss", "loss" + gradient_suffix);
 }
 
@@ -312,17 +372,37 @@ std::vector<std::string> collect_params(NetDef &model) {
 }
 
 void add_iter_lr_ops(NetDef &init_model, NetDef &predict_model, float base_rate) {
-  set_device_cpu_op(*add_constant_fill_int64_op(init_model, { 1 }, 0, "iter"));
-  predict_model.add_external_input("iter");
-  add_iter_op(predict_model, "iter");
-  add_learning_rate_op(predict_model, "iter", "LR", base_rate);
+  set_device_cpu_op(*add_constant_fill_int64_op(init_model, { 1 }, 0, iter_name));
+  predict_model.add_external_input(iter_name);
+  add_iter_op(predict_model, iter_name);
+  add_learning_rate_op(predict_model, iter_name, lr_name, base_rate);
 }
 
 void add_sgd_ops(NetDef &init_model, NetDef &predict_model) {
-  add_constant_fill_float_op(init_model, { 1 }, 1.0, "ONE");
-  predict_model.add_external_input("ONE");
+  add_constant_fill_float_op(init_model, { 1 }, 1.0, one_name);
+  predict_model.add_external_input(one_name);
   for (auto &param: collect_params(predict_model)) {
-    add_weighted_sum_op(predict_model, { param, "ONE", param + gradient_suffix, "LR" }, param);
+    add_weighted_sum_op(predict_model, { param, one_name, param + gradient_suffix, lr_name }, param);
+  }
+}
+
+void add_momentum_ops(NetDef &init_model, NetDef &predict_model) {
+  auto sizes = collect_param_sizes(init_model);
+  for (auto &param: collect_params(predict_model)) {
+    auto size = sizes[param];
+    add_constant_fill_float_op(init_model, { size }, 0.0, param + moment_suffix);
+    predict_model.add_external_input(param + moment_suffix);
+    add_momentum_sgd_op(predict_model, param, param + moment_suffix, param + gradient_suffix, lr_name);
+  }
+}
+
+void add_adagrad_ops(NetDef &init_model, NetDef &predict_model) {
+  auto sizes = collect_param_sizes(init_model);
+  for (auto &param: collect_params(predict_model)) {
+    auto size = sizes[param];
+    add_constant_fill_float_op(init_model, { size }, 0.0, param + moment_suffix);
+    predict_model.add_external_input(param + moment_suffix);
+    add_adagrad_op(predict_model, param, param + moment_suffix, param + gradient_suffix, lr_name);
   }
 }
 
@@ -330,17 +410,24 @@ void add_adam_ops(NetDef &init_model, NetDef &predict_model) {
   auto sizes = collect_param_sizes(init_model);
   for (auto &param: collect_params(predict_model)) {
     auto size = sizes[param];
-    add_constant_fill_float_op(init_model, { size }, 0.0, param + "_m1");
-    add_constant_fill_float_op(init_model, { size }, 0.0, param + "_m2");
-    predict_model.add_external_input(param + "_m1");
-    predict_model.add_external_input(param + "_m2");
-    add_adam_op(predict_model, param, param + "_m1", param + "_m2", param + gradient_suffix, "LR", "iter");
+    std::vector<std::string> moments(2);
+    auto i = 0;
+    for (auto &moment: moments) {
+      moment = param + moment_suffix + "_" + std::to_string(++i);
+      add_constant_fill_float_op(init_model, { size }, 0.0, moment);
+      predict_model.add_external_input(moment);
+    }
+    add_adam_op(predict_model, param, moments, param + gradient_suffix, lr_name, iter_name);
   }
 }
 
 void add_optimizer_ops(NetDef &init_model, NetDef &predict_model, std::string &optimizer) {
   if (optimizer == "sgd") {
     add_sgd_ops(init_model, predict_model);
+  } else if (optimizer == "momentum") {
+    add_momentum_ops(init_model, predict_model);
+  } else if (optimizer == "adagrad") {
+    add_adagrad_ops(init_model, predict_model);
   } else if (optimizer == "adam") {
     add_adam_ops(init_model, predict_model);
   } else {

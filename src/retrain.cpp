@@ -24,7 +24,7 @@ CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training run
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/adam");
+CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 enum {
@@ -440,7 +440,7 @@ void run() {
 
     if (i % (10 * cuda_multipier) == 0) {
       auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
-      auto lr = get_tensor_blob(*workspace.GetBlob("LR")).data<float>()[0];
+      auto lr = get_tensor_blob(*workspace.GetBlob("lr")).data<float>()[0];
       auto train_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
       auto train_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
       validate_time -= clock();
