@@ -18,17 +18,19 @@ void run() {
   // >>> x = np.random.rand(4, 3, 2)
   std::vector<float> x(4 * 3 * 2);
   for (auto &v: x) {
-    v = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    v = (float)rand() / RAND_MAX;
   }
 
   // >>> print(x)
   print(x, "x");
 
   // >>> workspace.FeedBlob("my_x", x)
-  auto blob = workspace.CreateBlob("my_x");
-  auto tensor = blob->GetMutable<TensorCPU>();
-  tensor->Resize(4, 3, 2);
-  memcpy(tensor->mutable_data<float>(), &x[0], tensor->nbytes());
+  {
+    auto tensor = workspace.CreateBlob("my_x")->GetMutable<TensorCPU>();
+    auto value = TensorCPU({ 4, 3, 2 }, x, NULL);
+    tensor->ResizeLike(value);
+    tensor->ShareData(value);
+  }
 
   // >>> x2 = workspace.FetchBlob("my_x")
   // >>> print(x2)
@@ -40,27 +42,29 @@ void run() {
   // >>> data = np.random.rand(16, 100).astype(np.float32)
   std::vector<float> data(16 * 100);
   for (auto& v: data) {
-    v = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    v = (float)rand() / RAND_MAX;
   }
 
   // >>> label = (np.random.rand(16) * 10).astype(np.int32)
   std::vector<int> label(16);
   for (auto& v: label) {
-    v = static_cast<int>(10 * rand() / RAND_MAX);
+    v = 10 * rand() / RAND_MAX;
   }
 
   // >>> workspace.FeedBlob("data", data)
   {
     auto tensor = workspace.CreateBlob("data")->GetMutable<TensorCPU>();
-    tensor->Resize(16, 100);
-    memcpy(tensor->mutable_data<float>(), &data[0], tensor->nbytes());
+    auto value = TensorCPU({ 16, 100 }, data, NULL);
+    tensor->ResizeLike(value);
+    tensor->ShareData(value);
   }
 
   // >>> workspace.FeedBlob("label", label)
   {
     auto tensor = workspace.CreateBlob("label")->GetMutable<TensorCPU>();
-    tensor->Resize(16, 100);
-    memcpy(tensor->mutable_data<int>(), &label[0], tensor->nbytes());
+    auto value = TensorCPU({ 16 }, label, NULL);
+    tensor->ResizeLike(value);
+    tensor->ShareData(value);
   }
 
   // >>> m = model_helper.ModelHelper(name="my first net")
@@ -167,25 +171,27 @@ void run() {
     // >>> data = np.random.rand(16, 100).astype(np.float32)
     std::vector<float> data(16 * 100);
     for (auto& v: data) {
-      v = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      v = (float)rand() / RAND_MAX;
     }
 
     // >>> label = (np.random.rand(16) * 10).astype(np.int32)
     std::vector<int> label(16);
     for (auto& v: label) {
-      v = static_cast<int>(10 * rand() / RAND_MAX);
+      v = 10 * rand() / RAND_MAX;
     }
 
     // >>> workspace.FeedBlob("data", data)
     {
       auto tensor = workspace.GetBlob("data")->GetMutable<TensorCPU>();
-      memcpy(tensor->mutable_data<float>(), &data[0], tensor->nbytes());
+      auto value = TensorCPU({ 16, 100 }, data, NULL);
+      tensor->ShareData(value);
     }
 
     // >>> workspace.FeedBlob("label", label)
     {
       auto tensor = workspace.GetBlob("label")->GetMutable<TensorCPU>();
-      memcpy(tensor->mutable_data<int>(), &label[0], tensor->nbytes());
+      auto value = TensorCPU({ 16 }, label, NULL);
+      tensor->ShareData(value);
     }
 
     // >>> workspace.RunNet(m.name, 10)   # run for 10 times
