@@ -82,6 +82,26 @@ TensorCPU readImageTensor(const std::string &filename, int size) {
   return readImageTensor({ filename }, size, indices);
 }
 
+void writeImageTensor(TensorCPU &tensor, const std::vector<std::string> &filenames, float mean = 128) {
+  auto data = tensor.data<float>();
+  auto count = tensor.dim(0);
+  CHECK(filenames.size() == count);
+  auto depth = tensor.dim(1);
+  auto height = tensor.dim(2);
+  auto width = tensor.dim(3);
+  for (int i = 0; i < count; i++) {
+    vector<cv::Mat> channels(depth);
+    for (auto &j: channels) {
+      j = cv::Mat(height, width, CV_32F, (void *)data);
+      data += (width * height);
+    }
+    cv::Mat image;
+    cv::merge(channels, image);
+    image.convertTo(image, CV_8UC3, 1.0, mean);
+    imwrite(filenames[i], image);
+  }
+}
+
 }  // namespace caffe2
 
 #endif  // IMAGE_H
