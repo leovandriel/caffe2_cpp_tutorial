@@ -22,8 +22,8 @@ CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
-CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
+CAFFE2_DEFINE_double(learning_rate, 1e-2, "Learning rate.");
+CAFFE2_DEFINE_string(optimizer, "sgd", "Training optimizer: sgd/momentum/adagrad/adam");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
@@ -115,6 +115,9 @@ void run() {
     set_device_cuda_model(first_predict_model);
   }
 
+  PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
+  load_time += clock();
+
   // std::cout << "first_init_model -------------" << std::endl;
   // print(first_init_model);
   // std::cout << "first_predict_model -------------" << std::endl;
@@ -143,9 +146,11 @@ void run() {
   // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
   // print(predict_model[kRunTrain]);
 
-  PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
-  load_time += clock();
 
+  // std::cout << "init_model[kRunValidate] -------------" << std::endl;
+  // print(init_model[kRunValidate]);
+  // std::cout << "init_model[kRunTest] -------------" << std::endl;
+  // print(init_model[kRunTest]);
 
   std::cout << std::endl;
 
