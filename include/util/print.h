@@ -66,6 +66,12 @@ void print(const NetDef &def) {
   for (const auto &op: def.op()) {
     print(op);
   }
+  if (def.has_device_option()) {
+    std::cout << "device_option {" << std::endl;
+    std::cout << "  device_type: " << '"' << def.device_option().device_type() << '"' << std::endl;
+    std::cout << "  cuda_gpu_id: " << '"' << def.device_option().cuda_gpu_id() << '"' << std::endl;
+    std::cout << "}" << std::endl;
+  }
   if (def.has_num_workers()) {
     std::cout << "num_workers: " << def.num_workers() << std::endl;
   }
@@ -85,7 +91,7 @@ void printType(const Tensor<C> &tensor, const std::string &name = "") {
     std::cout << (float)data[i] << ' ';
   }
   if (tensor.size() > 100) {
-    std::cout << "...";
+    std::cout << "... (" << *std::min_element(data, data + tensor.size()) << "," << *std::max_element(data, data + tensor.size()) << ")";
   }
   if (name.length() > 0) std::cout << std::endl;
 }
