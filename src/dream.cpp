@@ -11,6 +11,7 @@
 #include "util/cuda.h"
 #include "util/build.h"
 #include "util/net.h"
+#include "util/math.h"
 #include "res/imagenet_classes.h"
 #include "operator/operator_cout.h"
 
@@ -20,28 +21,13 @@ CAFFE2_DEFINE_string(layer, "pool5", "Name of the layer on which to split the mo
 CAFFE2_DEFINE_int(channel, 3, "The of channel runs.");
 
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
-CAFFE2_DEFINE_string(label, "Chihuahua", "What we're dreaming about.");
+// CAFFE2_DEFINE_string(label, "Chihuahua", "What we're dreaming about.");
 CAFFE2_DEFINE_int(train_runs, 200 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_double(learning_rate, 1e3, "Learning rate.");
+CAFFE2_DEFINE_double(learning_rate, 1e-1, "Learning rate.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
-
-TensorCPU normalizeTensor(TensorCPU &tensor) {
-  auto data = tensor.data<float>();
-  std::vector<float> values(data, data + tensor.size());
-  float sum = std::accumulate(values.begin(), values.end(), 0.0);
-  float mean = sum / values.size();
-  std::vector<float> diff(values.size());
-  std::transform(values.begin(), values.end(), diff.begin(), [mean](float x) { return x - mean; });
-  float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  float stdev = std::sqrt(sq_sum / values.size());
-  for (auto &v: values) {
-    v = (v - mean) / stdev * 100;
-  }
-  return TensorCPU(tensor.dims(), values, NULL);
-}
 
 void AddSuperNaive(NetDef &init_model, NetDef &predict_model, int label_index) {
   // add gradients
@@ -60,18 +46,11 @@ void AddSuperNaive(NetDef &init_model, NetDef &predict_model, int label_index) {
 }
 
 void AddNaive(NetDef &init_model, NetDef &predict_model, int channel) {
-  // add gradients
   auto &output = predict_model.external_output(0);
   add_channel_mean_ops(predict_model, output, 1, 4, channel);
   add_gradient_ops(predict_model);
-  add_iter_lr_ops(init_model, predict_model, FLAGS_learning_rate);
-
-  // add dream operator
-  add_uniform_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, -1, 1, predict_model.external_input(0));
-  add_constant_fill_float_op(init_model, { 1 }, 1.0, "one");
-  predict_model.add_external_input("one");
-  auto &input = predict_model.external_input(0);
-  add_weighted_sum_op(predict_model, { input, "one", input + "_grad", "lr" }, input);
+  add_uniform_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, -FLAGS_learning_rate / 10, FLAGS_learning_rate / 10, predict_model.external_input(0));
+  // add_constant_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, 1, predict_model.external_input(0));
 }
 
 void run() {
@@ -87,17 +66,17 @@ void run() {
     return;
   }
 
-  if (!FLAGS_label.size()) {
-    std::cerr << "specify a label name using --label <name>" << std::endl;
-    return;
-  }
+  // if (!FLAGS_label.size()) {
+  //   std::cerr << "specify a label name using --label <name>" << std::endl;
+  //   return;
+  // }
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
   std::cout << "channel: " << FLAGS_channel << std::endl;
 
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
-  std::cout << "label: " << FLAGS_label << std::endl;
+  // std::cout << "label: " << FLAGS_label << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
@@ -105,18 +84,18 @@ void run() {
 
   if (!FLAGS_force_cpu) setupCUDA();
 
-  auto label_index = -1;
-  for (int i = 0; i < 1000; i++) {
-    if (!strcmp(FLAGS_label.c_str(), imagenet_classes[i])) {
-      label_index = i;
-    }
-  }
-  if (label_index < 0) {
-    for (int i = 0; i < 1000; i++) {
-      std::cout << "  " << imagenet_classes[i] << std::endl;
-    }
-    LOG(FATAL) << "~ image class label not found: " << FLAGS_label;
-  }
+  // auto label_index = -1;
+  // for (int i = 0; i < 1000; i++) {
+  //   if (!strcmp(FLAGS_label.c_str(), imagenet_classes[i])) {
+  //     label_index = i;
+  //   }
+  // }
+  // if (label_index < 0) {
+  //   for (int i = 0; i < 1000; i++) {
+  //     std::cout << "  " << imagenet_classes[i] << std::endl;
+  //   }
+  //   LOG(FATAL) << "~ image class label not found: " << FLAGS_label;
+  // }
 
   std::cout << std::endl;
 
@@ -167,8 +146,13 @@ void run() {
 
   // read image as tensor
   // auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
-  // showImageTensor(input, 0);
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
+  // showImageTensor(input, 0);
+
+  TensorCPU show;
+  show.CopyFrom(get_tensor_blob(*workspace.GetBlob("data")));
+  normalize_tensor(show, 50);
+  showImageTensor(show, 0);
 
   // run predictor
   for (int i = 1; i <= FLAGS_train_runs; i++) {
@@ -176,6 +160,15 @@ void run() {
     dream_time -= clock();
     predict_net->Run();
     dream_time += clock();
+
+    auto grad = get_tensor_blob(*workspace.GetBlob("data_grad"));
+    float stdev = 0;
+    mean_stdev_tensor(grad, 0, &stdev);
+    affine_transform_tensor(grad, FLAGS_learning_rate / (stdev + 1e-8));
+    auto data = get_tensor_blob(*workspace.GetBlob("data"));
+    add_tensor(data, grad);
+    set_tensor_blob(*workspace.GetBlob("data"), data);
+
     // print(*workspace.GetBlob("lr"), "lr");
     // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
     // print(*workspace.GetBlob("pick"), "pick");
@@ -188,17 +181,18 @@ void run() {
     // print(*workspace.GetBlob("data_grad"), "data_grad");
     // break;
 
-    if (i % (10 * cuda_multipier) == 0) {
-      auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
-      auto lr = get_tensor_blob(*workspace.GetBlob("lr")).data<float>()[0];
-      auto train_accuracy = -1;//get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto train_score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
-      std::cout << "step: " << iter << "  rate: " << lr << "  score: " << train_score << "  accuracy: " << train_accuracy << std::endl;
 
-      auto input2 = get_tensor_blob(*workspace.GetBlob(input_name));
-      // writeImageTensor(input2, { "test_" + std::to_string(i) + ".jpg" });
-      // auto input3 = normalizeTensor(input2);
-      showImageTensor(input2, 0);
+    if (i % (10 * cuda_multipier) == 0) {
+      auto score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
+      if (score == 0) {
+          std::cout << "score is zero, try lower learning rate: --learning_rate 1e" << ((int)log10(FLAGS_learning_rate) - 1) << std::endl;
+        break;
+      }
+      std::cout << "step: " << i << "  score: " << score << std::endl;
+
+      TensorCPU show; show.CopyFrom(data);
+      normalize_tensor(show, 50);
+      showImageTensor(show, 0);
     }
   }
 
