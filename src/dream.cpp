@@ -192,6 +192,7 @@ void run() {
       TensorCPU show; show.CopyFrom(data);
       normalize_tensor(show, 50);
       showImageTensor(show, 0);
+      // writeImageTensor(show, { "deep_" + std::to_string(i) + ".jpg" });
     }
   }
 
