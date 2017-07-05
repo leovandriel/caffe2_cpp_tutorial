@@ -17,7 +17,10 @@ static const std::set<std::string> trainable_ops({
   "LRN",
   "MaxPool",
   "Mul",
+  "ReduceBackMean",
   "Relu",
+  "Reshape",
+  "Slice",
   "Softmax",
   "SpatialBN",
   "Sum",
@@ -45,9 +48,14 @@ static const std::set<std::string> filler_ops({
 
 static const std::string gradient_suffix("_grad");
 static const std::string moment_suffix("_moment");
+static const std::string reader_suffix("_reader");
 static const std::string iter_name("iter");
 static const std::string lr_name("lr");
 static const std::string one_name("one");
+static const std::string loss_name("loss");
+static const std::string label_name("label");
+static const std::string xent_name("xent");
+static const std::string accuracy_name("accuracy");
 
 // Operators
 
@@ -102,11 +110,49 @@ OperatorDef *add_label_cross_entropy_op(NetDef &model, const std::string &pred, 
   return op;
 }
 
-OperatorDef *add_averaged_loss(NetDef &model, const std::string &xent, const std::string &loss) {
+OperatorDef *add_averaged_loss(NetDef &model, const std::string &input, const std::string &loss) {
   auto op = model.add_op();
   op->set_type("AveragedLoss");
-  op->add_input(xent);
+  op->add_input(input);
   op->add_output(loss);
+  return op;
+}
+
+OperatorDef *add_reduce_back_mean_op(NetDef &model, const std::string &input, const std::string &output) {
+  auto op = model.add_op();
+  op->set_type("ReduceBackMean");
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_slice_op(NetDef &model, const std::string &input, const std::string &output, const std::vector<std::pair<int, int>> &ranges) {
+  auto op = model.add_op();
+  op->set_type("Slice");
+  auto arg1 = op->add_arg();
+  arg1->set_name("starts");
+  auto arg2 = op->add_arg();
+  arg2->set_name("ends");
+  for (auto r: ranges) {
+    arg1->add_ints(r.first);
+    arg2->add_ints(r.second);
+  }
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_reshape_op(NetDef &model, const std::string &input, const std::string &output, const std::vector<int> &shape) {
+  auto op = model.add_op();
+  op->set_type("Reshape");
+  auto arg = op->add_arg();
+  arg->set_name("shape");
+  for (auto s: shape) {
+    arg->add_ints(s);
+  }
+  op->add_input(input);
+  op->add_output(output);
+  op->add_output("_");
   return op;
 }
 
@@ -184,9 +230,9 @@ OperatorDef *add_cast_op(NetDef &model, const std::string &input, const std::str
   return op;
 }
 
-OperatorDef *add_constant_fill_op(NetDef &model, const std::vector<int> &shape, const std::string &param) {
+OperatorDef *add_fill_op(NetDef &model, const std::string type, const std::vector<int> &shape, const std::string &param) {
   auto op = model.add_op();
-  op->set_type("ConstantFill");
+  op->set_type(type);
   auto arg = op->add_arg();
   arg->set_name("shape");
   for (auto dim: shape) {
@@ -196,8 +242,19 @@ OperatorDef *add_constant_fill_op(NetDef &model, const std::vector<int> &shape, 
   return op;
 }
 
+OperatorDef *add_uniform_fill_float_op(NetDef &model, const std::vector<int> &shape, float min, float max, const std::string &param) {
+  auto op = add_fill_op(model, "UniformFill", shape, param);
+  auto arg1 = op->add_arg();
+  arg1->set_name("min");
+  arg1->set_f(min);
+  auto arg2 = op->add_arg();
+  arg2->set_name("max");
+  arg2->set_f(max);
+  return op;
+}
+
 OperatorDef *add_constant_fill_float_op(NetDef &model, const std::vector<int> &shape, float value, const std::string &param) {
-  auto op = add_constant_fill_op(model, shape, param);
+  auto op = add_fill_op(model, "ConstantFill", shape, param);
   auto arg = op->add_arg();
   arg->set_name("value");
   arg->set_f(value);
@@ -205,7 +262,7 @@ OperatorDef *add_constant_fill_float_op(NetDef &model, const std::vector<int> &s
 }
 
 OperatorDef *add_constant_fill_int64_op(NetDef &model, const std::vector<int> &shape, int64_t value, const std::string &param) {
-  auto op = add_constant_fill_op(model, shape, param);
+  auto op = add_fill_op(model, "ConstantFill", shape, param);
   auto arg1 = op->add_arg();
   arg1->set_name("value");
   arg1->set_i(value);
@@ -216,7 +273,7 @@ OperatorDef *add_constant_fill_int64_op(NetDef &model, const std::vector<int> &s
 }
 
 OperatorDef *add_constant_fill_int32_op(NetDef &model, const std::vector<int> &shape, int32_t value, const std::string &param) {
-  auto op = add_constant_fill_op(model, shape, param);
+  auto op = add_fill_op(model, "ConstantFill", shape, param);
   auto arg1 = op->add_arg();
   arg1->set_name("value");
   arg1->set_i(value);
@@ -293,49 +350,72 @@ void set_engine_cudnn_op(OperatorDef &op) {
   op.set_engine("CUDNN");
 }
 
-OperatorDef *add_gradient_op(NetDef &model, const OperatorDef *op) {
-  vector<GradientWrapper> output(op->output_size());
+OperatorDef *add_gradient_op(NetDef &model, OperatorDef &op) {
+  vector<GradientWrapper> output(op.output_size());
   for (auto i = 0; i < output.size(); i++) {
-    output[i].dense_ = op->output(i) + gradient_suffix;
+    output[i].dense_ = op.output(i) + gradient_suffix;
   }
-  GradientOpsMeta meta = GetGradientForOp(*op, output);
+  GradientOpsMeta meta = GetGradientForOp(op, output);
   auto grad = model.add_op();
   grad->CopyFrom(meta.ops_[0]);
   grad->set_is_gradient_op(true);
   return grad;
 }
 
-void add_gradient_ops(NetDef &model) {
+std::vector<OperatorDef> collect_gradient_ops(NetDef &model) {
   std::set<std::string> external_inputs(model.external_input().begin(), model.external_input().end());
-  auto x = model.op();
-  for (auto i = x.rbegin(); i != x.rend(); ++i) {
-    if (trainable_ops.find(i->type()) != trainable_ops.end()) {
-      add_gradient_op(model, &*i);
+  std::vector<OperatorDef> gradient_ops;
+  for (auto &op: model.op()) {
+    if (trainable_ops.find(op.type()) != trainable_ops.end()) {
+      gradient_ops.push_back(op);
       // std::cout << "type: " << op.type() << std::endl;
-    } else if (non_trainable_ops.find(i->type()) == non_trainable_ops.end()) {
-      std::cout << "unknown backprop operator type: " << i->type() << std::endl;
+    } else if (non_trainable_ops.find(op.type()) == non_trainable_ops.end()) {
+      std::cout << "unknown backprop operator type: " << op.type() << std::endl;
     }
+  }
+  std::reverse(gradient_ops.begin(), gradient_ops.end());
+  return gradient_ops;
+}
+
+void add_gradient_ops(NetDef &model) {
+  for (auto op: collect_gradient_ops(model)) {
+    add_gradient_op(model, op);
   }
 }
 
 void add_database_ops(NetDef &init_model, NetDef &predict_model, const std::string &name, const std::string &data, const std::string &db, const std::string &db_type, int batch_size) {
-  auto reader = name + "_dbreader";
+  auto reader = name + reader_suffix;
   add_create_db_op(init_model, reader, db_type, db);
   predict_model.add_external_input(reader);
-  add_tensor_protos_db_input_op(predict_model, reader, data, "label", batch_size);
+  add_tensor_protos_db_input_op(predict_model, reader, data, label_name, batch_size);
   // add_cout_op(predict_model, data);
-  // add_cout_op(predict_model, "label");
+  // add_cout_op(predict_model, label_name);
 }
 
-void add_test_ops(NetDef &model) {
-  add_accuracy_op(model, model.external_output(0), "label", "accuracy");
+void add_test_ops(NetDef &model, const std::string &output) {
+  add_accuracy_op(model, output, label_name, accuracy_name);
 }
 
-void add_xent_ops(NetDef &model) {
-  add_label_cross_entropy_op(model, model.external_output(0), "label", "xent");
-  add_averaged_loss(model, "xent", "loss");
-  add_accuracy_op(model, model.external_output(0), "label", "accuracy");
-  add_constant_fill_with_op(model, 1.0, "loss", "loss" + gradient_suffix);
+void add_xent_ops(NetDef &model, const std::string &output) {
+  add_label_cross_entropy_op(model, output, label_name, xent_name);
+  add_averaged_loss(model, xent_name, loss_name);
+  add_accuracy_op(model, output, label_name, accuracy_name);
+  add_constant_fill_with_op(model, 0.0, loss_name, loss_name + gradient_suffix);
+}
+
+void add_channel_mean_ops(NetDef &model, const std::string &output, int dim, int count, int channel) {
+  std::vector<std::pair<int, int>> ranges(count);
+  for (int i = 0; i < count; i++) {
+    if (i == dim) {
+      ranges[i] = { channel, channel + 1 };
+    } else {
+      ranges[i] = { 0, -1 };
+    }
+  }
+  add_slice_op(model, output, "pick", ranges);
+  add_reshape_op(model, "pick", "reshape", { -1 });
+  add_averaged_loss(model, "reshape", loss_name);
+  add_constant_fill_with_op(model, 1.0, loss_name, loss_name + gradient_suffix);
 }
 
 std::map<std::string, int> collect_param_sizes(NetDef &model) {
@@ -435,8 +515,8 @@ void add_optimizer_ops(NetDef &init_model, NetDef &predict_model, std::string &o
   }
 }
 
-void add_train_ops(NetDef &init_model, NetDef &predict_model, float base_rate, std::string &optimizer) {
-  add_xent_ops(predict_model);
+void add_train_ops(NetDef &init_model, NetDef &predict_model, const std::string &output, float base_rate, std::string &optimizer) {
+  add_xent_ops(predict_model, output);
   add_gradient_ops(predict_model);
   add_iter_lr_ops(init_model, predict_model, base_rate);
   add_optimizer_ops(init_model, predict_model, optimizer);
