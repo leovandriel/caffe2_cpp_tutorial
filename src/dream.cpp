@@ -15,14 +15,15 @@
 #include "operator/operator_cout.h"
 
 
-CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(layer, "", "Name of the layer on which to split the model.");
+CAFFE2_DEFINE_string(model, "alexnet", "Name of one of the pre-trained models.");
+CAFFE2_DEFINE_string(layer, "pool5", "Name of the layer on which to split the model.");
+CAFFE2_DEFINE_int(channel, 3, "The of channel runs.");
+
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_string(label, "Chihuahua", "What we're dreaming about.");
-CAFFE2_DEFINE_int(channel, 0, "The of channel runs.");
 CAFFE2_DEFINE_int(train_runs, 200 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_double(learning_rate, 1e5, "Learning rate.");
+CAFFE2_DEFINE_double(learning_rate, 1e3, "Learning rate.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
@@ -94,6 +95,7 @@ void run() {
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
   std::cout << "channel: " << FLAGS_channel << std::endl;
+
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
   std::cout << "label: " << FLAGS_label << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
@@ -141,10 +143,10 @@ void run() {
   // AddSuperNaive(full_init_model, full_predict_model, label_index);
   AddNaive(first_init_model, first_predict_model, FLAGS_channel);
 
-  std::cout << "first_init_model -------------" << std::endl;
-  print(first_init_model);
-  std::cout << "first_predict_model -------------" << std::endl;
-  print(first_predict_model);
+  // std::cout << "first_init_model -------------" << std::endl;
+  // print(first_init_model);
+  // std::cout << "first_predict_model -------------" << std::endl;
+  // print(first_predict_model);
 
   // set model to use CUDA
   if (!FLAGS_force_cpu) {
@@ -186,7 +188,7 @@ void run() {
     // print(*workspace.GetBlob("data_grad"), "data_grad");
     // break;
 
-    // if (i % (10 * cuda_multipier) == 0) {
+    if (i % (10 * cuda_multipier) == 0) {
       auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
       auto lr = get_tensor_blob(*workspace.GetBlob("lr")).data<float>()[0];
       auto train_accuracy = -1;//get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
@@ -197,7 +199,7 @@ void run() {
       // writeImageTensor(input2, { "test_" + std::to_string(i) + ".jpg" });
       // auto input3 = normalizeTensor(input2);
       showImageTensor(input2, 0);
-    // }
+    }
   }
 
   std::cout << std::endl;
