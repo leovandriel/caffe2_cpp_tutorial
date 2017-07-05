@@ -82,22 +82,33 @@ TensorCPU readImageTensor(const std::string &filename, int size) {
   return readImageTensor({ filename }, size, indices);
 }
 
+cv::Mat tensorToImage(TensorCPU &tensor, int index, float mean = 128) {
+  auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2), width = tensor.dim(3);
+  CHECK(index < count);
+  auto data = tensor.data<float>() + (index * width * height);
+  vector<cv::Mat> channels(depth);
+  for (auto &j: channels) {
+    j = cv::Mat(height, width, CV_32F, (void *)data);
+    data += (width * height);
+  }
+  cv::Mat image;
+  cv::merge(channels, image);
+  image.convertTo(image, CV_8UC3, 1.0, mean);
+  return image;
+}
+
+void showImageTensor(TensorCPU &tensor, int index, const std::string &name = "default", float mean = 128) {
+  const auto &image = tensorToImage(tensor, index, mean);
+  cv::namedWindow(name, cv::WINDOW_AUTOSIZE);
+  cv::imshow(name, image);
+  cv::waitKey(1);
+}
+
 void writeImageTensor(TensorCPU &tensor, const std::vector<std::string> &filenames, float mean = 128) {
-  auto data = tensor.data<float>();
   auto count = tensor.dim(0);
   CHECK(filenames.size() == count);
-  auto depth = tensor.dim(1);
-  auto height = tensor.dim(2);
-  auto width = tensor.dim(3);
   for (int i = 0; i < count; i++) {
-    vector<cv::Mat> channels(depth);
-    for (auto &j: channels) {
-      j = cv::Mat(height, width, CV_32F, (void *)data);
-      data += (width * height);
-    }
-    cv::Mat image;
-    cv::merge(channels, image);
-    image.convertTo(image, CV_8UC3, 1.0, mean);
+    const auto &image = tensorToImage(tensor, i, mean);
     imwrite(filenames[i], image);
   }
 }
