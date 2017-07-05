@@ -22,7 +22,7 @@ CAFFE2_DEFINE_string(label, "Chihuahua", "What we're dreaming about.");
 CAFFE2_DEFINE_int(channel, 0, "The of channel runs.");
 CAFFE2_DEFINE_int(train_runs, 200 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_double(learning_rate, 1e15, "Learning rate.");
+CAFFE2_DEFINE_double(learning_rate, 1e5, "Learning rate.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
@@ -66,7 +66,7 @@ void AddNaive(NetDef &init_model, NetDef &predict_model, int channel) {
   add_iter_lr_ops(init_model, predict_model, FLAGS_learning_rate);
 
   // add dream operator
-  add_uniform_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, -100, 101, predict_model.external_input(0));
+  add_uniform_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, -1, 1, predict_model.external_input(0));
   add_constant_fill_float_op(init_model, { 1 }, 1.0, "one");
   predict_model.add_external_input("one");
   auto &input = predict_model.external_input(0);
@@ -118,10 +118,6 @@ void run() {
 
   std::cout << std::endl;
 
-  // read image as tensor
-  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
-  showImageTensor(input, 0);
-
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
   NetDef full_init_model, full_predict_model;
@@ -165,21 +161,27 @@ void run() {
   auto predict_net = CreateNet(first_predict_model, &workspace);
   init_net->Run();
 
-  // run predictor
   auto &input_name = first_predict_model.external_input(0);
-  set_tensor_blob(*workspace.GetBlob(input_name), input);
+
+  // read image as tensor
+  // auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
+  // showImageTensor(input, 0);
+  // set_tensor_blob(*workspace.GetBlob(input_name), input);
+
+  // run predictor
   for (int i = 1; i <= FLAGS_train_runs; i++) {
+    // print(*workspace.GetBlob("data"), "data");
     dream_time -= clock();
     predict_net->Run();
     dream_time += clock();
-    // print(*workspace.GetBlob("data"), "data");
+    // print(*workspace.GetBlob("lr"), "lr");
     // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
-    // // print(*workspace.GetBlob("pick"), "pick");
-    // // print(*workspace.GetBlob("reshape"), "reshape");
-    // print(*workspace.GetBlob("loss"), "loss");
-    // print(*workspace.GetBlob("loss_grad"), "loss_grad");
-    // // print(*workspace.GetBlob("reshape_grad"), "reshape_grad");
-    // // print(*workspace.GetBlob("pick_grad"), "pick_grad");
+    // print(*workspace.GetBlob("pick"), "pick");
+    // print(*workspace.GetBlob("reshape"), "reshape");
+    // print(*workspace.GetBlob("score"), "score");
+    // print(*workspace.GetBlob("score_grad"), "score_grad");
+    // print(*workspace.GetBlob("reshape_grad"), "reshape_grad");
+    // print(*workspace.GetBlob("pick_grad"), "pick_grad");
     // print(*workspace.GetBlob(FLAGS_layer + "_grad"), FLAGS_layer + "_grad");
     // print(*workspace.GetBlob("data_grad"), "data_grad");
     // break;
@@ -188,8 +190,8 @@ void run() {
       auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
       auto lr = get_tensor_blob(*workspace.GetBlob("lr")).data<float>()[0];
       auto train_accuracy = -1;//get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto train_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
-      std::cout << "step: " << iter << "  rate: " << lr << "  loss: " << train_loss << "  accuracy: " << train_accuracy << std::endl;
+      auto train_score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
+      std::cout << "step: " << iter << "  rate: " << lr << "  score: " << train_score << "  accuracy: " << train_accuracy << std::endl;
 
       auto input2 = get_tensor_blob(*workspace.GetBlob(input_name));
       // writeImageTensor(input2, { "test_" + std::to_string(i) + ".jpg" });
