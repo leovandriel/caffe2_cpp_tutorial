@@ -16,8 +16,8 @@
 #include "operator/operator_cout.h"
 
 
-CAFFE2_DEFINE_string(model, "alexnet", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(layer, "pool5", "Name of the layer on which to split the model.");
+CAFFE2_DEFINE_string(model, "googlenet", "Name of one of the pre-trained models.");
+CAFFE2_DEFINE_string(layer, "pool3/3x3_s2", "Name of the layer on which to split the model.");
 CAFFE2_DEFINE_int(channel, 3, "The of channel runs.");
 
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
@@ -162,14 +162,13 @@ void run() {
     dream_time += clock();
 
     auto grad = get_tensor_blob(*workspace.GetBlob("data_grad"));
-    float stdev = 0;
-    mean_stdev_tensor(grad, 0, &stdev);
+    float mean = 0, stdev = 0;
+    mean_stdev_tensor(grad, &mean, &stdev);
     affine_transform_tensor(grad, FLAGS_learning_rate / (stdev + 1e-8));
     auto data = get_tensor_blob(*workspace.GetBlob("data"));
     add_tensor(data, grad);
     set_tensor_blob(*workspace.GetBlob("data"), data);
 
-    // print(*workspace.GetBlob("lr"), "lr");
     // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
     // print(*workspace.GetBlob("pick"), "pick");
     // print(*workspace.GetBlob("reshape"), "reshape");
@@ -184,11 +183,11 @@ void run() {
 
     if (i % (10 * cuda_multipier) == 0) {
       auto score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
+      std::cout << "step: " << i << "  score: " << score << "  mean: " << mean << "  stdev: " << stdev << std::endl;
       if (score == 0) {
-          std::cout << "score is zero, try lower learning rate: --learning_rate 1e" << ((int)log10(FLAGS_learning_rate) - 1) << std::endl;
+        std::cout << "score is zero, try lower learning rate: --learning_rate 1e" << ((int)log10(FLAGS_learning_rate) - 1) << std::endl;
         break;
       }
-      std::cout << "step: " << i << "  score: " << score << std::endl;
 
       TensorCPU show; show.CopyFrom(data);
       normalize_tensor(show, 50);
