@@ -72,11 +72,11 @@ The above models are all trained on ImageNet data, which means they will only be
 
 First divide all images in subfolders with the label a folder name. Then to retrain the final layer of GoogleNet:
 
-    make && ./bin/imagenet --model googlenet --folder <image-folder> --blob pool5/7x7_s1
+    make && ./bin/imagenet --model googlenet --folder <image-folder> --layer pool5/7x7_s1
 
 Or if you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
-    make && ./bin/imagenet --model vgg16 --folder <image-folder> --blob fc6
+    make && ./bin/imagenet --model vgg16 --folder <image-folder> --layer fc6
 
 See [DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition](https://arxiv.org/pdf/1310.1531v1.pdf) for more information.
 
