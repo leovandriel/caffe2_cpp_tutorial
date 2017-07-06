@@ -22,8 +22,8 @@ CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
-CAFFE2_DEFINE_double(learning_rate, 1e-2, "Learning rate.");
-CAFFE2_DEFINE_string(optimizer, "sgd", "Training optimizer: sgd/momentum/adagrad/adam");
+CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
+CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
