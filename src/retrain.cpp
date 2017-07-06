@@ -115,6 +115,9 @@ void run() {
     set_device_cuda_model(first_predict_model);
   }
 
+  PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
+  load_time += clock();
+
   // std::cout << "first_init_model -------------" << std::endl;
   // print(first_init_model);
   // std::cout << "first_predict_model -------------" << std::endl;
@@ -143,9 +146,11 @@ void run() {
   // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
   // print(predict_model[kRunTrain]);
 
-  PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
-  load_time += clock();
 
+  // std::cout << "init_model[kRunValidate] -------------" << std::endl;
+  // print(init_model[kRunValidate]);
+  // std::cout << "init_model[kRunTest] -------------" << std::endl;
+  // print(init_model[kRunTest]);
 
   std::cout << std::endl;
 

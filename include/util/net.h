@@ -10,6 +10,7 @@
 
 #include "util/image.h"
 #include "util/cuda.h"
+#include "util/print.h"
 #include "util/build.h"
 
 namespace caffe2 {
@@ -32,6 +33,11 @@ static std::map<int, int> percentage_for_run({
   { kRunValidate, 20 },
   { kRunTrain, 70 },
 });
+
+std::string filename_to_key(const std::string &filename) {
+  // return filename;
+  return std::to_string(std::hash<std::string>{}(filename)) + "_" + filename;
+}
 
 void LoadLabels(const std::string &folder, const std::string &path_prefix, std::vector<std::string> &class_labels, std::vector<std::pair<std::string, int>> &image_files) {
   std::cout << "load class labels.." << std::endl;
@@ -149,11 +155,12 @@ void WriteBatch(Workspace &workspace, NetBase *predict_net, std::string &input_n
     serializer.Serialize(single, "", data, 0, kDefaultChunkSize);
     label->set_int32_data(0, batch_files[i].second);
     protos.SerializeToString(&value);
-    int percentage = 0;
+    int percentage = 0, p = (int)(rand() * 100.0 / RAND_MAX);
+    auto key = filename_to_key(batch_files[i].first);
     for (auto pair: percentage_for_run) {
       percentage += pair.second;
-      if (rand() % 100 < percentage) {
-        transaction[pair.first]->Put(batch_files[i].first, value);
+      if (p < percentage) {
+        transaction[pair.first]->Put(key, value);
         break;
       }
     }
@@ -167,10 +174,8 @@ void WriteBatch(Workspace &workspace, NetBase *predict_net, std::string &input_n
 void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, NetDef &init_model, NetDef &predict_model, const std::string &db_type, int batch_size, int size_to_fit) {
   std::cout << "store partial prediction.." << std::endl;
   std::unique_ptr<db::DB> database[kRunNum];
-  std::unique_ptr<db::Cursor> cursor[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
-    cursor[i] = database[i]->NewCursor();
   }
   auto image_count = 0;
   Workspace workspace;
@@ -185,9 +190,11 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
     auto class_index = pair.second;
     image_count++;
     auto in_db = false;
+    auto key = filename_to_key(filename);
     for (int i = 0; i < kRunNum && !in_db; i++) {
-      cursor[i]->Seek(filename);
-      in_db |= (cursor[i]->Valid() && cursor[i]->key() == filename);
+      auto cursor = database[i]->NewCursor();
+      cursor->Seek(key);
+      in_db |= (cursor->Valid() && cursor->key() == key);
     }
     if (!in_db) {
       batch_files.push_back({ filename, class_index });
