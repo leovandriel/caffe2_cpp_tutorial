@@ -400,7 +400,7 @@ void add_xent_ops(NetDef &model, const std::string &output) {
   add_label_cross_entropy_op(model, output, label_name, xent_name);
   add_averaged_loss(model, xent_name, loss_name);
   add_accuracy_op(model, output, label_name, accuracy_name);
-  add_constant_fill_with_op(model, 0.0, loss_name, loss_name + gradient_suffix);
+  add_constant_fill_with_op(model, 1.0, loss_name, loss_name + gradient_suffix);
 }
 
 void add_channel_mean_ops(NetDef &model, const std::string &output, int dim, int count, int channel) {
