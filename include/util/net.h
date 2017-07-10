@@ -39,6 +39,31 @@ std::string filename_to_key(const std::string &filename) {
   return std::to_string(std::hash<std::string>{}(filename)) + "_" + filename;
 }
 
+std::set<std::string> collect_layers(const NetDef &net, const std::string &layer, bool forward = false) {
+  std::map<std::string, std::set<std::string>> lookup;
+  for (auto &op: net.op()) {
+    for (auto &input: op.input()) {
+      for (auto &output: op.output()) {
+        lookup[forward ? input : output].insert(forward ? output : input);
+      }
+    }
+  }
+  std::set<std::string> result;
+  for (std::set<std::string> step({ layer }); step.size();) {
+    std::set<std::string> next;
+    for (auto &l: step) {
+      if (result.find(l) == result.end()) {
+        result.insert(l);
+        for (auto &n: lookup[l]) {
+          next.insert(n);
+        }
+      }
+    }
+    step = next;
+  }
+  return result;
+}
+
 void LoadLabels(const std::string &folder, const std::string &path_prefix, std::vector<std::string> &class_labels, std::vector<std::pair<std::string, int>> &image_files) {
   std::cout << "load class labels.." << std::endl;
   auto classes_text_path = path_prefix + "classes.txt";
@@ -214,28 +239,18 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size() << " images processed" << std::endl;
 }
 
-void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu) {
+void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu, bool inclusive = true) {
   std::cout << "split model.." << std::endl;
-  std::set<std::string> static_inputs;
-  for (const auto &op: base_predict_model.op()) {
-    if (op.input(0) == layer && op.output(0) != layer) {
-      break;
-    }
-    for (const auto &input: op.input()) {
-      static_inputs.insert(input);
-    }
-  }
+  std::set<std::string> static_inputs = collect_layers(base_predict_model, layer);
 
   // copy operators
   for (const auto &op: base_init_model.op()) {
-    auto &output = op.output(0);
-    auto is_first = (static_inputs.find(output) != static_inputs.end());
+    auto is_first = (static_inputs.find(op.output(0)) != static_inputs.end());
     auto new_op = (is_first ? first_init_model : second_init_model).add_op();
     new_op->CopyFrom(op);
   }
-  bool is_first = true;
   for (const auto &op: base_predict_model.op()) {
-    is_first &= (op.input(0) != layer || op.output(0) == layer);
+    auto is_first = (static_inputs.find(op.output(0)) != static_inputs.end() && (inclusive || op.input(0) != op.output(0)));
     auto new_op = (is_first ? first_predict_model : second_predict_model).add_op();
     new_op->CopyFrom(op);
     if (!force_cpu) {
@@ -271,6 +286,23 @@ void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
   }
   if (second_predict_model.op().size()) {
     second_predict_model.add_external_output(base_predict_model.external_output(0));
+  }
+
+  if (base_init_model.has_name()) {
+    if (!first_init_model.has_name()) {
+      first_init_model.set_name(base_init_model.name() + "_first");
+    }
+    if (!second_init_model.has_name()) {
+      second_init_model.set_name(base_init_model.name() + "_second");
+    }
+  }
+  if (base_predict_model.has_name()) {
+    if (!first_predict_model.has_name()) {
+      first_predict_model.set_name(base_predict_model.name() + "_first");
+    }
+    if (!second_predict_model.has_name()) {
+      second_predict_model.set_name(base_predict_model.name() + "_second");
+    }
   }
 }
 
@@ -344,8 +376,8 @@ void CheckLayerAvailable(NetDef &model, const std::string &layer)
     auto layer_found = false;
     for (const auto &op: model.op()) {
       if (op.input(0) != op.output(0)) {
-        available_layers.push_back({ op.input(0), op.type() });
-        layer_found |= (op.input(0) == layer);
+        available_layers.push_back({ op.output(0), op.type() });
+        layer_found |= (op.output(0) == layer);
       }
     }
     if (!layer_found) {
