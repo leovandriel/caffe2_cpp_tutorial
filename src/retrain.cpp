@@ -102,10 +102,8 @@ void run() {
 
   CheckLayerAvailable(full_predict_model, FLAGS_layer);
 
-  // std::cout << "full_init_model -------------" << std::endl;
-  // print(full_init_model);
-  // std::cout << "full_predict_model -------------" << std::endl;
-  // print(full_predict_model);
+  // std::cout << join_net(full_init_model);
+  // std::cout << join_net(full_predict_model);
 
   NetDef first_init_model, first_predict_model, second_init_model, second_predict_model;
   SplitModel(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_force_cpu);
@@ -118,14 +116,10 @@ void run() {
   PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
   load_time += clock();
 
-  // std::cout << "first_init_model -------------" << std::endl;
-  // print(first_init_model);
-  // std::cout << "first_predict_model -------------" << std::endl;
-  // print(first_predict_model);
-  // std::cout << "second_init_model -------------" << std::endl;
-  // print(second_init_model);
-  // std::cout << "second_predict_model -------------" << std::endl;
-  // print(second_predict_model);
+  // std::cout << join_net(first_init_model);
+  // std::cout << join_net(first_predict_model);
+  // std::cout << join_net(second_init_model);
+  // std::cout << join_net(second_predict_model);
 
   for (int i = 0; i < kRunNum; i++) {
     add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_layer, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
@@ -141,16 +135,12 @@ void run() {
     }
   }
 
-  // std::cout << "init_model[kRunTrain] -------------" << std::endl;
-  // print(init_model[kRunTrain]);
-  // std::cout << "predict_model[kRunTrain] -------------" << std::endl;
-  // print(predict_model[kRunTrain]);
+  // std::cout << join_net(init_model[kRunTrain]);
+  // std::cout << join_net(predict_model[kRunTrain]);
 
 
-  // std::cout << "init_model[kRunValidate] -------------" << std::endl;
-  // print(init_model[kRunValidate]);
-  // std::cout << "init_model[kRunTest] -------------" << std::endl;
-  // print(init_model[kRunTest]);
+  // std::cout << join_net(init_model[kRunValidate]);
+  // std::cout << join_net(init_model[kRunTest]);
 
   std::cout << std::endl;
 

@@ -5,6 +5,8 @@
 
 namespace caffe2 {
 
+// Proto
+
 template<typename T> void print(const std::vector<T> vector, const std::string &name = "") {
   if (name.length() > 0) std::cout << name << ": ";
   for (auto &v: vector) {
@@ -135,6 +137,98 @@ void printBest(const Tensor<C> &tensor, const char **classes, const std::string 
     std::cout << pair.first << "% '" << classes[pair.second] << "' (" << pair.second << ")" << std::endl;
   }
 }
+
+
+// Join
+
+template<typename T>
+std::string join_values(const T &values, const std::string &separator = " ", const std::string &prefix = "[", const std::string &suffix = "]", int collapse = 64) {
+  std::stringstream stream;
+  if (values.size() > collapse) {
+    stream << "[#" << values.size() << "]";
+  } else {
+    bool is_next = false;
+    for (const auto &v: values) {
+      if (is_next) {
+        stream << separator;
+      } else {
+        stream << prefix;
+        is_next = true;
+      }
+      stream << v;
+    }
+    if (is_next) {
+        stream << suffix;
+    }
+  }
+  return stream.str();
+}
+
+std::string join_op(const OperatorDef &def) {
+  std::stringstream stream;
+  stream << "op: " << def.type();
+  if (def.name().size()) {
+    stream << " " << '"' << def.name() << '"';
+  }
+  if (def.input_size() || def.output_size()) {
+    stream << " " << join_values(def.input(), " ", "(", ")") << "->" << join_values(def.output(), " ", "(", ")");
+  }
+  if (def.arg_size()) {
+    for (const auto &arg: def.arg()) {
+      stream << " " << arg.name() << ":";
+      if (arg.has_f()) {
+        stream << arg.f();
+      } else if (arg.has_i()) {
+        stream << arg.i();
+      } else if (arg.has_s()) {
+        stream << arg.s();
+      } else {
+        stream << join_values(arg.ints());
+        stream << join_values(arg.floats());
+        stream << join_values(arg.strings());
+      }
+    }
+  }
+  if (def.has_engine()) {
+    stream << " engine:" << def.engine();
+  }
+  if (def.has_device_option() && def.device_option().has_device_type()) {
+    stream << " device_type:" << def.device_option().device_type();
+  }
+  if (def.has_device_option() && def.device_option().has_cuda_gpu_id()) {
+    stream << " cuda_gpu_id:" << def.device_option().cuda_gpu_id();
+  }
+  if (def.has_is_gradient_op()) {
+    stream << " is_gradient_op:true";
+  }
+  stream << std::endl;
+  return stream.str();
+}
+
+std::string join_net(const NetDef &def) {
+  std::stringstream stream;
+  stream << "net: ------------- " << def.name() << " -------------" << std::endl;
+  for (const auto &op: def.op()) {
+    stream << join_op(op);
+  }
+  if (def.has_device_option() && def.device_option().has_device_type()) {
+    stream << "device_type:" << def.device_option().device_type() << std::endl;
+  }
+  if (def.has_device_option() && def.device_option().has_cuda_gpu_id()) {
+    stream << "cuda_gpu_id:" << def.device_option().cuda_gpu_id() << std::endl;
+  }
+  if (def.has_num_workers()) {
+    stream << "num_workers: " << def.num_workers() << std::endl;
+  }
+  if (def.external_input_size()) {
+    stream << "external_input: " << join_values(def.external_input()) << std::endl;
+  }
+  if (def.external_output_size()) {
+    stream << "external_output: " << join_values(def.external_output()) << std::endl;
+  }
+  return stream.str();
+}
+
 
 }  // namespace caffe2
 
