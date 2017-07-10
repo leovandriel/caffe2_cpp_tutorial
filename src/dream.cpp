@@ -17,40 +17,57 @@
 
 
 CAFFE2_DEFINE_string(model, "googlenet", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(layer, "pool3/3x3_s2", "Name of the layer on which to split the model.");
-CAFFE2_DEFINE_int(channel, 3, "The of channel runs.");
+CAFFE2_DEFINE_string(layer, "inception_3b/5x5_reduce", "Name of the layer on which to split the model.");
+CAFFE2_DEFINE_int(offset, 0, "The first channel to run.");
+CAFFE2_DEFINE_int(batch, 5, "The number of channels to process in parallel.");
+CAFFE2_DEFINE_int(size, 200, "The goal image size.");
 
-CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
-// CAFFE2_DEFINE_string(label, "Chihuahua", "What we're dreaming about.");
-CAFFE2_DEFINE_int(train_runs, 200 * caffe2::cuda_multipier, "The of training runs.");
-CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_double(learning_rate, 1e-1, "Learning rate.");
+CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
+CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
+CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
+CAFFE2_DEFINE_int(initial, 0, "The of initial value.");
+CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
+CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
 
 namespace caffe2 {
 
-void AddSuperNaive(NetDef &init_model, NetDef &predict_model, int label_index) {
-  // add gradients
-  auto &output = predict_model.external_output(0);
-  add_xent_ops(predict_model, output);
-  add_gradient_ops(predict_model);
-  add_iter_lr_ops(init_model, predict_model, FLAGS_learning_rate);
+void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, int size) {
+  auto &input = dream_model.external_input(0);
+  auto &output = dream_model.external_output(0);
 
-  // add dream operator
-  add_constant_fill_int32_op(init_model, { 1 }, label_index, "label");
-  predict_model.add_external_input("label");
+  // initialize input data
+  add_uniform_fill_float_op(init_model, { FLAGS_batch, 3, size, size }, FLAGS_initial, FLAGS_initial + 1, input);
+
+  // add reduce mean as score
+  add_ensure_cpu_output_op(dream_model, output, output + "_host");
+  add_back_mean_op(dream_model, output + "_host", "mean", 2);
+  add_diagonal_op(dream_model, "mean", "diagonal", { 0, FLAGS_offset });
+  set_device_cpu_op(*add_averaged_loss(dream_model, "diagonal", "score"));
+  set_device_cpu_op(*add_constant_fill_with_op(dream_model, 1.0, "score", "score_grad"));
+
+  // add back prop
+  add_gradient_ops(dream_model);
+
+  // scale gradient
+  add_ensure_cpu_output_op(dream_model, input + "_grad", input + "_grad_host");
+  add_mean_stdev_op(dream_model, input + "_grad_host", "_", input + "_grad_stdev");
+  set_device_cpu_op(*add_constant_fill_with_op(dream_model, 0.0, input + "_grad_stdev", "zero"));
+  set_device_cpu_op(*add_scale_op(dream_model, input + "_grad_stdev", input + "_grad_stdev", 1 / FLAGS_learning_rate));
+  add_affine_scale_op(dream_model, input + "_grad_host", "zero", input + "_grad_stdev", input + "_grad_host", true);
+  add_copy_from_cpu_input_op(dream_model, input + "_grad_host", input + "_grad");
+
+  // apply gradient to input data
   add_constant_fill_float_op(init_model, { 1 }, 1.0, "one");
-  predict_model.add_external_input("one");
-  auto &input = predict_model.external_input(0);
-  add_weighted_sum_op(predict_model, { input, "one", input + "_grad", "lr" }, input);
-}
+  dream_model.add_external_input("one");
+  add_weighted_sum_op(dream_model, { input, "one", input + "_grad", "one" }, input);
 
-void AddNaive(NetDef &init_model, NetDef &predict_model, int channel) {
-  auto &output = predict_model.external_output(0);
-  add_channel_mean_ops(predict_model, output, 1, 4, channel);
-  add_gradient_ops(predict_model);
-  add_uniform_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, -FLAGS_learning_rate / 10, FLAGS_learning_rate / 10, predict_model.external_input(0));
-  // add_constant_fill_float_op(init_model, { 1, 3, FLAGS_size_to_fit, FLAGS_size_to_fit }, 1, predict_model.external_input(0));
+  // scale data to image
+  add_ensure_cpu_output_op(display_model, input, input + "_host");
+  add_mean_stdev_op(display_model, input + "_host", input + "_mean", input + "_stdev");
+  add_affine_scale_op(display_model, input + "_host", input + "_mean", input + "_stdev", "image", true);
+  add_scale_op(display_model, "image", "image", 25.5);
+  add_clip_op(display_model, "image", "image", -128, 128);
 }
 
 void run() {
@@ -73,35 +90,24 @@ void run() {
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
-  std::cout << "channel: " << FLAGS_channel << std::endl;
+  std::cout << "offset: " << FLAGS_offset << std::endl;
+  std::cout << "batch: " << FLAGS_batch << std::endl;
+  std::cout << "size: " << FLAGS_size << std::endl;
 
-  std::cout << "image_file: " << FLAGS_image_file << std::endl;
-  // std::cout << "label: " << FLAGS_label << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
-  std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "scale_runs: " << FLAGS_scale_runs << std::endl;
+  std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
+  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
 
   if (!FLAGS_force_cpu) setupCUDA();
-
-  // auto label_index = -1;
-  // for (int i = 0; i < 1000; i++) {
-  //   if (!strcmp(FLAGS_label.c_str(), imagenet_classes[i])) {
-  //     label_index = i;
-  //   }
-  // }
-  // if (label_index < 0) {
-  //   for (int i = 0; i < 1000; i++) {
-  //     std::cout << "  " << imagenet_classes[i] << std::endl;
-  //   }
-  //   LOG(FATAL) << "~ image class label not found: " << FLAGS_label;
-  // }
 
   std::cout << std::endl;
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
-  NetDef full_init_model, full_predict_model;
+  NetDef base_init_model, base_predict_model;
 
   // check if model present
   CAFFE_ENFORCE(ensureModel(FLAGS_model), "model ", FLAGS_model, " not found");
@@ -110,27 +116,38 @@ void run() {
 
   // read model files
   load_time -= clock();
-  CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &full_init_model));
-  CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model));
+  CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &base_init_model));
+  CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &base_predict_model));
   load_time += clock();
 
-  CheckLayerAvailable(full_predict_model, FLAGS_layer);
+  // std::cout << join_net(base_init_model);
+  // std::cout << join_net(base_predict_model);
 
-  NetDef first_init_model, first_predict_model, second_init_model, second_predict_model;
-  SplitModel(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_force_cpu);
+  // extract dream model
+  CheckLayerAvailable(base_predict_model, FLAGS_layer);
+  NetDef init_model, dream_model, display_model, unused_model;
+  SplitModel(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_force_cpu, false);
 
-  // AddSuperNaive(full_init_model, full_predict_model, label_index);
-  AddNaive(first_init_model, first_predict_model, FLAGS_channel);
+  // set_engine_cudnn_op(*add_cout_op(dream_model, { "_conv2/norm2_scale" }));
 
-  // std::cout << "first_init_model -------------" << std::endl;
-  // print(first_init_model);
-  // std::cout << "first_predict_model -------------" << std::endl;
-  // print(first_predict_model);
+  // add dream operators
+  auto image_size = FLAGS_size;
+  for (int i = 1; i < FLAGS_train_runs / FLAGS_scale_runs; i++) {
+    image_size = image_size * 100 / (100 + FLAGS_percent_incr);
+  }
+  CHECK(image_size > 10) << "train_runs too high or percent_incr too high";
+  AddNaive(init_model, dream_model, display_model, image_size);
 
   // set model to use CUDA
   if (!FLAGS_force_cpu) {
-    set_device_cuda_model(first_init_model);
-    set_device_cuda_model(first_predict_model);
+    set_device_cuda_model(init_model);
+    set_device_cuda_model(dream_model);
+    // set_engine_cudnn_net(dream_model);
+  }
+
+  if (FLAGS_dump_model) {
+    std::cout << join_net(init_model);
+    std::cout << join_net(dream_model);
   }
 
   std::cout << "running model.." << std::endl;
@@ -138,62 +155,76 @@ void run() {
   Workspace workspace;
 
   // setup workspace
-  auto init_net = CreateNet(first_init_model, &workspace);
-  auto predict_net = CreateNet(first_predict_model, &workspace);
+  auto init_net = CreateNet(init_model, &workspace);
+  auto predict_net = CreateNet(dream_model, &workspace);
+  auto display_net = CreateNet(display_model, &workspace);
   init_net->Run();
 
-  auto &input_name = first_predict_model.external_input(0);
 
   // read image as tensor
-  // auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
+  // auto &input_name = dream_model.external_input(0);
+  // auto input = readImageTensor(FLAGS_image_file, FLAGS_size / 10);
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
   // showImageTensor(input, 0);
 
-  TensorCPU show;
-  show.CopyFrom(get_tensor_blob(*workspace.GetBlob("data")));
-  normalize_tensor(show, 50);
-  showImageTensor(show, 0);
-
+  {
+    // show current images
+    std::cout << "start size: " << image_size << std::endl;
+#ifndef WITH_CUDA
+    display_net->Run();
+    auto image = get_tensor_blob(*workspace.GetBlob("image"));
+    showImageTensor(image, FLAGS_size / 2, FLAGS_size / 2);
+#endif
+  }
   // run predictor
-  for (int i = 1; i <= FLAGS_train_runs; i++) {
-    // print(*workspace.GetBlob("data"), "data");
-    dream_time -= clock();
-    predict_net->Run();
-    dream_time += clock();
+  for (auto step = 0; step < FLAGS_train_runs;) {
 
-    auto grad = get_tensor_blob(*workspace.GetBlob("data_grad"));
-    float mean = 0, stdev = 0;
-    mean_stdev_tensor(grad, &mean, &stdev);
-    affine_transform_tensor(grad, FLAGS_learning_rate / (stdev + 1e-8));
+    // scale up image tiny bit
+    image_size = std::min(image_size * (100 + FLAGS_percent_incr) / 100, FLAGS_size);
     auto data = get_tensor_blob(*workspace.GetBlob("data"));
-    add_tensor(data, grad);
-    set_tensor_blob(*workspace.GetBlob("data"), data);
+    auto scaled = scaleImageTensor(data, image_size, image_size);
+    set_tensor_blob(*workspace.GetBlob("data"), scaled);
 
-    // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
-    // print(*workspace.GetBlob("pick"), "pick");
-    // print(*workspace.GetBlob("reshape"), "reshape");
-    // print(*workspace.GetBlob("score"), "score");
-    // print(*workspace.GetBlob("score_grad"), "score_grad");
-    // print(*workspace.GetBlob("reshape_grad"), "reshape_grad");
-    // print(*workspace.GetBlob("pick_grad"), "pick_grad");
-    // print(*workspace.GetBlob(FLAGS_layer + "_grad"), FLAGS_layer + "_grad");
-    // print(*workspace.GetBlob("data_grad"), "data_grad");
-    // break;
+    for (int i = 0; i < FLAGS_scale_runs; i++, step++) {
+      dream_time -= clock();
+      predict_net->Run();
+      dream_time += clock();
 
 
-    if (i % (10 * cuda_multipier) == 0) {
-      auto score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
-      std::cout << "step: " << i << "  score: " << score << "  mean: " << mean << "  stdev: " << stdev << std::endl;
-      if (score == 0) {
-        std::cout << "score is zero, try lower learning rate: --learning_rate 1e" << ((int)log10(FLAGS_learning_rate) - 1) << std::endl;
-        break;
+      if (!step) {
+        auto depth = get_tensor_blob(*workspace.GetBlob(FLAGS_layer)).dim(1);
+        std::cout << "channel depth: " << depth << std::endl;
+
+        // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
+        // print(*workspace.GetBlob("mean"), "mean");
+        // print(*workspace.GetBlob("diagonal"), "diagonal");
+        // print(*workspace.GetBlob("score"), "score");
+        // print(*workspace.GetBlob("score_grad"), "score_grad");
+        // print(*workspace.GetBlob("diagonal_grad"), "diagonal_grad");
+        // print(*workspace.GetBlob("mean_grad"), "mean_grad");
+        // print(*workspace.GetBlob(FLAGS_layer + "_grad"), FLAGS_layer + "_grad");
+        // print(*workspace.GetBlob("data_grad"), "data_grad");
+        // print(*workspace.GetBlob("data_grad_stdev"), "data_grad_stdev");
+        // print(*workspace.GetBlob("zero"), "zero");
+        // print(*workspace.GetBlob("one"), "one");
+        // print(*workspace.GetBlob("data"), "data");
       }
-
-      TensorCPU show; show.CopyFrom(data);
-      normalize_tensor(show, 50);
-      showImageTensor(show, 0);
-      // writeImageTensor(show, { "deep_" + std::to_string(i) + ".jpg" });
     }
+
+    auto score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
+    std::cout << "step: " << step << "  score: " << score << "  size: " << image_size << std::endl;
+
+    // show current images
+    display_net->Run();
+    auto image = get_tensor_blob(*workspace.GetBlob("image"));
+    showImageTensor(image, FLAGS_size / 2, FLAGS_size / 2);
+  }
+
+  {
+    auto image = get_tensor_blob(*workspace.GetBlob("image"));
+    auto safe_layer = FLAGS_layer;
+    std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
+    writeImageTensor(image, "dream/" + safe_layer + "_" + std::to_string(FLAGS_offset));
   }
 
   std::cout << std::endl;
