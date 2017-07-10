@@ -97,20 +97,78 @@ cv::Mat tensorToImage(TensorCPU &tensor, int index, float mean = 128) {
   return image;
 }
 
-void showImageTensor(TensorCPU &tensor, int index, const std::string &name = "default", float mean = 128) {
-  const auto &image = tensorToImage(tensor, index, mean);
-  cv::namedWindow(name, cv::WINDOW_AUTOSIZE);
-  cv::imshow(name, image);
-  cv::waitKey(1);
+static const auto screen_width = 1600;
+static const auto window_padding = 4;
+
+void showImageTensor(TensorCPU &tensor, int width, int height, const std::string &name = "default", float mean = 128) {
+  for (auto i = 0; i < tensor.dim(0); i++) {
+    auto title = name + "-" + std::to_string(i);
+    auto image = tensorToImage(tensor, i, mean);
+#ifndef WITH_CUDA
+    cv::resize(image, image, cv::Size(width, height));
+    cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
+    auto max_cols = screen_width / (image.cols + window_padding);
+    cv::moveWindow(title, (i % max_cols) * (image.cols + window_padding), (i / max_cols) * (image.rows + window_padding));
+    cv::imshow(title, image);
+    cv::waitKey(1);
+#endif
+  }
 }
 
-void writeImageTensor(TensorCPU &tensor, const std::vector<std::string> &filenames, float mean = 128) {
+void writeImageTensor(TensorCPU &tensor, const std::string &name, float mean = 128) {
   auto count = tensor.dim(0);
-  CHECK(filenames.size() == count);
   for (int i = 0; i < count; i++) {
-    const auto &image = tensorToImage(tensor, i, mean);
-    imwrite(filenames[i], image);
+    auto image = tensorToImage(tensor, i, mean);
+    auto filename = name + "_" + std::to_string(i) + ".jpg";
+    vector<int> params({ CV_IMWRITE_JPEG_QUALITY, 90 });
+    CHECK(cv::imwrite(filename, image, params));
+    // vector<uchar> buffer;
+    // cv::imencode(".jpg", image, buffer, params);
+    // std::ofstream image_file(filename, std::ios::out | std::ios::binary);
+    // if (image_file.is_open()) {
+    //   image_file.write((char *)&buffer[0], buffer.size());
+    //   image_file.close();
+    // }
   }
+}
+
+TensorCPU imageToTensor(cv::Mat &image, float mean = 128) {
+  std::vector<float> data;
+  image.convertTo(image, CV_32FC3, 1.0, -mean);
+  vector<cv::Mat> channels(3);
+  cv::split(image, channels);
+  for (auto &c: channels) {
+    data.insert(data.end(), (float *)c.datastart, (float *)c.dataend);
+  }
+  std::vector<TIndex> dims({ 1, 3, image.rows, image.cols });
+  return TensorCPU(dims, data, NULL);
+}
+
+TensorCPU scaleImageTensor(const TensorCPU &tensor, int width, int height) {
+  auto count = tensor.dim(0), dim_c = tensor.dim(1), dim_h = tensor.dim(2), dim_w = tensor.dim(3);
+  std::vector<float> output;
+  output.reserve(count * dim_c * height * width);
+  auto input = tensor.data<float>();
+  vector<cv::Mat> channels(dim_c);
+  for (int i = 0; i < count; i++) {
+    for (auto &j: channels) {
+      j = cv::Mat(dim_h, dim_w, CV_32F, (void *)input);
+      input += (dim_w * dim_h);
+    }
+    cv::Mat image;
+    cv::merge(channels, image);
+    // image.convertTo(image, CV_8UC3, 1.0, mean);
+
+    cv::resize(image, image, cv::Size(width, height));
+
+    // image.convertTo(image, CV_32FC3, 1.0, -mean);
+    cv::split(image, channels);
+    for (auto &c: channels) {
+      output.insert(output.end(), (float *)c.datastart, (float *)c.dataend);
+    }
+  }
+  std::vector<TIndex> dims({ count, dim_c, height, width });
+  return TensorCPU(dims, output, NULL);
 }
 
 }  // namespace caffe2
