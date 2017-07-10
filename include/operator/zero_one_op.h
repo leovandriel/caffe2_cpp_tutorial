@@ -1,5 +1,5 @@
-#ifndef OPERATOR_ZERO_ONE_H
-#define OPERATOR_ZERO_ONE_H
+#ifndef ZERO_ONE_OP_H
+#define ZERO_ONE_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -68,4 +68,4 @@ SHOULD_NOT_DO_GRADIENT(ZeroOne);
 
 }  // namespace caffe2
 
-#endif  // OPERATOR_ZERO_ONE_H
+#endif  // ZERO_ONE_OP_H

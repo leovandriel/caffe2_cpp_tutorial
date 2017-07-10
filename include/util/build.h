@@ -84,11 +84,12 @@ OperatorDef *add_tensor_protos_db_input_op(NetDef &model, const std::string &rea
   return op;
 }
 
-OperatorDef *add_cout_op(NetDef &model, const std::string &param) {
+OperatorDef *add_cout_op(NetDef &model, const std::vector<std::string> &params) {
   auto op = model.add_op();
   op->set_type("Cout");
-  auto arg = op->add_arg();
-  op->add_input(param);
+  for (auto param: params) {
+    op->add_input(param);
+  }
   return op;
 }
 

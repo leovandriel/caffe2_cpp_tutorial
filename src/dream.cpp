@@ -13,7 +13,7 @@
 #include "util/net.h"
 #include "util/math.h"
 #include "res/imagenet_classes.h"
-#include "operator/operator_cout.h"
+#include "operator/cout_op.h"
 
 
 CAFFE2_DEFINE_string(model, "googlenet", "Name of one of the pre-trained models.");
