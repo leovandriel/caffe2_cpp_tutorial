@@ -8,16 +8,19 @@ namespace caffe2 {
 
 static const std::set<std::string> trainable_ops({
   "Add",
+  "AffineScale",
   "AveragedLoss",
   "AveragePool",
+  "BackMean",
   "Concat",
   "Conv",
+  "Diagonal",
+  "EnsureCPUOutput",
   "FC",
   "LabelCrossEntropy",
   "LRN",
   "MaxPool",
   "Mul",
-  "ReduceBackMean",
   "Relu",
   "Reshape",
   "Slice",
@@ -119,11 +122,69 @@ OperatorDef *add_averaged_loss(NetDef &model, const std::string &input, const st
   return op;
 }
 
-OperatorDef *add_reduce_back_mean_op(NetDef &model, const std::string &input, const std::string &output) {
+OperatorDef *add_ensure_cpu_output_op(NetDef &model, const std::string &input, const std::string &output) {
   auto op = model.add_op();
-  op->set_type("ReduceBackMean");
+  op->set_type("EnsureCPUOutput");
   op->add_input(input);
   op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_copy_from_cpu_input_op(NetDef &model, const std::string &input, const std::string &output) {
+  auto op = model.add_op();
+  op->set_type("CopyFromCPUInput");
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_diagonal_op(NetDef &model, const std::string &input, const std::string &diagonal, const std::vector<int> &offset) {
+  auto op = model.add_op();
+  op->set_type("Diagonal");
+  auto arg = op->add_arg();
+  arg->set_name("offset");
+  for (auto o: offset) {
+    arg->add_ints(o);
+  }
+  op->add_input(input);
+  op->add_output(diagonal);
+  op->mutable_device_option()->set_device_type(CPU);
+  return op;
+}
+
+OperatorDef *add_back_mean_op(NetDef &model, const std::string &input, const std::string &mean, int count = 1) {
+  auto op = model.add_op();
+  op->set_type("BackMean");
+  auto arg = op->add_arg();
+  arg->set_name("count");
+  arg->set_i(count);
+  op->add_input(input);
+  op->add_output(mean);
+  op->mutable_device_option()->set_device_type(CPU);
+  return op;
+}
+
+OperatorDef *add_mean_stdev_op(NetDef &model, const std::string &input, const std::string &mean, const std::string &scale) {
+  auto op = model.add_op();
+  op->set_type("MeanStdev");
+  op->add_input(input);
+  op->add_output(mean);
+  op->add_output(scale);
+  op->mutable_device_option()->set_device_type(CPU);
+  return op;
+}
+
+OperatorDef *add_affine_scale_op(NetDef &model, const std::string &input, const std::string &mean, const std::string &scale, const std::string &transformed, bool inverse = false) {
+  auto op = model.add_op();
+  op->set_type("AffineScale");
+  auto arg = op->add_arg();
+  arg->set_name("inverse");
+  arg->set_i(inverse);
+  op->add_input(input);
+  op->add_input(mean);
+  op->add_input(scale);
+  op->add_output(transformed);
+  op->mutable_device_option()->set_device_type(CPU);
   return op;
 }
 
@@ -220,6 +281,20 @@ OperatorDef *add_scale_op(NetDef &model, const std::string &input, const std::st
   return op;
 }
 
+OperatorDef *add_clip_op(NetDef &model, const std::string &input, const std::string &output, float min, float max) {
+  auto op = model.add_op();
+  op->set_type("Clip");
+  auto arg1 = op->add_arg();
+  arg1->set_name("min");
+  arg1->set_f(min);
+  auto arg2 = op->add_arg();
+  arg2->set_name("max");
+  arg2->set_f(max);
+  op->add_input(input);
+  op->add_output(output);
+  return op;
+}
+
 OperatorDef *add_cast_op(NetDef &model, const std::string &input, const std::string &output, TensorProto::DataType type) {
   auto op = model.add_op();
   op->set_type("Cast");
@@ -292,6 +367,24 @@ OperatorDef *add_constant_fill_with_op(NetDef &model, float value, const std::st
   arg->set_f(value);
   op->add_input(input);
   op->add_output(output);
+  return op;
+}
+
+OperatorDef *add_vector_fill_op(NetDef &model, const std::vector<int> &values, const std::string &name) {
+  auto op = model.add_op();
+  op->set_type("GivenTensorFill");
+  auto arg1 = op->add_arg();
+  arg1->set_name("shape");
+  arg1->add_ints(values.size());
+  auto arg2 = op->add_arg();
+  arg2->set_name("values");
+  for (auto v: values) {
+    arg2->add_ints(v);
+  }
+  auto arg3 = op->add_arg();
+  arg3->set_name("dtype");
+  arg3->set_i(TensorProto_DataType_INT32);
+  op->add_output(name);
   return op;
 }
 
@@ -402,21 +495,6 @@ void add_xent_ops(NetDef &model, const std::string &output) {
   add_averaged_loss(model, xent_name, loss_name);
   add_accuracy_op(model, output, label_name, accuracy_name);
   add_constant_fill_with_op(model, 1.0, loss_name, loss_name + gradient_suffix);
-}
-
-void add_channel_mean_ops(NetDef &model, const std::string &output, int dim, int count, int channel) {
-  std::vector<std::pair<int, int>> ranges(count);
-  for (int i = 0; i < count; i++) {
-    if (i == dim) {
-      ranges[i] = { channel, channel + 1 };
-    } else {
-      ranges[i] = { 0, -1 };
-    }
-  }
-  add_slice_op(model, output, "pick", ranges);
-  add_reshape_op(model, "pick", "reshape", { -1 });
-  add_averaged_loss(model, "reshape", "score");
-  add_constant_fill_with_op(model, 1.0, "score", "score" + gradient_suffix);
 }
 
 std::map<std::string, int> collect_param_sizes(NetDef &model) {
