@@ -37,6 +37,11 @@ static const std::set<std::string> non_trainable_ops({
   "TensorProtosDBInput",
 });
 
+static const std::map<std::string, std::string> custom_gradient({
+  { "EnsureCPUOutput", "CopyFromCPUInput" },
+  { "CopyFromCPUInput", "EnsureCPUOutput" },
+});
+
 static const std::set<std::string> filler_ops({
   "UniformFill",
   "UniformIntFill",
@@ -444,14 +449,34 @@ void set_engine_cudnn_op(OperatorDef &op) {
   op.set_engine("CUDNN");
 }
 
-OperatorDef *add_gradient_op(NetDef &model, OperatorDef &op) {
-  vector<GradientWrapper> output(op.output_size());
-  for (auto i = 0; i < output.size(); i++) {
-    output[i].dense_ = op.output(i) + gradient_suffix;
+void set_engine_cudnn_net(NetDef &net) {
+  for (auto &op: *net.mutable_op()) {
+    op.set_engine("CUDNN");
   }
-  GradientOpsMeta meta = GetGradientForOp(op, output);
+}
+
+OperatorDef *add_gradient_op(NetDef &model, OperatorDef &op) {
   auto grad = model.add_op();
-  grad->CopyFrom(meta.ops_[0]);
+  if (custom_gradient.find(op.type()) == custom_gradient.end()) {
+    vector<GradientWrapper> output(op.output_size());
+    for (auto i = 0; i < output.size(); i++) {
+      output[i].dense_ = op.output(i) + gradient_suffix;
+    }
+    GradientOpsMeta meta = GetGradientForOp(op, output);
+    grad->CopyFrom(meta.ops_[0]);
+  } else {
+    grad->set_type(custom_gradient.at(op.type()));
+    for (auto arg: op.arg()) {
+      auto copy = grad->add_arg();
+      copy->CopyFrom(arg);
+    }
+    for (auto output: op.output()) {
+      grad->add_input(output);
+    }
+    for (auto input: op.input()) {
+      grad->add_output(input + "_grad");
+    }
+  }
   grad->set_is_gradient_op(true);
   return grad;
 }
