@@ -191,22 +191,13 @@ void run() {
     }
   }
 
-  std::set<std::string> static_inputs;
-  for (const auto &op: full_predict_model.op()) {
-    if (op.input(0) != op.output(0) && op.input(0) == FLAGS_layer) {
-      break;
-    }
-    for (const auto &input: op.input()) {
-      static_inputs.insert(input);
-    }
-  }
-
   NetDef deploy_init_model; // the final initialization model
   deploy_init_model.set_name("retrain_" + full_init_model.name());
   for (const auto &op: full_init_model.op()) {
     auto &output = op.output(0);
-    if (static_inputs.find(output) == static_inputs.end()) {
-      auto tensor = get_tensor_blob(*workspace.GetBlob(output));
+    auto blob = workspace.GetBlob(output);
+    if (blob) {
+      auto tensor = get_tensor_blob(*blob);
       auto init_op = deploy_init_model.add_op();
       init_op->set_type("GivenTensorFill");
       auto arg1 = init_op->add_arg();
@@ -226,11 +217,8 @@ void run() {
     }
   }
 
-  // std::cout << "full_init_model -------------" << std::endl;
-  // print(full_init_model);
-  // std::cout << "deploy_init_model -------------" << std::endl;
-  // print(deploy_init_model);
-
+  // std::cout << join_net(full_init_model);
+  // std::cout << join_net(deploy_init_model);
 
   WriteProtoToBinaryFile(deploy_init_model, path_prefix + "init_net.pb");
   WriteProtoToBinaryFile(full_predict_model, path_prefix + "predict_net.pb");
