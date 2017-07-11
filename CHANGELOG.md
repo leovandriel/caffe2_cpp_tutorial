@@ -3,6 +3,7 @@ Change Log
 
 ### master (untagged)
 
+* Add Deep Dream example
 * Add Retrain example
 
 ### 0.0.2 (2017-06-26)

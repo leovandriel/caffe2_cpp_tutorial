@@ -16,13 +16,13 @@
 #include "operator/cout_op.h"
 
 
-CAFFE2_DEFINE_string(model, "googlenet", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(layer, "inception_3b/5x5_reduce", "Name of the layer on which to split the model.");
+CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
+CAFFE2_DEFINE_string(layer, "", "Name of the layer on which to split the model.");
 CAFFE2_DEFINE_int(offset, 0, "The first channel to run.");
-CAFFE2_DEFINE_int(batch, 5, "The number of channels to process in parallel.");
-CAFFE2_DEFINE_int(size, 200, "The goal image size.");
+CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
+CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
-CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
+CAFFE2_DEFINE_int(train_runs, 60, "The of training runs.");
 CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, 0, "The of initial value.");
@@ -80,6 +80,11 @@ void run() {
     for (auto const &pair: model_lookup) {
       std::cerr << "  " << pair.first << std::endl;
     }
+    return;
+  }
+
+  if (!FLAGS_layer.size()) {
+    std::cerr << "specify a layer name using --layer <name>" << std::endl;
     return;
   }
 
