@@ -18,6 +18,10 @@ Check out the actual tutorials at [https://caffe2.ai/docs/tutorials.html](https:
 
         brew install cmake leveldb opencv
 
+    On Ubuntu:
+
+        apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev
+
 2. Install Caffe2
 
     Follow the Caffe2 installation instructions: [https://caffe2.ai/docs/getting-started.html](https://caffe2.ai/docs/getting-started.html)
@@ -72,13 +76,27 @@ The above models are all trained on ImageNet data, which means they will only be
 
 First divide all images in subfolders with the label a folder name. Then to retrain the final layer of GoogleNet:
 
-    make && ./bin/imagenet --model googlenet --folder <image-folder> --layer pool5/7x7_s1
+    make && ./bin/retrain --model googlenet --folder <image-folder> --layer pool5/7x7_s1
 
 Or if you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
-    make && ./bin/imagenet --model vgg16 --folder <image-folder> --layer fc6
+    make && ./bin/retrain --model vgg16 --folder <image-folder> --layer fc6
 
 See [DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition](https://arxiv.org/pdf/1310.1531v1.pdf) for more information.
+
+## Deep Dream
+
+One way to inspect the weight parameters of a trained network is by using a technique called Deep Dream. This approach does backpropagation as usual, but instead of updating the weights, it updates the input data. By focussing on a specific channel in a specific layer, we can get an idea of what this particular part of the model was trained to recognize.
+
+The `inception_3b/5x5_reduce` layer in GoogleNet:
+
+    make && ./bin/dream --model googlenet --layer inception_3b/5x5_reduce
+
+Or if you have more (GPU) power at your disposal, the `conv3_1` layer in VGG16:
+
+    make && ./bin/dream --model vgg16 --layer conv3_1
+
+See [Inceptionism: Going Deeper into Neural Networks](https://research.googleblog.com/2015/06/inceptionism-going-deeper-into-neural.html) for more information.
 
 ## Troubleshooting
 
