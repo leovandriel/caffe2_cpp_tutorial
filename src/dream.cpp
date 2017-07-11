@@ -18,7 +18,7 @@
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "", "Name of the layer on which to split the model.");
-CAFFE2_DEFINE_int(offset, 0, "The first channel to run.");
+CAFFE2_DEFINE_int(channel, 0, "The first channel to run.");
 CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
 CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
@@ -42,7 +42,7 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
   // add reduce mean as score
   add_ensure_cpu_output_op(dream_model, output, output + "_host");
   add_back_mean_op(dream_model, output + "_host", "mean", 2);
-  add_diagonal_op(dream_model, "mean", "diagonal", { 0, FLAGS_offset });
+  add_diagonal_op(dream_model, "mean", "diagonal", { 0, FLAGS_channel });
   set_device_cpu_op(*add_averaged_loss(dream_model, "diagonal", "score"));
   set_device_cpu_op(*add_constant_fill_with_op(dream_model, 1.0, "score", "score_grad"));
 
@@ -95,7 +95,7 @@ void run() {
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
-  std::cout << "offset: " << FLAGS_offset << std::endl;
+  std::cout << "channel: " << FLAGS_channel << std::endl;
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "size: " << FLAGS_size << std::endl;
 
@@ -229,7 +229,7 @@ void run() {
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    writeImageTensor(image, "dream/" + safe_layer + "_" + std::to_string(FLAGS_offset));
+    writeImageTensor(image, "dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
   }
 
   std::cout << std::endl;
