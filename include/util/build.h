@@ -620,10 +620,10 @@ OperatorDef *add_gradient_op(NetDef &model, OperatorDef &op) {
       copy->CopyFrom(arg);
     }
     for (auto output: op.output()) {
-      grad->add_input(output);
+      grad->add_input(output + gradient_suffix);
     }
     for (auto input: op.input()) {
-      grad->add_output(input + "_grad");
+      grad->add_output(input + gradient_suffix);
     }
   }
   grad->set_is_gradient_op(true);
