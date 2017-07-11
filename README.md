@@ -88,11 +88,11 @@ See [DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recogniti
 
 One way to inspect the weight parameters of a trained network is by using a technique called Deep Dream. This approach does backpropagation as usual, but instead of updating the weights, it updates the input data. By focussing on a specific channel in a specific layer, we can get an idea of what this particular part of the model was trained to recognize.
 
-The `inception_3b/5x5_reduce` layer in GoogleNet:
+The 139th channel in the `inception_3b/5x5_reduce` layer in GoogleNet:
 
-    make && ./bin/dream --model googlenet --layer inception_3b/5x5_reduce
+    make && ./bin/dream --model googlenet --layer inception_4d/5x5 --channel 139
 
-Or if you have more (GPU) power at your disposal, the `conv3_1` layer in VGG16:
+Or if you have more (GPU) power at your disposal, the first channel in `conv3_1` layer in VGG16:
 
     make && ./bin/dream --model vgg16 --layer conv3_1
 
