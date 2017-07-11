@@ -30,7 +30,7 @@ Check out the actual tutorials at [https://caffe2.ai/docs/tutorials.html](https:
 
     Internally it creates a `build` folder and runs CMake from there. This also downloads the resources that are required for running some of the tutorials.
 
-Note: sources are developed and tested on macOS, but should be fairly OS-agnostic.
+Note: sources are developed and tested on macOS and Ubuntu.
 
 
 ## Tutorials
