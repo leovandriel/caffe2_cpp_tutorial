@@ -25,7 +25,7 @@ CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 CAFFE2_DEFINE_int(train_runs, 60, "The of training runs.");
 CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
-CAFFE2_DEFINE_int(initial, 0, "The of initial value.");
+CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
@@ -102,6 +102,7 @@ void run() {
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "scale_runs: " << FLAGS_scale_runs << std::endl;
   std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
+  std::cout << "initial: " << FLAGS_initial << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
   std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
@@ -209,9 +210,6 @@ void run() {
         // print(*workspace.GetBlob("mean_grad"), "mean_grad");
         // print(*workspace.GetBlob(FLAGS_layer + "_grad"), FLAGS_layer + "_grad");
         // print(*workspace.GetBlob("data_grad"), "data_grad");
-        // print(*workspace.GetBlob("data_grad_stdev"), "data_grad_stdev");
-        // print(*workspace.GetBlob("zero"), "zero");
-        // print(*workspace.GetBlob("one"), "one");
         // print(*workspace.GetBlob("data"), "data");
       }
     }

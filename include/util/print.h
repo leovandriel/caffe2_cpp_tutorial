@@ -86,31 +86,31 @@ void print(const NetDef &def) {
 }
 
 template<typename T, typename C>
-void printType(const Tensor<C> &tensor, const std::string &name = "") {
+void printType(const Tensor<C> &tensor, const std::string &name, int max) {
   const auto& data = tensor.template data<T>();
   if (name.length() > 0) std::cout << name << "(" << tensor.dims() << "): ";
-  for (auto i = 0; i < (tensor.size() > 100 ? 100 : tensor.size()); ++i) {
+  for (auto i = 0; i < (tensor.size() > max ? max : tensor.size()); ++i) {
     std::cout << (float)data[i] << ' ';
   }
-  if (tensor.size() > 100) {
+  if (tensor.size() > max) {
     std::cout << "... (" << *std::min_element(data, data + tensor.size()) << "," << *std::max_element(data, data + tensor.size()) << ")";
   }
   if (name.length() > 0) std::cout << std::endl;
 }
 
 template<typename C>
-void print(const Tensor<C> &tensor, const std::string &name = "") {
+void print(const Tensor<C> &tensor, const std::string &name = "", int max = 100) {
   if (tensor.template IsType<float>()) {
-    return printType<float>(tensor, name);
+    return printType<float>(tensor, name, max);
   }
   if (tensor.template IsType<int>()) {
-    return printType<int>(tensor, name);
+    return printType<int>(tensor, name, max);
   }
   if (tensor.template IsType<uint8_t>()) {
-    return printType<uint8_t>(tensor, name);
+    return printType<uint8_t>(tensor, name, max);
   }
   if (tensor.template IsType<int8_t>()) {
-    return printType<int8_t>(tensor, name);
+    return printType<int8_t>(tensor, name, max);
   }
   std::cout << name << "?" << std::endl;
 }
