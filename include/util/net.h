@@ -239,6 +239,11 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size() << " images processed" << std::endl;
 }
 
+void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, const std::string &db_type, int size_to_fit) {
+  NetDef none;
+  PreProcess(image_files, db_paths, none, none, db_type, 64, size_to_fit);
+}
+
 void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu, bool inclusive = true) {
   std::cout << "split model.." << std::endl;
   std::set<std::string> static_inputs = collect_layers(base_predict_model, layer);
@@ -311,11 +316,13 @@ void TrainModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
   for (const auto &op: base_predict_model.op()) {
     auto new_op = train_predict_model.add_op();
     new_op->CopyFrom(op);
+    set_trainable(*new_op, true);
     if (op.type() == "FC") {
       last_w = op.input(1);
       last_b = op.input(2);
     }
   }
+  set_rename_inplace(train_predict_model);
   for (const auto &op: base_init_model.op()) {
     auto &output = op.output(0);
     auto init_op = train_init_model.add_op();
@@ -353,13 +360,10 @@ void TrainModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
 }
 
 void TestModel(NetDef &base_predict_model, NetDef &test_predict_model) {
-  std::set<std::string> strip_op_types({ "Dropout" });
   for (const auto &op: base_predict_model.op()) {
-    auto train_only = (strip_op_types.find(op.type()) != strip_op_types.end());
-    if (!train_only) {
-      auto new_op = test_predict_model.add_op();
-      new_op->CopyFrom(op);
-    }
+    auto new_op = test_predict_model.add_op();
+    new_op->CopyFrom(op);
+    set_trainable(*new_op, false);
   }
   for (const auto &input: base_predict_model.external_input()) {
     test_predict_model.add_external_input(input);
@@ -372,8 +376,8 @@ void TestModel(NetDef &base_predict_model, NetDef &test_predict_model) {
 
 void CheckLayerAvailable(NetDef &model, const std::string &layer)
     {
-    std::vector<std::pair<std::string, std::string>> available_layers;
-    auto layer_found = false;
+    std::vector<std::pair<std::string, std::string>> available_layers({ { model.external_input(0), "Input" } });
+    auto layer_found = (model.external_input(0) == layer);
     for (const auto &op: model.op()) {
       if (op.input(0) != op.output(0)) {
         available_layers.push_back({ op.output(0), op.type() });
