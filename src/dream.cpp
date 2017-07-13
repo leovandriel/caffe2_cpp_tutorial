@@ -5,6 +5,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include "caffe2/util/tensor.h"
+
 #include "util/models.h"
 #include "util/print.h"
 #include "util/image.h"
@@ -171,7 +173,7 @@ void run() {
   // auto &input_name = dream_model.external_input(0);
   // auto input = readImageTensor(FLAGS_image_file, FLAGS_size / 10);
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
-  // showImageTensor(input, 0);
+  // TensorUtil(input).showImages(0);
 
   {
     // show current images
@@ -179,7 +181,7 @@ void run() {
 #ifndef WITH_CUDA
     display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
-    showImageTensor(image, FLAGS_size / 2, FLAGS_size / 2);
+    TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
 #endif
   }
   // run predictor
@@ -220,14 +222,14 @@ void run() {
     // show current images
     display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
-    showImageTensor(image, FLAGS_size / 2, FLAGS_size / 2);
+    TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
   }
 
   {
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    writeImageTensor(image, "dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
+    TensorUtil(image).writeImages("dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
   }
 
   std::cout << std::endl;

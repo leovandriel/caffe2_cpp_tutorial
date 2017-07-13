@@ -82,56 +82,6 @@ TensorCPU readImageTensor(const std::string &filename, int size) {
   return readImageTensor({ filename }, size, indices);
 }
 
-cv::Mat tensorToImage(TensorCPU &tensor, int index, float mean = 128) {
-  auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2), width = tensor.dim(3);
-  CHECK(index < count);
-  auto data = tensor.data<float>() + (index * width * height);
-  vector<cv::Mat> channels(depth);
-  for (auto &j: channels) {
-    j = cv::Mat(height, width, CV_32F, (void *)data);
-    data += (width * height);
-  }
-  cv::Mat image;
-  cv::merge(channels, image);
-  image.convertTo(image, CV_8UC3, 1.0, mean);
-  return image;
-}
-
-static const auto screen_width = 1600;
-static const auto window_padding = 4;
-
-void showImageTensor(TensorCPU &tensor, int width, int height, const std::string &name = "default", float mean = 128) {
-  for (auto i = 0; i < tensor.dim(0); i++) {
-    auto title = name + "-" + std::to_string(i);
-    auto image = tensorToImage(tensor, i, mean);
-#ifndef WITH_CUDA
-    cv::resize(image, image, cv::Size(width, height));
-    cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
-    auto max_cols = screen_width / (image.cols + window_padding);
-    cv::moveWindow(title, (i % max_cols) * (image.cols + window_padding), (i / max_cols) * (image.rows + window_padding));
-    cv::imshow(title, image);
-    cv::waitKey(1);
-#endif
-  }
-}
-
-void writeImageTensor(TensorCPU &tensor, const std::string &name, float mean = 128) {
-  auto count = tensor.dim(0);
-  for (int i = 0; i < count; i++) {
-    auto image = tensorToImage(tensor, i, mean);
-    auto filename = name + "_" + std::to_string(i) + ".jpg";
-    vector<int> params({ CV_IMWRITE_JPEG_QUALITY, 90 });
-    CHECK(cv::imwrite(filename, image, params));
-    // vector<uchar> buffer;
-    // cv::imencode(".jpg", image, buffer, params);
-    // std::ofstream image_file(filename, std::ios::out | std::ios::binary);
-    // if (image_file.is_open()) {
-    //   image_file.write((char *)&buffer[0], buffer.size());
-    //   image_file.close();
-    // }
-  }
-}
-
 TensorCPU imageToTensor(cv::Mat &image, float mean = 128) {
   std::vector<float> data;
   image.convertTo(image, CV_32FC3, 1.0, -mean);

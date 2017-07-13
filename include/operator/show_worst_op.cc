@@ -1,5 +1,7 @@
 #include "operator/show_worst_op.h"
 
+#include "caffe2/util/tensor.h"
+
 #ifdef WITH_CUDA
 #include "caffe2/core/common_cudnn.h"
 #include "caffe2/core/context_gpu.h"
@@ -62,42 +64,13 @@ void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &ima
     }
   }
 
-  float scale = 200.f / image.dim32(3);
+  TensorUtil util(image);
   if (pos_i >= 0) {
-    auto data = imageData + (pos_i * image.dim32(1) * image.dim32(2) * image.dim32(3));
-    vector<cv::Mat> channels(image.dim32(1));
-    for (auto &j: channels) {
-      j = cv::Mat(image.dim32(2), image.dim32(3), CV_32F, (void *)data);
-      data += (image.dim32(2) * image.dim32(3));
-    }
-    cv::Mat mat;
-    cv::merge(channels, mat);
-    mat.convertTo(mat, CV_8UC3, 1.0, 128);
-
-    cv::resize(mat, mat, cv::Size(), scale, scale, cv::INTER_NEAREST);
-    cv::namedWindow("pos", cv::WINDOW_AUTOSIZE);
-    // cv::setWindowTitle("pos", "worst correct, pred: " + std::to_string((int)(100 * pos_pred)) + "%  label: " + std::to_string(pos_label) + "  iter: " + std::to_string(iter));
-    cv::imshow("pos", mat);
+    util.showImage(200, 200, pos_i, "pos", 0);
   }
   if (neg_i >= 0) {
-    auto data = imageData + (neg_i * image.dim32(1) * image.dim32(2) * image.dim32(3));
-    vector<cv::Mat> channels(image.dim32(1));
-    for (auto &j: channels) {
-      j = cv::Mat(image.dim32(2), image.dim32(3), CV_32F, (void *)data);
-      data += (image.dim32(2) * image.dim32(3));
-    }
-    cv::Mat mat;
-    cv::merge(channels, mat);
-    mat.convertTo(mat, CV_8UC3, 1.0, 128);
-
-    cv::resize(mat, mat, cv::Size(), scale, scale, cv::INTER_NEAREST);
-    cv::namedWindow("neg", cv::WINDOW_AUTOSIZE);
-    // cv::setWindowTitle("neg", "worst incorrect, pred: " + std::to_string((int)(100 * neg_pred)) + "%  label: " + std::to_string(neg_label) + "  iter: " + std::to_string(iter));
-    cv::moveWindow("neg", mat.cols, 0);
-    cv::imshow("neg", mat);
+    util.showImage(200, 200, neg_i, "neg", 0);
   }
-  cv::waitKey(1000);
-
 }
 
 template <>
