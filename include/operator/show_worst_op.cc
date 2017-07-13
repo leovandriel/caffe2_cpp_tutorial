@@ -1,5 +1,11 @@
 #include "operator/show_worst_op.h"
 
+#ifdef WITH_CUDA
+#include "caffe2/core/common_cudnn.h"
+#include "caffe2/core/context_gpu.h"
+#include "caffe2/core/types.h"
+#endif
+
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -7,18 +13,14 @@
 
 namespace caffe2 {
 
-template <>
-bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
-  auto &X = Input(PREDICTION);
-  auto &label = Input(LABEL);
-  auto &image = Input(DATA);
-  auto iter = -1;
-  if (InputSize() > 3) {
-    iter = Input(ITER).data<int64_t>()[0];
-    if (iter % 10) {
-      return true;
-    }
-  }
+void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &image) {
+  // auto iter = -1;
+  // if (InputSize() > 3) {
+  //   iter = Input(ITER).data<int64_t>()[0];
+  //   if (iter % 10) {
+  //     return true;
+  //   }
+  // }
   DCHECK_EQ(X.ndim(), 2);
   int N = X.dim32(0);
   int D = X.dim32(1);
@@ -61,7 +63,7 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
   }
 
   float scale = 200.f / image.dim32(3);
-  if (pos_i > 0) {
+  if (pos_i >= 0) {
     auto data = imageData + (pos_i * image.dim32(1) * image.dim32(2) * image.dim32(3));
     vector<cv::Mat> channels(image.dim32(1));
     for (auto &j: channels) {
@@ -77,7 +79,7 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
     // cv::setWindowTitle("pos", "worst correct, pred: " + std::to_string((int)(100 * pos_pred)) + "%  label: " + std::to_string(pos_label) + "  iter: " + std::to_string(iter));
     cv::imshow("pos", mat);
   }
-  if (neg_i > 0) {
+  if (neg_i >= 0) {
     auto data = imageData + (neg_i * image.dim32(1) * image.dim32(2) * image.dim32(3));
     vector<cv::Mat> channels(image.dim32(1));
     for (auto &j: channels) {
@@ -96,12 +98,29 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
   }
   cv::waitKey(1000);
 
+}
+
+template <>
+bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
+  show_worst(Input(PREDICTION), Input(LABEL), Input(DATA));
   return true;
 }
+
+#ifdef WITH_CUDA
+template <>
+bool ShowWorstOp<float, CUDAContext>::RunOnDevice() {
+  show_worst(TensorCPU(Input(PREDICTION)), TensorCPU(Input(LABEL)), TensorCPU(Input(DATA)));
+  return true;
+}
+#endif
 
 namespace {
 
 REGISTER_CPU_OPERATOR(ShowWorst, ShowWorstOp<float, CPUContext>);
+
+#ifdef WITH_CUDA
+REGISTER_CUDA_OPERATOR(ShowWorst, ShowWorstOp<float, CUDAContext>);
+#endif
 
 OPERATOR_SCHEMA(ShowWorst)
   .NumInputs(3, 4)
