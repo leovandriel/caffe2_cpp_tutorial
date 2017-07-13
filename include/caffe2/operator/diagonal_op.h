@@ -1,5 +1,5 @@
-#ifndef DIAGONAL_OP_H
-#define DIAGONAL_OP_H
+#ifndef OPERATOR_DIAGONAL_OP_H
+#define OPERATOR_DIAGONAL_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -33,4 +33,4 @@ class DiagonalGradientOp final : public Operator<Context> {
 
 } // namespace caffe2
 
-#endif // DIAGONAL_OP_H
+#endif // OPERATOR_DIAGONAL_OP_H

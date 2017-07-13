@@ -1,5 +1,5 @@
-#ifndef AFFINE_SCALE_OP_H
-#define AFFINE_SCALE_OP_H
+#ifndef OPERATOR_AFFINE_SCALE_OP_H
+#define OPERATOR_AFFINE_SCALE_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -33,4 +33,4 @@ class AffineScaleGradientOp final : public Operator<Context> {
 
 } // namespace caffe2
 
-#endif // AFFINE_SCALE_OP_H
+#endif // OPERATOR_AFFINE_SCALE_OP_H

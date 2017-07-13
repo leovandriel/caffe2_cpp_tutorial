@@ -15,7 +15,6 @@
 #include "util/net.h"
 #include "util/math.h"
 #include "res/imagenet_classes.h"
-#include "operator/cout_op.h"
 
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");

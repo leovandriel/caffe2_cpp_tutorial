@@ -1,4 +1,4 @@
-#include "operator/show_worst_op.h"
+#include "caffe2/operator/show_worst_op.h"
 
 #include "caffe2/util/tensor.h"
 
@@ -10,8 +10,6 @@
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
-// #include "util/print.h"
 
 namespace caffe2 {
 

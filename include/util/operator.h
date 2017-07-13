@@ -344,7 +344,6 @@ OperatorDef *add_diagonal_op(NetDef &model, const std::string &input, const std:
   }
   op->add_input(input);
   op->add_output(diagonal);
-  op->mutable_device_option()->set_device_type(CPU);
   return op;
 }
 
@@ -356,7 +355,6 @@ OperatorDef *add_back_mean_op(NetDef &model, const std::string &input, const std
   arg->set_i(count);
   op->add_input(input);
   op->add_output(mean);
-  op->mutable_device_option()->set_device_type(CPU);
   return op;
 }
 
@@ -366,7 +364,6 @@ OperatorDef *add_mean_stdev_op(NetDef &model, const std::string &input, const st
   op->add_input(input);
   op->add_output(mean);
   op->add_output(scale);
-  op->mutable_device_option()->set_device_type(CPU);
   return op;
 }
 
@@ -380,7 +377,6 @@ OperatorDef *add_affine_scale_op(NetDef &model, const std::string &input, const 
   op->add_input(mean);
   op->add_input(scale);
   op->add_output(transformed);
-  op->mutable_device_option()->set_device_type(CPU);
   return op;
 }
 
