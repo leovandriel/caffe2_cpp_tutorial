@@ -130,9 +130,9 @@ void run() {
   // std::cout << join_net(base_predict_model);
 
   // extract dream model
-  CheckLayerAvailable(base_predict_model, FLAGS_layer);
+  check_layer_available(base_predict_model, FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
-  SplitModel(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_force_cpu, false);
+  split_model(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_force_cpu, false);
 
   // set_engine_cudnn_op(*add_cout_op(dream_model, { "_conv2/norm2_scale" }));
 

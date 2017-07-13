@@ -83,7 +83,7 @@ void run() {
   auto load_time = -clock();
   std::vector<std::string> class_labels;
   std::vector<std::pair<std::string, int>> image_files;
-  LoadLabels(FLAGS_folder, path_prefix, class_labels, image_files);
+  load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
 
   std::cout << "load model.." << std::endl;
   CHECK(ensureModel(FLAGS_model)) << "~ model " << FLAGS_model << " not found";
@@ -100,20 +100,20 @@ void run() {
   CHECK(ReadProtoFromFile(init_filename.c_str(), &full_init_model)) << "~ empty init model " << init_filename;
   CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
 
-  CheckLayerAvailable(full_predict_model, FLAGS_layer);
+  check_layer_available(full_predict_model, FLAGS_layer);
 
   // std::cout << join_net(full_init_model);
   // std::cout << join_net(full_predict_model);
 
   NetDef first_init_model, first_predict_model, second_init_model, second_predict_model;
-  SplitModel(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_force_cpu);
+  split_model(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_force_cpu);
 
   if (!FLAGS_force_cpu) {
     set_device_cuda_model(first_init_model);
     set_device_cuda_model(first_predict_model);
   }
 
-  PreProcess(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
+  pre_process(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
   load_time += clock();
 
   // std::cout << join_net(first_init_model);
@@ -124,9 +124,9 @@ void run() {
   for (int i = 0; i < kRunNum; i++) {
     add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_layer, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
-  TrainModel(second_init_model, second_predict_model, FLAGS_layer, class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
-  TestModel(second_predict_model, predict_model[kRunValidate]);
-  TestModel(second_predict_model, predict_model[kRunTest]);
+  add_train_model(second_init_model, second_predict_model, FLAGS_layer, class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
+  add_test_model(second_predict_model, predict_model[kRunValidate]);
+  add_test_model(second_predict_model, predict_model[kRunTest]);
 
   if (!FLAGS_force_cpu) {
     for (int i = 0; i < kRunNum; i++) {
