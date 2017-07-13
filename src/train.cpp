@@ -86,7 +86,7 @@ void run() {
   auto load_time = -clock();
   std::vector<std::string> class_labels;
   std::vector<std::pair<std::string, int>> image_files;
-  LoadLabels(FLAGS_folder, path_prefix, class_labels, image_files);
+  load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
 
   std::cout << "load model.." << std::endl;
   NetDef full_init_model, full_predict_model;
@@ -109,15 +109,15 @@ void run() {
     predict_model[i].set_name(name_for_run[i] + "_predict_model");
   }
 
-  PreProcess(image_files, db_paths, FLAGS_db_type, FLAGS_size_to_fit);
+  pre_process(image_files, db_paths, FLAGS_db_type, FLAGS_size_to_fit);
   load_time += clock();
 
   for (int i = 0; i < kRunNum; i++) {
     add_database_ops(init_model[i], predict_model[i], name_for_run[i], full_predict_model.external_input(0), db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
-  TrainModel(full_init_model, full_predict_model, full_predict_model.external_input(0), class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
-  TestModel(full_predict_model, predict_model[kRunValidate]);
-  TestModel(full_predict_model, predict_model[kRunTest]);
+  add_train_model(full_init_model, full_predict_model, full_predict_model.external_input(0), class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
+  add_test_model(full_predict_model, predict_model[kRunValidate]);
+  add_test_model(full_predict_model, predict_model[kRunTest]);
   if (FLAGS_zero_one) {
     add_zero_one_op(predict_model[kRunValidate], full_predict_model.external_output(0), "label");
   }

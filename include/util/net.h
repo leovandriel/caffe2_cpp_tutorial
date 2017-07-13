@@ -64,7 +64,7 @@ std::set<std::string> collect_layers(const NetDef &net, const std::string &layer
   return result;
 }
 
-void LoadLabels(const std::string &folder, const std::string &path_prefix, std::vector<std::string> &class_labels, std::vector<std::pair<std::string, int>> &image_files) {
+void load_labels(const std::string &folder, const std::string &path_prefix, std::vector<std::string> &class_labels, std::vector<std::pair<std::string, int>> &image_files) {
   std::cout << "load class labels.." << std::endl;
   auto classes_text_path = path_prefix + "classes.txt";
   ;
@@ -138,7 +138,7 @@ void LoadLabels(const std::string &folder, const std::string &path_prefix, std::
   }
 }
 
-void WriteBatch(Workspace &workspace, NetBase *predict_net, std::string &input_name, std::string &output_name, std::vector<std::pair<std::string, int>> &batch_files, std::unique_ptr<db::DB> *database, int size_to_fit) {
+void write_batch(Workspace &workspace, NetBase *predict_net, std::string &input_name, std::string &output_name, std::vector<std::pair<std::string, int>> &batch_files, std::unique_ptr<db::DB> *database, int size_to_fit) {
   std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     transaction[i] = database[i]->NewTransaction();
@@ -196,7 +196,7 @@ void WriteBatch(Workspace &workspace, NetBase *predict_net, std::string &input_n
   }
 }
 
-void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, NetDef &init_model, NetDef &predict_model, const std::string &db_type, int batch_size, int size_to_fit) {
+void pre_process(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, NetDef &init_model, NetDef &predict_model, const std::string &db_type, int batch_size, int size_to_fit) {
   std::cout << "store partial prediction.." << std::endl;
   std::unique_ptr<db::DB> database[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
@@ -226,12 +226,12 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
     }
     if (batch_files.size() == batch_size) {
       std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. " << image_count << '/' << image_files.size() << " " << std::setprecision(3) << ((float)100 * image_count / image_files.size()) << "%" << std::flush;
-      WriteBatch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database, size_to_fit);
+      write_batch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database, size_to_fit);
       batch_files.clear();
     }
   }
   if (batch_files.size() > 0) {
-    WriteBatch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database, size_to_fit);
+    write_batch(workspace, predict_net ? predict_net.get() : NULL, input_name, output_name, batch_files, database, size_to_fit);
   }
   for (int i = 0; i < kRunNum; i++) {
     CHECK(database[i]->NewCursor()->Valid()) << "~ database " << name_for_run[i] << " is empty";
@@ -239,12 +239,12 @@ void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, con
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size() << " images processed" << std::endl;
 }
 
-void PreProcess(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, const std::string &db_type, int size_to_fit) {
+void pre_process(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, const std::string &db_type, int size_to_fit) {
   NetDef none;
-  PreProcess(image_files, db_paths, none, none, db_type, 64, size_to_fit);
+  pre_process(image_files, db_paths, none, none, db_type, 64, size_to_fit);
 }
 
-void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu, bool inclusive = true) {
+void split_model(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu, bool inclusive = true) {
   std::cout << "split model.." << std::endl;
   std::set<std::string> static_inputs = collect_layers(base_predict_model, layer);
 
@@ -311,7 +311,7 @@ void SplitModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
   }
 }
 
-void TrainModel(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, int out_size, NetDef &train_init_model, NetDef &train_predict_model, float base_rate, std::string &optimizer) {
+void add_train_model(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, int out_size, NetDef &train_init_model, NetDef &train_predict_model, float base_rate, std::string &optimizer) {
   std::string last_w, last_b;
   for (const auto &op: base_predict_model.op()) {
     auto new_op = train_predict_model.add_op();
@@ -344,8 +344,17 @@ void TrainModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
     }
     init_op->add_output(output);
   }
+  std::set<std::string> existing_inputs;
+  existing_inputs.insert(train_predict_model.external_input().begin(), train_predict_model.external_input().end());
+  for (const auto &op: train_predict_model.op()) {
+    for (auto &output: op.output()) {
+      existing_inputs.insert(output);
+    }
+  }
   for (const auto &input: base_predict_model.external_input()) {
-    train_predict_model.add_external_input(input);
+    if (existing_inputs.find(input) == existing_inputs.end()) {
+      train_predict_model.add_external_input(input);
+    }
   }
   for (const auto &output: base_predict_model.external_output()) {
     train_predict_model.add_external_output(output);
@@ -359,7 +368,7 @@ void TrainModel(NetDef &base_init_model, NetDef &base_predict_model, const std::
   add_train_ops(train_init_model, train_predict_model, train_predict_model.external_output(0), base_rate, optimizer);
 }
 
-void TestModel(NetDef &base_predict_model, NetDef &test_predict_model) {
+void add_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
   for (const auto &op: base_predict_model.op()) {
     auto new_op = test_predict_model.add_op();
     new_op->CopyFrom(op);
@@ -374,7 +383,7 @@ void TestModel(NetDef &base_predict_model, NetDef &test_predict_model) {
   add_test_ops(test_predict_model, test_predict_model.external_output(0));
 }
 
-void CheckLayerAvailable(NetDef &model, const std::string &layer)
+void check_layer_available(NetDef &model, const std::string &layer)
     {
     std::vector<std::pair<std::string, std::string>> available_layers({ { model.external_input(0), "Input" } });
     auto layer_found = (model.external_input(0) == layer);
