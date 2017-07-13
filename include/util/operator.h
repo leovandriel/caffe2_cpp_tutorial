@@ -103,6 +103,23 @@ OperatorDef *add_cout_op(NetDef &model, const std::vector<std::string> &params) 
   return op;
 }
 
+OperatorDef *add_zero_one_op(NetDef &model, const std::string &pred, const std::string &label) {
+  auto op = model.add_op();
+  op->set_type("ZeroOne");
+  op->add_input(pred);
+  op->add_input(label);
+  return op;
+}
+
+OperatorDef *add_show_worst_op(NetDef &model, const std::string &pred, const std::string &label, const std::string &data) {
+  auto op = model.add_op();
+  op->set_type("ShowWorst");
+  op->add_input(pred);
+  op->add_input(label);
+  op->add_input(data);
+  return op;
+}
+
 OperatorDef *add_ensure_cpu_output_op(NetDef &model, const std::string &input, const std::string &output) {
   auto op = model.add_op();
   op->set_type("EnsureCPUOutput");

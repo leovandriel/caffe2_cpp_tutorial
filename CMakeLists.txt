@@ -91,7 +91,7 @@ if(CUDA_LIBRARIES)
   target_link_libraries(dream ${CAFFE2_GPU_LIB} ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${NCCL_LIB} ${CURAND_LIB})
 endif()
 
-add_executable(train src/train.cpp)
+add_executable(train src/train.cpp ${OPERATOR_SOURCES})
 target_link_libraries(train ${CAFFE2_LIB} ${PROTOBUF_LIBRARY} ${GLOG_LIB} ${GFLAGS_LIB} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 if(CURL_LIBRARIES)
   target_link_libraries(train ${CURL_LIBRARIES})

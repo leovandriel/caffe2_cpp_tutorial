@@ -25,6 +25,8 @@ CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
 CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
 CAFFE2_DEFINE_string(device, "cudnn", "Computation device: cpu/cuda/cudnn");
 CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
+CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
+CAFFE2_DEFINE_bool(show_worst, false, "Show worst correct and incorrect classification.");
 
 static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
 static const std::set<std::string> optimizer_types({ "sgd", "momentum", "adagrad", "adam" });
@@ -116,6 +118,12 @@ void run() {
   TrainModel(full_init_model, full_predict_model, full_predict_model.external_input(0), class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
   TestModel(full_predict_model, predict_model[kRunValidate]);
   TestModel(full_predict_model, predict_model[kRunTest]);
+  if (FLAGS_zero_one) {
+    add_zero_one_op(predict_model[kRunValidate], full_predict_model.external_output(0), "label");
+  }
+  if (FLAGS_show_worst) {
+    add_show_worst_op(predict_model[kRunValidate], full_predict_model.external_output(0), "label", full_predict_model.external_input(0));
+  }
 
   if (FLAGS_device != "cpu") {
     for (int i = 0; i < kRunNum; i++) {
