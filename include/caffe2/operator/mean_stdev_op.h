@@ -1,5 +1,5 @@
-#ifndef MEAN_STDEV_OP_H
-#define MEAN_STDEV_OP_H
+#ifndef OPERATOR_MEAN_STDEV_OP_H
+#define OPERATOR_MEAN_STDEV_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -16,4 +16,4 @@ class MeanStdevOp final : public Operator<Context> {
 
 } // namespace caffe2
 
-#endif // MEAN_STDEV_OP_H
+#endif // OPERATOR_MEAN_STDEV_OP_H

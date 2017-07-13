@@ -1,5 +1,5 @@
-#ifndef BACK_MEAN_OP_H
-#define BACK_MEAN_OP_H
+#ifndef OPERATOR_BACK_MEAN_OP_H
+#define OPERATOR_BACK_MEAN_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -33,4 +33,4 @@ class BackMeanGradientOp final : public Operator<Context> {
 
 } // namespace caffe2
 
-#endif // BACK_MEAN_OP_H
+#endif // OPERATOR_BACK_MEAN_OP_H

@@ -1,5 +1,5 @@
-#ifndef SHOW_WORST_OP
-#define SHOW_WORST_OP
+#ifndef OPERATOR_SHOW_WORST_OP
+#define OPERATOR_SHOW_WORST_OP
 
 #include "caffe2/core/operator.h"
 
@@ -20,4 +20,4 @@ class ShowWorstOp final : public Operator<Context> {
 
 }  // namespace caffe2
 
-#endif  // SHOW_WORST_OP
+#endif  // OPERATOR_SHOW_WORST_OP

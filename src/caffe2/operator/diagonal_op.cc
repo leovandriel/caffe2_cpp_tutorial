@@ -1,4 +1,4 @@
-#include "operator/diagonal_op.h"
+#include "caffe2/operator/diagonal_op.h"
 #include "util/math.h"
 
 namespace caffe2 {

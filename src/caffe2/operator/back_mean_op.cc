@@ -1,4 +1,4 @@
-#include "operator/back_mean_op.h"
+#include "caffe2/operator/back_mean_op.h"
 #include "util/math.h"
 
 namespace caffe2 {

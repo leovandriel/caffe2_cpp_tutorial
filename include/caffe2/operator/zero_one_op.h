@@ -1,5 +1,5 @@
-#ifndef ZERO_ONE_OP_H
-#define ZERO_ONE_OP_H
+#ifndef OPERATOR_ZERO_ONE_OP_H
+#define OPERATOR_ZERO_ONE_OP_H
 
 #include "caffe2/core/operator.h"
 
@@ -20,4 +20,4 @@ class ZeroOneOp final : public Operator<Context> {
 
 }  // namespace caffe2
 
-#endif  // ZERO_ONE_OP_H
+#endif  // OPERATOR_ZERO_ONE_OP_H
