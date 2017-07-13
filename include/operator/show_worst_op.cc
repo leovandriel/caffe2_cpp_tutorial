@@ -14,7 +14,7 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
   auto &image = Input(DATA);
   auto iter = -1;
   if (InputSize() > 3) {
-    iter = Input(ITER).data<long long>()[0];
+    iter = Input(ITER).data<int64_t>()[0];
     if (iter % 10) {
       return true;
     }
