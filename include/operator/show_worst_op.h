@@ -1,23 +1,23 @@
-#ifndef ZERO_ONE_OP_H
-#define ZERO_ONE_OP_H
+#ifndef SHOW_WORST_OP
+#define SHOW_WORST_OP
 
 #include "caffe2/core/operator.h"
 
 namespace caffe2 {
 
 template <typename T, class Context>
-class ZeroOneOp final : public Operator<Context> {
+class ShowWorstOp final : public Operator<Context> {
  public:
   USE_OPERATOR_CONTEXT_FUNCTIONS;
-  ZeroOneOp(const OperatorDef& def, Workspace* ws)
+  ShowWorstOp(const OperatorDef& def, Workspace* ws)
     : Operator<Context>(def, ws) {}
 
   bool RunOnDevice() override;
 
  protected:
-  INPUT_TAGS(PREDICTION, LABEL);
+  INPUT_TAGS(PREDICTION, LABEL, DATA, ITER);
 };
 
 }  // namespace caffe2
 
-#endif  // ZERO_ONE_OP_H
+#endif  // SHOW_WORST_OP
