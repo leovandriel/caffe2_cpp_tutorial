@@ -35,10 +35,6 @@ static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
 
 namespace caffe2 {
 
-void set_device_cpu_op(OperatorDef &op) {
-  op.mutable_device_option()->set_device_type(CPU);
-}
-
 void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, int size) {
   auto &input = dream_model.external_input(0);
   auto &output = dream_model.external_output(0);
@@ -51,22 +47,19 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
   init.AddUniformFillOp({ FLAGS_batch, 3, size, size }, FLAGS_initial, FLAGS_initial + 1, input);
 
   // add reduce mean as score
-  dream.AddEnsureCpuOutputOp(output, output + "_host");
-  dream.AddBackMeanOp(output + "_host", "mean", 2);
+  dream.AddBackMeanOp(output, "mean", 2);
   dream.AddDiagonalOp("mean", "diagonal", { 0, FLAGS_channel });
-  set_device_cpu_op(*dream.AddAveragedLoss("diagonal", "score"));
-  set_device_cpu_op(*dream.AddConstantFillWithOp(1.f, "score", "score_grad"));
+  dream.AddAveragedLoss("diagonal", "score");
+  dream.AddConstantFillWithOp(1.f, "score", "score_grad");
 
   // add back prop
   dream.AddGradientOps();
 
   // scale gradient
-  dream.AddEnsureCpuOutputOp(input + "_grad", input + "_grad_host");
-  dream.AddMeanStdevOp(input + "_grad_host", "_", input + "_grad_stdev");
-  set_device_cpu_op(*dream.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero"));
-  set_device_cpu_op(*dream.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev", 1 / FLAGS_learning_rate));
-  dream.AddAffineScaleOp(input + "_grad_host", "zero", input + "_grad_stdev", input + "_grad_host", true);
-  dream.AddCopyFromCpuInputOp(input + "_grad_host", input + "_grad");
+  dream.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
+  dream.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero");
+  dream.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev", 1 / FLAGS_learning_rate);
+  dream.AddAffineScaleOp(input + "_grad", "zero", input + "_grad_stdev", input + "_grad", true);
 
   // apply gradient to input data
   init.AddConstantFillOp({ 1 }, 1.f, "one");
@@ -74,9 +67,8 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
   dream.AddWeightedSumOp({ input, "one", input + "_grad", "one" }, input);
 
   // scale data to image
-  display.AddEnsureCpuOutputOp(input, input + "_host");
-  display.AddMeanStdevOp(input + "_host", input + "_mean", input + "_stdev");
-  display.AddAffineScaleOp(input + "_host", input + "_mean", input + "_stdev", "image", true);
+  display.AddMeanStdevOp(input, input + "_mean", input + "_stdev");
+  display.AddAffineScaleOp(input, input + "_mean", input + "_stdev", "image", true);
   display.AddScaleOp("image", "image", 25.5f);
   display.AddClipOp("image", "image", -128, 128);
 }

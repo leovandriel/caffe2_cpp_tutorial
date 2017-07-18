@@ -14,15 +14,13 @@ int back_mean_strip(std::vector<TIndex> &dims, int count) {
 
 namespace {
 
-__global__ void ZeroKernel(const int N, float* Y) {
-  CUDA_1D_KERNEL_LOOP(i, N) {
-   Y[i] = 0;
-  }
-}
-
 __global__ void BackMeanKernel(const int N, const int C, const float D, const float* X, float* Y) {
   CUDA_1D_KERNEL_LOOP(i, N) {
-    Y[i / C] += X[i] / D;
+    float sum = 0;
+    for (int j = i * C, e = j + C; j != e; j++) {
+      sum += X[j];
+    }
+    Y[i] = sum / D;
   }
 }
 
@@ -36,10 +34,8 @@ bool BackMeanOp<float, CUDAContext>::RunOnDevice() {
   auto size = back_mean_strip(dims, count_);
   Y->Resize(dims);
   if (Y->size() > 0) {
-    ZeroKernel<<<CAFFE_GET_BLOCKS(Y->size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-      Y->size(), Y->mutable_data<float>());
-    BackMeanKernel<<<CAFFE_GET_BLOCKS(X.size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-      X.size(), size, (float)size, X.data<float>(), Y->mutable_data<float>());
+    BackMeanKernel<<<CAFFE_GET_BLOCKS(Y->size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
+      Y->size(), size, (float)size, X.data<float>(), Y->mutable_data<float>());
   }
   return true;
 }
