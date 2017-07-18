@@ -1,15 +1,14 @@
-#include "util/net.h"
+#include "util/misc.h"
 
 #include "caffe2/core/init.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
 
-#include "util/models.h"
+#include "util/zoo.h"
 #include "util/cuda.h"
 #include "util/print.h"
 #include "util/image.h"
-#include "util/build.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
@@ -92,8 +91,8 @@ void run() {
   add_model(FLAGS_model, full_init_model, full_predict_model);
 
   if (FLAGS_device == "cudnn") {
-    set_engine_cudnn_net(full_init_model);
-    set_engine_cudnn_net(full_predict_model);
+    NetUtil(full_init_model).SetEngineOps("CUDNN");
+    NetUtil(full_predict_model).SetEngineOps("CUDNN");
   }
 
   if (FLAGS_dump_model) {
@@ -112,16 +111,16 @@ void run() {
   load_time += clock();
 
   for (int i = 0; i < kRunNum; i++) {
-    add_database_ops(init_model[i], predict_model[i], name_for_run[i], full_predict_model.external_input(0), db_paths[i], FLAGS_db_type, FLAGS_batch_size);
+    ModelUtil(init_model[i], predict_model[i]).AddDatabaseOps(name_for_run[i], full_predict_model.external_input(0), db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
   add_train_model(full_init_model, full_predict_model, full_predict_model.external_input(0), class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
   add_test_model(full_predict_model, predict_model[kRunValidate]);
   add_test_model(full_predict_model, predict_model[kRunTest]);
   if (FLAGS_zero_one) {
-    add_zero_one_op(predict_model[kRunValidate], full_predict_model.external_output(0), "label");
+    NetUtil(predict_model[kRunValidate]).AddZeroOneOp(full_predict_model.external_output(0), "label");
   }
   if (FLAGS_show_worst) {
-    add_show_worst_op(predict_model[kRunValidate], full_predict_model.external_output(0), "label", full_predict_model.external_input(0));
+    NetUtil(predict_model[kRunValidate]).AddShowWorstOp(full_predict_model.external_output(0), "label", full_predict_model.external_input(0));
   }
 
   if (FLAGS_device != "cpu") {

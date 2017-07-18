@@ -7,12 +7,11 @@
 
 #include "caffe2/util/tensor.h"
 
-#include "util/models.h"
+#include "util/zoo.h"
 #include "util/print.h"
 #include "util/image.h"
 #include "util/cuda.h"
-#include "util/build.h"
-#include "util/net.h"
+#include "util/misc.h"
 #include "util/math.h"
 #include "res/imagenet_classes.h"
 
@@ -36,42 +35,50 @@ static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
 
 namespace caffe2 {
 
+void set_device_cpu_op(OperatorDef &op) {
+  op.mutable_device_option()->set_device_type(CPU);
+}
+
 void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, int size) {
   auto &input = dream_model.external_input(0);
   auto &output = dream_model.external_output(0);
 
+  NetUtil init(init_model);
+  NetUtil dream(dream_model);
+  NetUtil display(display_model);
+
   // initialize input data
-  add_uniform_fill_float_op(init_model, { FLAGS_batch, 3, size, size }, FLAGS_initial, FLAGS_initial + 1, input);
+  init.AddUniformFillOp({ FLAGS_batch, 3, size, size }, FLAGS_initial, FLAGS_initial + 1, input);
 
   // add reduce mean as score
-  add_ensure_cpu_output_op(dream_model, output, output + "_host");
-  add_back_mean_op(dream_model, output + "_host", "mean", 2);
-  add_diagonal_op(dream_model, "mean", "diagonal", { 0, FLAGS_channel });
-  set_device_cpu_op(*add_averaged_loss(dream_model, "diagonal", "score"));
-  set_device_cpu_op(*add_constant_fill_with_op(dream_model, 1.0, "score", "score_grad"));
+  dream.AddEnsureCpuOutputOp(output, output + "_host");
+  dream.AddBackMeanOp(output + "_host", "mean", 2);
+  dream.AddDiagonalOp("mean", "diagonal", { 0, FLAGS_channel });
+  set_device_cpu_op(*dream.AddAveragedLoss("diagonal", "score"));
+  set_device_cpu_op(*dream.AddConstantFillWithOp(1.f, "score", "score_grad"));
 
   // add back prop
-  add_gradient_ops(dream_model);
+  dream.AddGradientOps();
 
   // scale gradient
-  add_ensure_cpu_output_op(dream_model, input + "_grad", input + "_grad_host");
-  add_mean_stdev_op(dream_model, input + "_grad_host", "_", input + "_grad_stdev");
-  set_device_cpu_op(*add_constant_fill_with_op(dream_model, 0.0, input + "_grad_stdev", "zero"));
-  set_device_cpu_op(*add_scale_op(dream_model, input + "_grad_stdev", input + "_grad_stdev", 1 / FLAGS_learning_rate));
-  add_affine_scale_op(dream_model, input + "_grad_host", "zero", input + "_grad_stdev", input + "_grad_host", true);
-  add_copy_from_cpu_input_op(dream_model, input + "_grad_host", input + "_grad");
+  dream.AddEnsureCpuOutputOp(input + "_grad", input + "_grad_host");
+  dream.AddMeanStdevOp(input + "_grad_host", "_", input + "_grad_stdev");
+  set_device_cpu_op(*dream.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero"));
+  set_device_cpu_op(*dream.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev", 1 / FLAGS_learning_rate));
+  dream.AddAffineScaleOp(input + "_grad_host", "zero", input + "_grad_stdev", input + "_grad_host", true);
+  dream.AddCopyFromCpuInputOp(input + "_grad_host", input + "_grad");
 
   // apply gradient to input data
-  add_constant_fill_float_op(init_model, { 1 }, 1.0, "one");
-  dream_model.add_external_input("one");
-  add_weighted_sum_op(dream_model, { input, "one", input + "_grad", "one" }, input);
+  init.AddConstantFillOp({ 1 }, 1.f, "one");
+  dream.AddInput("one");
+  dream.AddWeightedSumOp({ input, "one", input + "_grad", "one" }, input);
 
   // scale data to image
-  add_ensure_cpu_output_op(display_model, input, input + "_host");
-  add_mean_stdev_op(display_model, input + "_host", input + "_mean", input + "_stdev");
-  add_affine_scale_op(display_model, input + "_host", input + "_mean", input + "_stdev", "image", true);
-  add_scale_op(display_model, "image", "image", 25.5);
-  add_clip_op(display_model, "image", "image", -128, 128);
+  display.AddEnsureCpuOutputOp(input, input + "_host");
+  display.AddMeanStdevOp(input + "_host", input + "_mean", input + "_stdev");
+  display.AddAffineScaleOp(input + "_host", input + "_mean", input + "_stdev", "image", true);
+  display.AddScaleOp("image", "image", 25.5f);
+  display.AddClipOp("image", "image", -128, 128);
 }
 
 void run() {
@@ -135,11 +142,11 @@ void run() {
   // std::cout << join_net(base_predict_model);
 
   // extract dream model
-  check_layer_available(base_predict_model, FLAGS_layer);
+  NetUtil(base_predict_model).CheckLayerAvailable(FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
   split_model(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_device != "cudnn", false);
 
-  // set_engine_cudnn_op(*add_cout_op(dream_model, { "_conv2/norm2_scale" }));
+  // add_cout_op(dream_model, { "_conv2/norm2_scale" })->set_engine("CUDNN");
 
   // add dream operators
   auto image_size = FLAGS_size;
@@ -154,7 +161,7 @@ void run() {
     set_device_cuda_model(init_model);
     set_device_cuda_model(dream_model);
     set_device_cuda_model(display_model);
-    // set_engine_cudnn_net(dream_model);
+    // NetUtil(dream_model).SetEngineCudnnOps();
   }
 
   if (FLAGS_dump_model) {
@@ -178,7 +185,7 @@ void run() {
   // auto &input_name = dream_model.external_input(0);
   // auto input = readImageTensor(FLAGS_image_file, FLAGS_size / 10);
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
-  // TensorUtil(input).showImages(0);
+  // TensorUtil(input).ShowImages(0);
 
   std::cout << "start size: " << image_size << std::endl;
 
@@ -187,7 +194,7 @@ void run() {
     // show current images
     display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
-    TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
+    TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2);
 #endif
   }
 
@@ -197,7 +204,7 @@ void run() {
     // scale up image tiny bit
     image_size = std::min(image_size * (100 + FLAGS_percent_incr) / 100, FLAGS_size);
     auto data = get_tensor_blob(*workspace.GetBlob("data"));
-    auto scaled = scaleImageTensor(data, image_size, image_size);
+    auto scaled = TensorUtil(data).ScaleImageTensor(image_size, image_size);
     set_tensor_blob(*workspace.GetBlob("data"), scaled);
 
     for (int i = 0; i < FLAGS_scale_runs; i++, step++) {
@@ -230,7 +237,7 @@ void run() {
     if (FLAGS_show_image) {
       display_net->Run();
       auto image = get_tensor_blob(*workspace.GetBlob("image"));
-      TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
+      TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2);
     }
   }
 
@@ -239,7 +246,7 @@ void run() {
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    TensorUtil(image).writeImages("dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
+    TensorUtil(image).WriteImages("dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
   }
 
   std::cout << std::endl;

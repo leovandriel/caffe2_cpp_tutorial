@@ -1,7 +1,7 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
 
-#include "util/models.h"
+#include "util/zoo.h"
 #include "util/print.h"
 
 #include "google/protobuf/io/zero_copy_stream_impl.h"
@@ -24,7 +24,7 @@ void run() {
     std::string model = "googlenet";
     ReadProtoFromFile(("res/" + model + "_init_net.pb").c_str(), &init_model);
     ReadProtoFromFile(("res/" + model + "_predict_net.pb").c_str(), &predict_model);
-    set_fill_to_train(init_model);
+    NetUtil(init_model).SetFillToTrain();
   } else {
     std::cerr << "set either --code or --file" << std::endl;
   }

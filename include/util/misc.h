@@ -1,9 +1,11 @@
-#ifndef NET_H
-#define NET_H
+#ifndef MISC_H
+#define MISC_H
 
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
 #include "caffe2/core/db.h"
+
+#include "caffe2/util/model.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -11,7 +13,6 @@
 #include "util/image.h"
 #include "util/cuda.h"
 #include "util/print.h"
-#include "util/build.h"
 
 namespace caffe2 {
 
@@ -37,31 +38,6 @@ static std::map<int, int> percentage_for_run({
 std::string filename_to_key(const std::string &filename) {
   // return filename;
   return std::to_string(std::hash<std::string>{}(filename)) + "_" + filename;
-}
-
-std::set<std::string> collect_layers(const NetDef &net, const std::string &layer, bool forward = false) {
-  std::map<std::string, std::set<std::string>> lookup;
-  for (auto &op: net.op()) {
-    for (auto &input: op.input()) {
-      for (auto &output: op.output()) {
-        lookup[forward ? input : output].insert(forward ? output : input);
-      }
-    }
-  }
-  std::set<std::string> result;
-  for (std::set<std::string> step({ layer }); step.size();) {
-    std::set<std::string> next;
-    for (auto &l: step) {
-      if (result.find(l) == result.end()) {
-        result.insert(l);
-        for (auto &n: lookup[l]) {
-          next.insert(n);
-        }
-      }
-    }
-    step = next;
-  }
-  return result;
 }
 
 void load_labels(const std::string &folder, const std::string &path_prefix, std::vector<std::string> &class_labels, std::vector<std::pair<std::string, int>> &image_files) {
@@ -246,7 +222,7 @@ void pre_process(const std::vector<std::pair<std::string, int>> &image_files, co
 
 void split_model(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, NetDef &first_init_model, NetDef &first_predict_model, NetDef &second_init_model, NetDef &second_predict_model, bool force_cpu, bool inclusive = true) {
   std::cout << "split model.." << std::endl;
-  std::set<std::string> static_inputs = collect_layers(base_predict_model, layer);
+  std::set<std::string> static_inputs = NetUtil(base_predict_model).CollectLayers(layer);
 
   // copy operators
   for (const auto &op: base_init_model.op()) {
@@ -259,7 +235,7 @@ void split_model(NetDef &base_init_model, NetDef &base_predict_model, const std:
     auto new_op = (is_first ? first_predict_model : second_predict_model).add_op();
     new_op->CopyFrom(op);
     if (!force_cpu) {
-      set_engine_cudnn_op(*new_op);
+      new_op->set_engine("CUDNN"); // TODO: not here
     }
   }
 
@@ -311,6 +287,16 @@ void split_model(NetDef &base_init_model, NetDef &base_predict_model, const std:
   }
 }
 
+void set_trainable(OperatorDef &op, bool train) {
+  if (op.type() == "Dropout") {
+    for (auto &arg: *op.mutable_arg()) {
+      if (arg.name() == "is_test") {
+        arg.set_i(!train);
+      }
+    }
+  }
+}
+
 void add_train_model(NetDef &base_init_model, NetDef &base_predict_model, const std::string &layer, int out_size, NetDef &train_init_model, NetDef &train_predict_model, float base_rate, std::string &optimizer) {
   std::string last_w, last_b;
   for (const auto &op: base_predict_model.op()) {
@@ -322,7 +308,7 @@ void add_train_model(NetDef &base_init_model, NetDef &base_predict_model, const 
       last_b = op.input(2);
     }
   }
-  set_rename_inplace(train_predict_model);
+  NetUtil(train_predict_model).SetRenameInplace();
   for (const auto &op: base_init_model.op()) {
     auto &output = op.output(0);
     auto init_op = train_init_model.add_op();
@@ -365,7 +351,7 @@ void add_train_model(NetDef &base_init_model, NetDef &base_predict_model, const 
   // arg->set_name("shape");
   // arg->add_ints(1);
   // op->add_output(layer);
-  add_train_ops(train_init_model, train_predict_model, train_predict_model.external_output(0), base_rate, optimizer);
+  ModelUtil(train_init_model, train_predict_model).AddTrainOps(train_predict_model.external_output(0), base_rate, optimizer);
 }
 
 void add_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
@@ -380,28 +366,9 @@ void add_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
   for (const auto &output: base_predict_model.external_output()) {
     test_predict_model.add_external_output(output);
   }
-  add_test_ops(test_predict_model, test_predict_model.external_output(0));
+  ModelUtil(base_predict_model, test_predict_model).AddTestOps(test_predict_model.external_output(0));
 }
-
-void check_layer_available(NetDef &model, const std::string &layer)
-    {
-    std::vector<std::pair<std::string, std::string>> available_layers({ { model.external_input(0), "Input" } });
-    auto layer_found = (model.external_input(0) == layer);
-    for (const auto &op: model.op()) {
-      if (op.input(0) != op.output(0)) {
-        available_layers.push_back({ op.output(0), op.type() });
-        layer_found |= (op.output(0) == layer);
-      }
-    }
-    if (!layer_found) {
-      std::cout << "available layers:" << std::endl;
-      for (auto &layer: available_layers) {
-        std::cout << "  " << layer.first << " (" << layer.second << ")" << std::endl;
-      }
-      LOG(FATAL) << "~ no layer with name " << layer << " in model.";
-    }
-  }
 
 }  // namespace caffe2
 
-#endif  // NET_H
+#endif  // MISC_H

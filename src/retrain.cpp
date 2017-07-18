@@ -1,15 +1,14 @@
-#include "util/net.h"
+#include "util/misc.h"
 
 #include "caffe2/core/init.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
 
-#include "util/models.h"
+#include "util/zoo.h"
 #include "util/cuda.h"
 #include "util/print.h"
 #include "util/image.h"
-#include "util/build.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
@@ -99,7 +98,7 @@ void run() {
   CHECK(ReadProtoFromFile(init_filename.c_str(), &full_init_model)) << "~ empty init model " << init_filename;
   CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
 
-  check_layer_available(full_predict_model, FLAGS_layer);
+  NetUtil(full_predict_model).CheckLayerAvailable(FLAGS_layer);
 
   // std::cout << join_net(full_init_model);
   // std::cout << join_net(full_predict_model);
@@ -121,7 +120,7 @@ void run() {
   // std::cout << join_net(second_predict_model);
 
   for (int i = 0; i < kRunNum; i++) {
-    add_database_ops(init_model[i], predict_model[i], name_for_run[i], FLAGS_layer, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
+    ModelUtil(init_model[i], predict_model[i]).AddDatabaseOps(name_for_run[i], FLAGS_layer, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
   add_train_model(second_init_model, second_predict_model, FLAGS_layer, class_labels.size(), init_model[kRunTrain], predict_model[kRunTrain], FLAGS_learning_rate, FLAGS_optimizer);
   add_test_model(second_predict_model, predict_model[kRunValidate]);
