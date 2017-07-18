@@ -28,8 +28,11 @@ CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
-CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
+CAFFE2_DEFINE_string(device, "cudnn", "Computation device: cpu/cuda/cudnn");
 CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
+CAFFE2_DEFINE_bool(show_image, false, "show image while dreaming.");
+
+static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
 
 namespace caffe2 {
 
@@ -89,10 +92,10 @@ void run() {
     return;
   }
 
-  // if (!FLAGS_label.size()) {
-  //   std::cerr << "specify a label name using --label <name>" << std::endl;
-  //   return;
-  // }
+  if (device_types.find(FLAGS_device) == device_types.end()) {
+    std::cerr << "incorrect device type (" << std::vector<std::string>(device_types.begin(), device_types.end()) << "): " << FLAGS_device << std::endl;
+    return;
+  }
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
@@ -105,10 +108,11 @@ void run() {
   std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
+  std::cout << "device: " << FLAGS_device << std::endl;
   std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
+  std::cout << "show_image: " << (FLAGS_show_image ? "true" : "false") << std::endl;
 
-  if (!FLAGS_force_cpu) setupCUDA();
+  if (FLAGS_device != "cpu") setupCUDA();
 
   std::cout << std::endl;
 
@@ -133,7 +137,7 @@ void run() {
   // extract dream model
   check_layer_available(base_predict_model, FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
-  split_model(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_force_cpu, false);
+  split_model(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_device != "cudnn", false);
 
   // set_engine_cudnn_op(*add_cout_op(dream_model, { "_conv2/norm2_scale" }));
 
@@ -146,15 +150,17 @@ void run() {
   AddNaive(init_model, dream_model, display_model, image_size);
 
   // set model to use CUDA
-  if (!FLAGS_force_cpu) {
+  if (FLAGS_device != "cpu") {
     set_device_cuda_model(init_model);
     set_device_cuda_model(dream_model);
+    set_device_cuda_model(display_model);
     // set_engine_cudnn_net(dream_model);
   }
 
   if (FLAGS_dump_model) {
     std::cout << join_net(init_model);
     std::cout << join_net(dream_model);
+    std::cout << join_net(display_model);
   }
 
   std::cout << "running model.." << std::endl;
@@ -174,15 +180,17 @@ void run() {
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
   // TensorUtil(input).showImages(0);
 
-  {
-    // show current images
-    std::cout << "start size: " << image_size << std::endl;
+  std::cout << "start size: " << image_size << std::endl;
+
+  if (FLAGS_show_image) {
 #ifndef WITH_CUDA
+    // show current images
     display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
 #endif
   }
+
   // run predictor
   for (auto step = 0; step < FLAGS_train_runs;) {
 
@@ -202,16 +210,16 @@ void run() {
         auto depth = get_tensor_blob(*workspace.GetBlob(FLAGS_layer)).dim(1);
         std::cout << "channel depth: " << depth << std::endl;
 
-        // print(*workspace.GetBlob(FLAGS_layer), FLAGS_layer);
-        // print(*workspace.GetBlob("mean"), "mean");
-        // print(*workspace.GetBlob("diagonal"), "diagonal");
-        // print(*workspace.GetBlob("score"), "score");
-        // print(*workspace.GetBlob("score_grad"), "score_grad");
-        // print(*workspace.GetBlob("diagonal_grad"), "diagonal_grad");
-        // print(*workspace.GetBlob("mean_grad"), "mean_grad");
-        // print(*workspace.GetBlob(FLAGS_layer + "_grad"), FLAGS_layer + "_grad");
-        // print(*workspace.GetBlob("data_grad"), "data_grad");
-        // print(*workspace.GetBlob("data"), "data");
+        // print(get_tensor_blob(*workspace.GetBlob(FLAGS_layer)), FLAGS_layer);
+        // print(get_tensor_blob(*workspace.GetBlob("mean")), "mean");
+        // print(get_tensor_blob(*workspace.GetBlob("diagonal")), "diagonal");
+        // print(get_tensor_blob(*workspace.GetBlob("score")), "score");
+        // print(get_tensor_blob(*workspace.GetBlob("score_grad")), "score_grad");
+        // print(get_tensor_blob(*workspace.GetBlob("diagonal_grad")), "diagonal_grad");
+        // print(get_tensor_blob(*workspace.GetBlob("mean_grad")), "mean_grad");
+        // print(get_tensor_blob(*workspace.GetBlob(FLAGS_layer + "_grad")), FLAGS_layer + "_grad");
+        // print(get_tensor_blob(*workspace.GetBlob("data_grad")), "data_grad");
+        // print(get_tensor_blob(*workspace.GetBlob("data")), "data");
       }
     }
 
@@ -219,12 +227,15 @@ void run() {
     std::cout << "step: " << step << "  score: " << score << "  size: " << image_size << std::endl;
 
     // show current images
-    display_net->Run();
-    auto image = get_tensor_blob(*workspace.GetBlob("image"));
-    TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
+    if (FLAGS_show_image) {
+      display_net->Run();
+      auto image = get_tensor_blob(*workspace.GetBlob("image"));
+      TensorUtil(image).showImages(FLAGS_size / 2, FLAGS_size / 2);
+    }
   }
 
   {
+    display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
