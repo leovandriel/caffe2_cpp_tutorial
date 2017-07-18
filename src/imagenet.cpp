@@ -5,7 +5,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "util/models.h"
+#include "util/zoo.h"
 #include "util/print.h"
 #include "util/image.h"
 #include "util/cuda.h"

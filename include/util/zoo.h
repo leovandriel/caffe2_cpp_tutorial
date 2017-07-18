@@ -1,7 +1,7 @@
-#ifndef MODELS_H
-#define MODELS_H
+#ifndef ZOO_H
+#define ZOO_H
 
-#include "util/build.h"
+#include "caffe2/util/net.h"
 
 #ifdef WITH_CURL
   #include <curl/curl.h>
@@ -106,32 +106,36 @@ bool ensureModel(const std::string &name) {
 
 OperatorDef *alexnet_add_conv_ops(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size, int stride, int padding, int kernel, bool group) {
   auto output = "conv" + prefix;
-  add_fill_op(init_model, "XavierFill", { out_size, in_size, kernel, kernel }, output + "_w");
+  NetUtil(init_model).AddXavierFillOp({ out_size, in_size, kernel, kernel }, output + "_w");
   predict_model.add_external_input(output + "_w");
-  add_fill_op(init_model, "ConstantFill", { out_size }, output + "_b");
+  NetUtil(init_model).AddConstantFillOp({ out_size }, output + "_b");
   predict_model.add_external_input(output + "_b");
-  auto conv = add_conv_op(predict_model, input, output + "_w", output + "_b", output, stride, padding, kernel);
-  if (group) add_arg(*conv, "group", 2);
-  return add_relu_op(predict_model, output, output);
+  auto conv = NetUtil(predict_model).AddConvOp(input, output + "_w", output + "_b", output, stride, padding, kernel);
+  if (group) {
+    auto arg = conv->add_arg();
+    arg->set_name("group");
+    arg->set_i(2);
+  }
+  return NetUtil(predict_model).AddReluOp(output, output);
 }
 
 OperatorDef *alexnet_add_conv_pool(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size, int stride, int padding, int kernel, bool group) {
   auto output = "conv" + prefix;
   auto op = alexnet_add_conv_ops(init_model, predict_model, prefix, input, in_size, out_size, stride, padding, kernel, group);
-  add_lrn_op(predict_model, output, "norm" + prefix, 5, 0.0001, 0.75, 1);
-  return add_max_pool_op(predict_model, "norm" + prefix, "pool" + prefix, 2, 0, 3);
+  NetUtil(predict_model).AddLrnOp(output, "norm" + prefix, 5, 0.0001, 0.75, 1);
+  return NetUtil(predict_model).AddMaxPoolOp("norm" + prefix, "pool" + prefix, 2, 0, 3);
 }
 
 OperatorDef *alexnet_add_fc(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size, bool relu) {
   auto output = "fc" + prefix;
-  add_fill_op(init_model, "XavierFill", { out_size, in_size }, output + "_w");
+  NetUtil(init_model).AddXavierFillOp({ out_size, in_size }, output + "_w");
   predict_model.add_external_input(output + "_w");
-  add_fill_op(init_model, "ConstantFill", { out_size }, output + "_b");
+  NetUtil(init_model).AddConstantFillOp({ out_size }, output + "_b");
   predict_model.add_external_input(output + "_b");
-  auto op = add_fc_op(predict_model, input, output + "_w", output + "_b", output);
+  auto op = NetUtil(predict_model).AddFcOp(input, output + "_w", output + "_b", output);
   if (!relu) return op;
-  add_relu_op(predict_model, output, output);
-  return add_dropout_op(predict_model, output, output, 0.5);
+  NetUtil(predict_model).AddReluOp(output, output);
+  return NetUtil(predict_model).AddDropoutOp(output, output, 0.5);
 }
 
 void add_alexnet_model(NetDef &init_model, NetDef &predict_model) {
@@ -144,32 +148,32 @@ void add_alexnet_model(NetDef &init_model, NetDef &predict_model) {
   layer = alexnet_add_conv_ops(init_model, predict_model, "3", layer, 256, 384, 1, 1, 3, false)->output(0);
   layer = alexnet_add_conv_ops(init_model, predict_model, "4", layer, 192, 384, 1, 1, 3, true)->output(0);
   layer = alexnet_add_conv_ops(init_model, predict_model, "5", layer, 192, 256, 1, 1, 3, true)->output(0);
-  layer = add_max_pool_op(predict_model, layer, "pool5", 2, 0, 3)->output(0);
+  layer = NetUtil(predict_model).AddMaxPoolOp(layer, "pool5", 2, 0, 3)->output(0);
   layer = alexnet_add_fc(init_model, predict_model, "6", layer, 9216, 4096, true)->output(0);
   layer = alexnet_add_fc(init_model, predict_model, "7", layer, 4096, 4096, true)->output(0);
   layer = alexnet_add_fc(init_model, predict_model, "8", layer, 4096, 1000, false)->output(0);
-  layer = add_softmax_op(predict_model, layer, "prob")->output(0);
+  layer = NetUtil(predict_model).AddSoftmaxOp(layer, "prob")->output(0);
   predict_model.add_external_output(layer);
-  add_fill_op(init_model, "ConstantFill", { 1 }, input);
+  NetUtil(init_model).AddConstantFillOp({ 1 }, input);
 }
 
 // GoogleNet
 
 OperatorDef *googlenet_add_conv_ops(NetDef &init_model, NetDef &predict_model, const std::string &input, const std::string &output, int in_size, int out_size, int stride, int padding, int kernel) {
-  add_fill_op(init_model, "XavierFill", { out_size, in_size, kernel, kernel }, output + "_w");
+  NetUtil(init_model).AddXavierFillOp({ out_size, in_size, kernel, kernel }, output + "_w");
   predict_model.add_external_input(output + "_w");
-  add_fill_op(init_model, "ConstantFill", { out_size }, output + "_b");
+  NetUtil(init_model).AddConstantFillOp({ out_size }, output + "_b");
   predict_model.add_external_input(output + "_b");
-  add_conv_op(predict_model, input, output + "_w", output + "_b", output, stride, padding, kernel);
-  return add_relu_op(predict_model, output, output);
+  NetUtil(predict_model).AddConvOp(input, output + "_w", output + "_b", output, stride, padding, kernel);
+  return NetUtil(predict_model).AddReluOp(output, output);
 }
 
 OperatorDef *googlenet_add_first(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size) {
   auto output = "conv" + prefix + "/";
   std::string layer = input;
   layer = googlenet_add_conv_ops(init_model, predict_model, layer, output + "7x7_s2", in_size, out_size, 2, 3, 7)->output(0);
-  layer = add_max_pool_op(predict_model, layer, "pool" + prefix + "/3x3_s2", 2, 0, 3)->output(0);
-  return add_lrn_op(predict_model, layer, "pool1/norm1", 5, 0.0001, 0.75, 1);
+  layer = NetUtil(predict_model).AddMaxPoolOp(layer, "pool" + prefix + "/3x3_s2", 2, 0, 3)->output(0);
+  return NetUtil(predict_model).AddLrnOp(layer, "pool1/norm1", 5, 0.0001, 0.75, 1);
 }
 
 OperatorDef *googlenet_add_second(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size) {
@@ -177,7 +181,7 @@ OperatorDef *googlenet_add_second(NetDef &init_model, NetDef &predict_model, con
   std::string layer = input;
   layer = googlenet_add_conv_ops(init_model, predict_model, layer, output + "_reduce", in_size, out_size / 3, 1, 0, 1)->output(0);
   layer = googlenet_add_conv_ops(init_model, predict_model, layer, output, in_size, out_size, 1, 1, 3)->output(0);
-  return add_lrn_op(predict_model, layer, "conv2/norm2", 5, 0.0001, 0.75, 1);
+  return NetUtil(predict_model).AddLrnOp(layer, "conv2/norm2", 5, 0.0001, 0.75, 1);
 }
 
 OperatorDef *googlenet_add_inception(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, std::vector<int> sizes) {
@@ -191,19 +195,19 @@ OperatorDef *googlenet_add_inception(NetDef &init_model, NetDef &predict_model, 
     }
     layers.push_back(googlenet_add_conv_ops(init_model, predict_model, layer, b, sizes[kernel - 1], sizes[kernel], 1, i, kernel)->output(0));
   }
-  layer = add_max_pool_op(predict_model, input, output + "pool", 1, 1, 3)->output(0);
+  layer = NetUtil(predict_model).AddMaxPoolOp(input, output + "pool", 1, 1, 3)->output(0);
   layers.push_back(googlenet_add_conv_ops(init_model, predict_model, layer, layer + "_proj", sizes[0], sizes[6], 1, 0, 1)->output(0));
-  return add_concat_op(predict_model, layers, output + "output");
+  return NetUtil(predict_model).AddConcatOp(layers, output + "output");
 }
 
 OperatorDef *googlenet_add_fc(NetDef &init_model, NetDef &predict_model, const std::string &prefix, const std::string &input, int in_size, int out_size) {
   auto output = "loss" + prefix + "/classifier";
-  add_fill_op(init_model, "XavierFill", { out_size, in_size }, output + "_w");
+  NetUtil(init_model).AddXavierFillOp({ out_size, in_size }, output + "_w");
   predict_model.add_external_input(output + "_w");
-  add_fill_op(init_model, "ConstantFill", { out_size }, output + "_b");
+  NetUtil(init_model).AddConstantFillOp({ out_size }, output + "_b");
   predict_model.add_external_input(output + "_b");
-  add_dropout_op(predict_model, input, input, 0.4)->output(0);
-  return add_fc_op(predict_model, input, output + "_w", output + "_b", output);
+  NetUtil(predict_model).AddDropoutOp(input, input, 0.4)->output(0);
+  return NetUtil(predict_model).AddFcOp(input, output + "_w", output + "_b", output);
 }
 
 void add_googlenet_model(NetDef &init_model, NetDef &predict_model) {
@@ -213,23 +217,23 @@ void add_googlenet_model(NetDef &init_model, NetDef &predict_model) {
   predict_model.add_external_input(layer);
   layer = googlenet_add_first(init_model, predict_model, "1", layer, 3, 64)->output(0);
   layer = googlenet_add_second(init_model, predict_model, "2", layer, 64, 192)->output(0);
-  layer = add_max_pool_op(predict_model, layer, "pool2/3x3_s2", 2, 0, 3)->output(0);
+  layer = NetUtil(predict_model).AddMaxPoolOp(layer, "pool2/3x3_s2", 2, 0, 3)->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "3a", layer, { 192, 64, 96, 128, 16, 32, 32 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "3b", layer, { 256, 128, 128, 192, 32, 96, 64 })->output(0);
-  layer = add_max_pool_op(predict_model, layer, "pool3/3x3_s2", 2, 0, 3)->output(0);
+  layer = NetUtil(predict_model).AddMaxPoolOp(layer, "pool3/3x3_s2", 2, 0, 3)->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "4a", layer, { 480, 192, 96, 208, 16, 48, 64 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "4b", layer, { 512, 160, 112, 224, 24, 64, 64 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "4c", layer, { 512, 128, 128, 256, 24, 64, 64 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "4d", layer, { 512, 112, 144, 288, 32, 64, 64 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "4e", layer, { 528, 256, 160, 320, 32, 128, 128 })->output(0);
-  layer = add_max_pool_op(predict_model, layer, "pool4/3x3_s2", 2, 0, 3)->output(0);
+  layer = NetUtil(predict_model).AddMaxPoolOp(layer, "pool4/3x3_s2", 2, 0, 3)->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "5a", layer, { 832, 256, 160, 320, 32, 128, 128 })->output(0);
   layer = googlenet_add_inception(init_model, predict_model, "5b", layer, { 832, 384, 192, 384, 48, 128, 128 })->output(0);
-  layer = add_average_pool_op(predict_model, layer, "pool5/7x7_s1", 1, 0, 7)->output(0);
+  layer = NetUtil(predict_model).AddAveragePoolOp(layer, "pool5/7x7_s1", 1, 0, 7)->output(0);
   layer = googlenet_add_fc(init_model, predict_model, "3", layer, 1024, 1000)->output(0);
-  layer = add_softmax_op(predict_model, layer, "prob")->output(0);
+  layer = NetUtil(predict_model).AddSoftmaxOp(layer, "prob")->output(0);
   predict_model.add_external_output(layer);
-  add_fill_op(init_model, "ConstantFill", { 1 }, input);
+  NetUtil(init_model).AddConstantFillOp({ 1 }, input);
 }
 
 // All
@@ -246,4 +250,4 @@ void add_model(const std::string &name, NetDef &init_model, NetDef &predict_mode
 
 }  // namespace caffe2
 
-#endif  // MODELS_H
+#endif  // ZOO_H

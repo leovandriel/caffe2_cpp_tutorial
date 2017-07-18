@@ -94,33 +94,6 @@ TensorCPU imageToTensor(cv::Mat &image, float mean = 128) {
   return TensorCPU(dims, data, NULL);
 }
 
-TensorCPU scaleImageTensor(const TensorCPU &tensor, int width, int height) {
-  auto count = tensor.dim(0), dim_c = tensor.dim(1), dim_h = tensor.dim(2), dim_w = tensor.dim(3);
-  std::vector<float> output;
-  output.reserve(count * dim_c * height * width);
-  auto input = tensor.data<float>();
-  vector<cv::Mat> channels(dim_c);
-  for (int i = 0; i < count; i++) {
-    for (auto &j: channels) {
-      j = cv::Mat(dim_h, dim_w, CV_32F, (void *)input);
-      input += (dim_w * dim_h);
-    }
-    cv::Mat image;
-    cv::merge(channels, image);
-    // image.convertTo(image, CV_8UC3, 1.0, mean);
-
-    cv::resize(image, image, cv::Size(width, height));
-
-    // image.convertTo(image, CV_32FC3, 1.0, -mean);
-    cv::split(image, channels);
-    for (auto &c: channels) {
-      output.insert(output.end(), (float *)c.datastart, (float *)c.dataend);
-    }
-  }
-  std::vector<TIndex> dims({ count, dim_c, height, width });
-  return TensorCPU(dims, output, NULL);
-}
-
 }  // namespace caffe2
 
 #endif  // IMAGE_H

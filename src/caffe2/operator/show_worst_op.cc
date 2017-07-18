@@ -62,12 +62,12 @@ void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &ima
     }
   }
 
-  TensorUtil util(image);
+  TensorUtil t(image);
   if (pos_i >= 0) {
-    util.showImage(200, 200, pos_i, "pos", 0);
+    t.ShowImage(200, 200, pos_i, "pos", 0);
   }
   if (neg_i >= 0) {
-    util.showImage(200, 200, neg_i, "neg", 0);
+    t.ShowImage(200, 200, neg_i, "neg", 0);
   }
 }
 
