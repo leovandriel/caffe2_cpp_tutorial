@@ -16,11 +16,11 @@ Check out the actual tutorials at [https://caffe2.ai/docs/tutorials.html](https:
 
     Install the dependencies CMake, leveldb and OpenCV. If you're on macOS, use Homebrew:
 
-        brew install cmake leveldb opencv
+        brew install cmake leveldb opencv eigen
 
     On Ubuntu:
 
-        apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev
+        apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev libeigen3-dev
 
 2. Install Caffe2
 
