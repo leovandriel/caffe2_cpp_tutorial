@@ -15,7 +15,6 @@
 #include "util/math.h"
 #include "res/imagenet_classes.h"
 
-
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "", "Name of the layer on which to split the model.");
 CAFFE2_DEFINE_int(channel, 0, "The first channel to run.");
@@ -27,11 +26,9 @@ CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
-CAFFE2_DEFINE_string(device, "cudnn", "Computation device: cpu/cuda/cudnn");
-CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
 CAFFE2_DEFINE_bool(show_image, false, "show image while dreaming.");
 
-static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
+#include "util/cmd.h"
 
 namespace caffe2 {
 
@@ -74,9 +71,9 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
 }
 
 void run() {
-  std::cout << std::endl;
-  std::cout << "## Deep Dream Example ##" << std::endl;
-  std::cout << std::endl;
+  if (!cmd_init("Deep Dream Example")) {
+    return;
+  }
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
@@ -91,11 +88,6 @@ void run() {
     return;
   }
 
-  if (device_types.find(FLAGS_device) == device_types.end()) {
-    std::cerr << "incorrect device type (" << std::vector<std::string>(device_types.begin(), device_types.end()) << "): " << FLAGS_device << std::endl;
-    return;
-  }
-
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "layer: " << FLAGS_layer << std::endl;
   std::cout << "channel: " << FLAGS_channel << std::endl;
@@ -107,11 +99,7 @@ void run() {
   std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "device: " << FLAGS_device << std::endl;
-  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
   std::cout << "show_image: " << (FLAGS_show_image ? "true" : "false") << std::endl;
-
-  if (FLAGS_device != "cpu") setupCUDA();
 
   std::cout << std::endl;
 
@@ -186,7 +174,7 @@ void run() {
     // show current images
     display_net->Run();
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
-    TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2);
+    TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
 #endif
   }
 
@@ -229,7 +217,7 @@ void run() {
     if (FLAGS_show_image) {
       display_net->Run();
       auto image = get_tensor_blob(*workspace.GetBlob("image"));
-      TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2);
+      TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
     }
   }
 
