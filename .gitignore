@@ -6,5 +6,5 @@ res
 tmp
 include/res
 
-retrain
-dream
+data
+output
