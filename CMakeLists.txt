@@ -84,32 +84,32 @@ if(CURL_LIBRARIES)
   add_definitions(-DWITH_CURL)
 endif()
 
-add_executable(intro src/intro.cpp)
+add_executable(intro src/caffe2/binaries/intro.cpp)
 target_link_libraries(intro ${ALL_LIBRARIES})
 
-add_executable(toy src/toy.cpp)
+add_executable(toy src/caffe2/binaries/toy.cpp)
 target_link_libraries(toy ${ALL_LIBRARIES})
 
-add_executable(pretrained src/pretrained.cpp)
+add_executable(pretrained src/caffe2/binaries/pretrained.cpp)
 target_link_libraries(pretrained ${ALL_LIBRARIES})
 
-add_executable(mnist src/mnist.cpp)
+add_executable(mnist src/caffe2/binaries/mnist.cpp)
 target_link_libraries(mnist ${ALL_LIBRARIES})
 
-add_executable(imagenet src/imagenet.cpp)
+add_executable(imagenet src/caffe2/binaries/imagenet.cpp)
 target_link_libraries(imagenet ${ALL_LIBRARIES})
 
-add_executable(retrain src/retrain.cpp)
+add_executable(retrain src/caffe2/binaries/retrain.cpp)
 target_link_libraries(retrain ${ALL_LIBRARIES})
 
-add_executable(dream src/dream.cpp)
+add_executable(dream src/caffe2/binaries/dream.cpp)
 target_link_libraries(dream ${ALL_LIBRARIES})
 
-add_executable(train src/train.cpp)
+add_executable(train src/caffe2/binaries/train.cpp)
 target_link_libraries(train ${ALL_LIBRARIES})
 
-add_executable(diff src/diff.cpp)
+add_executable(diff src/caffe2/binaries/diff.cpp)
 target_link_libraries(diff ${ALL_LIBRARIES})
 
-add_executable(inspect src/inspect.cpp)
+add_executable(inspect src/caffe2/binaries/inspect.cpp)
 target_link_libraries(inspect ${ALL_LIBRARIES})
