@@ -110,3 +110,6 @@ target_link_libraries(train ${ALL_LIBRARIES})
 
 add_executable(diff src/diff.cpp)
 target_link_libraries(diff ${ALL_LIBRARIES})
+
+add_executable(inspect src/inspect.cpp)
+target_link_libraries(inspect ${ALL_LIBRARIES})
