@@ -6,6 +6,7 @@
 #include "caffe2/core/db.h"
 
 #include "caffe2/util/model.h"
+#include "caffe2/util/tensor.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -213,6 +214,29 @@ void pre_process(const std::vector<std::pair<std::string, int>> &image_files, co
     CHECK(database[i]->NewCursor()->Valid()) << "~ database " << name_for_run[i] << " is empty";
   }
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size() << " images processed" << std::endl;
+}
+
+void dump_database(const std::string db_path, const std::string &db_type) {
+  std::cout << "dumping database.." << std::endl;
+  std::unique_ptr<db::DB> database = db::CreateDB(db_type, db_path, db::READ);
+
+  for (auto cursor = database->NewCursor(); cursor->Valid(); cursor->Next()) {
+    auto key = cursor->key().substr(0, 48);
+    auto value = cursor->value();
+    TensorProtos protos;
+    protos.ParseFromString(value);
+    auto tensor_proto = protos.protos(0);
+    auto label_proto = protos.protos(1);
+    TensorDeserializer<CPUContext> deserializer;
+    TensorCPU tensor;
+    int label = label_proto.int32_data(0);
+    deserializer.Deserialize(tensor_proto, &tensor);
+    auto dims = tensor.dims();
+    dims.insert(dims.begin(), 1);
+    tensor.Resize(dims);
+    std::cout << key << "  " << (value.size() / 1000) << "K  (" << tensor.dims() << ")  " << label << std::endl;
+    TensorUtil(tensor).ShowImage(200, 200, 0, "inspect", 0, 1000);
+  }
 }
 
 void pre_process(const std::vector<std::pair<std::string, int>> &image_files, const std::string *db_paths, const std::string &db_type, int size_to_fit) {
