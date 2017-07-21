@@ -238,7 +238,7 @@ void run() {
     auto image = get_tensor_blob(*workspace.GetBlob("image"));
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    TensorUtil(image).WriteImages("dream/" + safe_layer + "_" + std::to_string(FLAGS_channel));
+    TensorUtil(image).WriteImages("output/" + safe_layer + "_" + std::to_string(FLAGS_channel));
   }
 
   std::cout << std::endl;
