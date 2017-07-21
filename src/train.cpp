@@ -20,21 +20,18 @@ CAFFE2_DEFINE_int(train_runs, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
-CAFFE2_DEFINE_string(device, "cudnn", "Computation device: cpu/cuda/cudnn");
-CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
+
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(show_worst, false, "Show worst correct and incorrect classification.");
 
-static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
-static const std::set<std::string> optimizer_types({ "sgd", "momentum", "adagrad", "adam" });
+#include "util/cmd.h"
 
 namespace caffe2 {
 
 void run() {
-  std::cout << std::endl;
-  std::cout << "## Full Train Example ##" << std::endl;
-  std::cout << std::endl;
+  if (!cmd_init("Full Train Example")) {
+    return;
+  }
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
@@ -49,16 +46,6 @@ void run() {
     return;
   }
 
-  if (device_types.find(FLAGS_device) == device_types.end()) {
-    std::cerr << "incorrect device type (" << std::vector<std::string>(device_types.begin(), device_types.end()) << "): " << FLAGS_device << std::endl;
-    return;
-  }
-
-  if (optimizer_types.find(FLAGS_optimizer) == optimizer_types.end()) {
-    std::cerr << "incorrect optimizer type (" << std::vector<std::string>(optimizer_types.begin(), optimizer_types.end()) << "): " << FLAGS_optimizer << std::endl;
-    return;
-  }
-
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "image_dir: " << FLAGS_folder << std::endl;
   std::cout << "db_type: " << FLAGS_db_type << std::endl;
@@ -67,11 +54,8 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "optimizer: " << FLAGS_optimizer << std::endl;
-  std::cout << "device: " << FLAGS_device << std::endl;
-  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
-
-  if (FLAGS_device != "cpu") setupCUDA();
+  std::cout << "zero_one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
+  std::cout << "show_worst: " << (FLAGS_show_worst ? "true" : "false") << std::endl;
 
   auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_';
   std::string db_paths[kRunNum];

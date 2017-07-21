@@ -21,15 +21,15 @@ CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training run
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
-CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
+
+#include "util/cmd.h"
 
 namespace caffe2 {
 
 void run() {
-  std::cout << std::endl;
-  std::cout << "## Partial Retrain Example ##" << std::endl;
-  std::cout << std::endl;
+  if (!cmd_init("Partial Retrain Example")) {
+    return;
+  }
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
@@ -58,10 +58,6 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "optimizer: " << FLAGS_optimizer << std::endl;
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
-
-  if (!FLAGS_force_cpu) setupCUDA();
 
   std::string layer_safe = FLAGS_layer;
   std::string::size_type index = 0;
@@ -104,9 +100,9 @@ void run() {
   // std::cout << join_net(full_predict_model);
 
   NetDef first_init_model, first_predict_model, second_init_model, second_predict_model;
-  split_model(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_force_cpu);
+  split_model(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_device != "cudnn");
 
-  if (!FLAGS_force_cpu) {
+  if (FLAGS_device != "cpu") {
     set_device_cuda_model(first_init_model);
     set_device_cuda_model(first_predict_model);
   }
@@ -126,19 +122,19 @@ void run() {
   add_test_model(second_predict_model, predict_model[kRunValidate]);
   add_test_model(second_predict_model, predict_model[kRunTest]);
 
-  if (!FLAGS_force_cpu) {
+  if (FLAGS_device != "cpu") {
     for (int i = 0; i < kRunNum; i++) {
       set_device_cuda_model(init_model[i]);
       set_device_cuda_model(predict_model[i]);
     }
   }
 
-  // std::cout << join_net(init_model[kRunTrain]);
-  // std::cout << join_net(predict_model[kRunTrain]);
-
-
-  // std::cout << join_net(init_model[kRunValidate]);
-  // std::cout << join_net(init_model[kRunTest]);
+  if (FLAGS_dump_model) {
+    std::cout << join_net(init_model[kRunTrain]);
+    std::cout << join_net(predict_model[kRunTrain]);
+    // std::cout << join_net(init_model[kRunValidate]);
+    // std::cout << join_net(init_model[kRunTest]);
+  }
 
   std::cout << std::endl;
 
