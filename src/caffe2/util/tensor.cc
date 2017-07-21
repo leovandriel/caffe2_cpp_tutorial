@@ -10,9 +10,10 @@ const auto screen_width = 1600;
 const auto window_padding = 4;
 
 cv::Mat to_image(const Tensor<CPUContext>& tensor, int index, float mean) {
+  CHECK(tensor.ndim() == 4);
   auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2), width = tensor.dim(3);
   CHECK(index < count);
-  auto data = tensor.data<float>() + (index * width * height);
+  auto data = tensor.data<float>() + (index * width * height * depth);
   vector<cv::Mat> channels(depth);
   for (auto& j: channels) {
     j = cv::Mat(height, width, CV_32F, (void*)data);
@@ -24,27 +25,19 @@ cv::Mat to_image(const Tensor<CPUContext>& tensor, int index, float mean) {
   return image;
 }
 
-void TensorUtil::ShowImage(int width, int height, int index, const std::string& name, int offset, float mean) {
-  auto title = name + "-" + std::to_string(index);
+void TensorUtil::ShowImage(int width, int height, int index, const std::string& title, int offset, int wait, float mean) {
   auto image = to_image(tensor_, index, mean);
   cv::resize(image, image, cv::Size(width, height));
   cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
   auto max_cols = screen_width / (image.cols + window_padding);
   cv::moveWindow(title, (offset % max_cols) * (image.cols + window_padding), (offset / max_cols) * (image.rows + window_padding));
   cv::imshow(title, image);
-  cv::waitKey(1);
+  cv::waitKey(wait);
 }
 
 void TensorUtil::ShowImages(int width, int height, const std::string& name, float mean) {
   for (auto i = 0; i < tensor_.dim(0); i++) {
-    auto title = name + "-" + std::to_string(i);
-    auto image = to_image(tensor_, i, mean);
-    cv::resize(image, image, cv::Size(width, height));
-    cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
-    auto max_cols = screen_width / (image.cols + window_padding);
-    cv::moveWindow(title, (i % max_cols) * (image.cols + window_padding), (i / max_cols) * (image.rows + window_padding));
-    cv::imshow(title, image);
-    cv::waitKey(1);
+    ShowImage(width, height, i, name + "-" + std::to_string(i), i, 1, mean);
   }
 }
 

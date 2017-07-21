@@ -24,7 +24,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &ima
   DCHECK_EQ(X.ndim(), 2);
   int N = X.dim32(0);
   int D = X.dim32(1);
-  int CHW = image.dim32(1) * image.dim32(2) * image.dim32(3);
+  int CHW = image.size() / image.dim32(0);
   DCHECK_EQ(label.ndim(), 1);
   DCHECK_EQ(label.dim32(0), N);
   const auto *Xdata = X.data<float>();
@@ -67,7 +67,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &ima
     t.ShowImage(200, 200, pos_i, "pos", 0);
   }
   if (neg_i >= 0) {
-    t.ShowImage(200, 200, neg_i, "neg", 0);
+    t.ShowImage(200, 200, neg_i, "neg", 1);
   }
 }
 
@@ -105,8 +105,8 @@ OPERATOR_SCHEMA(ShowWorst)
   .Input(2, "data", "4-D tensor (Tensor<float>) of size "
         "(N x C x H x Wwidth), where N is the batch size, C is the number of channels, and"
         " H and W are the height and width. Note that this is for the NCHW usage. On "
-        "the other hand, the NHWC Op has a different set of dimension constraints.")
-  .Input(3, "iter", "1-D tensor (Tensor<int>) of size (1) having training iteraton");
+        "the other hand, the NHWC Op has a different set of dimension constraints.");
+  // .Input(3, "iter", "1-D tensor (Tensor<int>) of size (1) having training iteraton");
 
 SHOULD_NOT_DO_GRADIENT(ShowWorst);
 
