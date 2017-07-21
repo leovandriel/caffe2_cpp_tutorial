@@ -294,8 +294,12 @@ OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs, const 
 
 // Training
 
-OperatorDef* NetUtil::AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy) {
-  return AddOp("Accuracy", { pred, label }, { accuracy });
+OperatorDef* NetUtil::AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k) {
+  auto op = AddOp("Accuracy", { pred, label }, { accuracy });
+  if (top_k) {
+    net_add_arg(*op, "top_k", top_k);
+  }
+  return op;
 }
 
 OperatorDef* NetUtil::AddLabelCrossEntropyOp(const std::string& pred, const std::string& label, const std::string& xent) {
@@ -409,6 +413,10 @@ void NetUtil::AddInput(const std::string input) {
 
 void NetUtil::AddOutput(const std::string output) {
   net_.add_external_output(output);
+}
+
+void NetUtil::SetName(const std::string name) {
+  net_.set_name(name);
 }
 
 void NetUtil::SetFillToTrain() {

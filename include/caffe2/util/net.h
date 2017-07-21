@@ -39,7 +39,7 @@ class NetUtil {
   OperatorDef* AddSoftmaxOp(const std::string& input, const std::string& output);
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs, const std::string& output, const std::string& order = "NCHW");
 
-  OperatorDef* AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy);
+  OperatorDef* AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k = 0);
   OperatorDef* AddLabelCrossEntropyOp(const std::string& pred, const std::string& label, const std::string& xent);
   OperatorDef* AddAveragedLoss(const std::string& input, const std::string& loss);
   OperatorDef* AddDiagonalOp(const std::string& input, const std::string& diagonal, const std::vector<int>& offset);
@@ -61,6 +61,7 @@ class NetUtil {
 
   void AddInput(const std::string input);
   void AddOutput(const std::string output);
+  void SetName(const std::string name);
 
   void SetFillToTrain();
   void SetRenameInplace();
