@@ -3,6 +3,7 @@ Change Log
 
 ### master (untagged)
 
+* Add RNN and LSTM tutorial
 * Add Deep Dream example
 * Add Retrain example
 

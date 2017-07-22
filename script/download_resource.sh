@@ -21,3 +21,6 @@ test -d res/mnist-test-nchw-leveldb || echo "downloading MNIST test data (2)"
 test -f res/t10k-images-idx3-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz | gunzip > res/t10k-images-idx3-ubyte
 test -f res/t10k-labels-idx1-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > res/t10k-labels-idx1-ubyte
 test -d res/mnist-test-nchw-leveldb || make_mnist_db --image_file=res/t10k-images-idx3-ubyte --label_file=res/t10k-labels-idx1-ubyte --output_file=res/mnist-test-nchw-leveldb --channel_first --db leveldb
+
+test -f res/shakespeare.txt || echo "downloading RNN and LSTM test data (1)"
+test -f res/shakespeare.txt || curl --progress-bar --output res/shakespeare.txt https://caffe2.ai/static/datasets/shakespeare.txt

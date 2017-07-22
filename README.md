@@ -53,6 +53,7 @@ The following tutorials have been transcribed:
 * `toy`: [Toy Regression](https://caffe2.ai/docs/tutorial-toy-regression.html)
 * `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
 * `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html)
+* `rnn`: [RNNs and LSTM Networks](https://caffe2.ai/docs/RNNs-and-LSTM-networks.html)
 
 ## ImageNet
 

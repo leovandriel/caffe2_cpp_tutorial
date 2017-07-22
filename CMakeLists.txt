@@ -96,6 +96,9 @@ target_link_libraries(pretrained ${ALL_LIBRARIES})
 add_executable(mnist src/caffe2/binaries/mnist.cpp)
 target_link_libraries(mnist ${ALL_LIBRARIES})
 
+add_executable(rnn src/caffe2/binaries/rnn.cpp)
+target_link_libraries(rnn ${ALL_LIBRARIES})
+
 add_executable(imagenet src/caffe2/binaries/imagenet.cpp)
 target_link_libraries(imagenet ${ALL_LIBRARIES})
 
