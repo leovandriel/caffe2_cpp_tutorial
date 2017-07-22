@@ -1,9 +1,14 @@
 #include "caffe2/core/init.h"
+#include "caffe2/core/operator.h"
 #include "caffe2/core/operator_gradient.h"
 
-#include "util/print.h"
-
 namespace caffe2 {
+
+void print(const Blob *blob, const std::string &name) {
+  auto tensor = blob->Get<TensorCPU>();
+  const auto& data = tensor.data<float>();
+  std::cout << name << "(" << tensor.dims() << "): " << std::vector<float>(data, data + tensor.size()) << std::endl;
+}
 
 void run() {
   std::cout << std::endl;
@@ -293,10 +298,10 @@ void run() {
   auto trainNet = CreateNet(trainModel, &workspace);
 
   // >>> print("Before training, W is: {}".format(workspace.FetchBlob("W")))
-  print(*workspace.GetBlob("W"), "W before");
+  print(workspace.GetBlob("W"), "W before");
 
   // >>> print("Before training, B is: {}".format(workspace.FetchBlob("B")))
-  print(*workspace.GetBlob("B"), "B before");
+  print(workspace.GetBlob("B"), "B before");
 
   // >>> for i in range(100):
   for (auto i = 1; i <= 100; i++) {
@@ -312,16 +317,16 @@ void run() {
   }
 
   // >>> print("After training, W is: {}".format(workspace.FetchBlob("W")))
-  print(*workspace.GetBlob("W"), "W after");
+  print(workspace.GetBlob("W"), "W after");
 
   // >>> print("After training, B is: {}".format(workspace.FetchBlob("B")))
-  print(*workspace.GetBlob("B"), "B after");
+  print(workspace.GetBlob("B"), "B after");
 
   // >>> print("Ground truth W is: {}".format(workspace.FetchBlob("W_gt")))
-  print(*workspace.GetBlob("W_gt"), "W ground truth");
+  print(workspace.GetBlob("W_gt"), "W ground truth");
 
   // >>> print("Ground truth B is: {}".format(workspace.FetchBlob("B_gt")))
-  print(*workspace.GetBlob("B_gt"), "B ground truth");
+  print(workspace.GetBlob("B_gt"), "B ground truth");
 }
 
 }  // namespace caffe2

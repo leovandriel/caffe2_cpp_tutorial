@@ -5,7 +5,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "util/print.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb", "The given path to the init protobuffer.");
@@ -65,9 +64,6 @@ void run() {
 
   // >>> with open(path_to_PREDICT_NET) as f:
   CAFFE_ENFORCE(ReadProtoFromFile(FLAGS_predict_net, &predict_net));
-
-  // print(init_net);
-  // print(predict_net);
 
   // >>> p = workspace.Predictor(init_net, predict_net)
   Predictor predictor(init_net, predict_net);
