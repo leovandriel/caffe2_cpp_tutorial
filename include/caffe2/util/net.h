@@ -40,6 +40,8 @@ class NetUtil {
   OperatorDef* AddDropoutOp(const std::string& input, const std::string& output, float ratio);
   OperatorDef* AddSoftmaxOp(const std::string& input, const std::string& output, int axis = 1);
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs, const std::string& output, const std::string& order = "NCHW");
+  OperatorDef* AddLSTMUnitOp(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs, int drop_states = 0, float forget_bias = 0.f);
+  OperatorDef* AddRecurrentNetworkOp(const std::string &seq_lengths, const std::string &hidden_init, const std::string &cell_init, const std::string &scope, const std::string &hidden_output, const std::string &cell_state, bool force_cpu);
 
   OperatorDef* AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k = 0);
   OperatorDef* AddLabelCrossEntropyOp(const std::string& pred, const std::string& label, const std::string& xent);

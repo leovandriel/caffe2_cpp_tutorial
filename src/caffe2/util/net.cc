@@ -308,6 +308,13 @@ OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs, const 
   return op;
 }
 
+OperatorDef* NetUtil::AddLSTMUnitOp(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs, int drop_states, float forget_bias) {
+  auto op = AddOp("LSTMUnit", inputs, outputs);
+  net_add_arg(*op, "drop_states", drop_states);
+  net_add_arg(*op, "forget_bias", forget_bias);
+  return op;
+}
+
 // Training
 
 OperatorDef* NetUtil::AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k) {
@@ -611,6 +618,87 @@ void NetUtil::CheckLayerAvailable(const std::string &layer) {
     }
     LOG(FATAL) << "~ no layer with name " << layer << " in model.";
   }
+}
+
+OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, const std::string &hidden_init, const std::string &cell_init, const std::string &scope, const std::string &hidden_output, const std::string &cell_state, bool force_cpu) {
+  NetDef forwardModel;
+  NetUtil forward(forwardModel);
+  forward.SetName(scope);
+  forward.SetType("rnn");
+  forward.AddInput("input_t");
+  forward.AddInput("timestep");
+  forward.AddInput(scope + "/hidden_t_prev");
+  forward.AddInput(scope + "/cell_t_prev");
+  forward.AddInput(scope + "/gates_t_w");
+  forward.AddInput(scope + "/gates_t_b");
+  auto fc = forward.AddFcOp(scope + "/hidden_t_prev", scope + "/gates_t_w", scope + "/gates_t_b", scope + "/gates_t", 2);
+  fc->set_engine("CUDNN");
+  auto sum = forward.AddSumOp({ scope + "/gates_t", "input_t" }, scope + "/gates_t");
+  forward.AddInput(seq_lengths);
+  auto lstm = forward.AddLSTMUnitOp({ scope + "/hidden_t_prev", scope + "/cell_t_prev", scope + "/gates_t", seq_lengths, "timestep" }, { scope + "/hidden_t", scope + "/cell_t" });
+  forward.AddOutput(scope + "/hidden_t");
+  forward.AddOutput(scope + "/cell_t");
+  #ifdef WITH_CUDA
+    if (!force_cpu) {
+      fc->mutable_device_option()->set_device_type(CUDA);
+      sum->mutable_device_option()->set_device_type(CUDA);
+      lstm->mutable_device_option()->set_device_type(CUDA);
+      forwardModel.mutable_device_option()->set_device_type(CUDA);
+    }
+  #endif
+  std::string forwardString;
+  google::protobuf::io::StringOutputStream forwardStream(&forwardString);
+  google::protobuf::TextFormat::Print(forwardModel, &forwardStream);
+
+  NetDef backwardModel;
+  NetUtil backward(backwardModel);
+  backward.SetName("RecurrentBackwardStep");
+  backward.SetType("simple");
+  backward.AddGradientOp(*lstm);
+  auto grad = backward.AddGradientOp(*fc);
+  grad->set_output(2, scope + "/hidden_t_prev_grad_split");
+  backward.AddSumOp({ scope + "/hidden_t_prev_grad", scope + "/hidden_t_prev_grad_split" }, scope + "/hidden_t_prev_grad");
+  backward.AddInput(scope + "/gates_t");
+  backward.AddInput(scope + "/hidden_t_grad");
+  backward.AddInput(scope + "/cell_t_grad");
+  backward.AddInput("input_t");
+  backward.AddInput("timestep");
+  backward.AddInput(scope + "/hidden_t_prev");
+  backward.AddInput(scope + "/cell_t_prev");
+  backward.AddInput(scope + "/gates_t_w");
+  backward.AddInput(scope + "/gates_t_b");
+  backward.AddInput(seq_lengths);
+  backward.AddInput(scope + "/hidden_t");
+  backward.AddInput(scope + "/cell_t");
+  #ifdef WITH_CUDA
+    if (!force_cpu) {
+      backwardModel.mutable_device_option()->set_device_type(CUDA);
+    }
+  #endif
+  std::string backwardString;
+  google::protobuf::io::StringOutputStream backwardStream(&backwardString);
+  google::protobuf::TextFormat::Print(backwardModel, &backwardStream);
+
+  auto op = AddOp("RecurrentNetwork", { scope + "/i2h", hidden_init, cell_init, scope + "/gates_t_w", scope + "/gates_t_b", seq_lengths }, { scope + "/hidden_t_all", hidden_output, scope + "/cell_t_all", cell_state, scope + "/step_workspaces" });
+  net_add_arg(*op, "outputs_with_grads", std::vector<int>{ 0 });
+  net_add_arg(*op, "link_internal", std::vector<std::string>{ scope + "/hidden_t_prev", scope + "/hidden_t", scope + "/cell_t_prev", scope + "/cell_t", "input_t" });
+  net_add_arg(*op, "alias_dst", std::vector<std::string>{ scope + "/hidden_t_all", hidden_output, scope + "/cell_t_all", cell_state });
+  net_add_arg(*op, "recompute_blobs_on_backward");
+  net_add_arg(*op, "timestep", "timestep");
+  net_add_arg(*op, "backward_link_external", std::vector<std::string>{ scope + "/" + scope + "/hidden_t_prev_states_grad", scope + "/" + scope + "/hidden_t_prev_states_grad", scope + "/" + scope + "/cell_t_prev_states_grad", scope + "/" + scope + "/cell_t_prev_states_grad", scope + "/i2h_grad" });
+  net_add_arg(*op, "link_external", std::vector<std::string>{ scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/cell_t_prev_states", scope + "/" + scope + "/cell_t_prev_states", scope + "/i2h" });
+  net_add_arg(*op, "link_offset", std::vector<int>{ 0, 1, 0, 1, 0 });
+  net_add_arg(*op, "alias_offset", std::vector<int>{ 1, -1, 1, -1 });
+  net_add_arg(*op, "recurrent_states", std::vector<std::string>{ scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/cell_t_prev_states" });
+  net_add_arg(*op, "backward_link_offset", std::vector<int>{ 1, 0, 1, 0, 0 });
+  net_add_arg(*op, "param_grads", std::vector<std::string>{ scope + "/gates_t_w_grad", scope + "/gates_t_b_grad" });
+  net_add_arg(*op, "backward_link_internal", std::vector<std::string>{ scope + "/hidden_t_grad", scope + "/hidden_t_prev_grad", scope + "/cell_t_grad", scope + "/cell_t_prev_grad", scope + "/gates_t_grad" });
+  net_add_arg(*op, "param", std::vector<int>{ 3, 4 });
+  net_add_arg(*op, "step_net", forwardString);
+  net_add_arg(*op, "backward_step_net", backwardString);
+  net_add_arg(*op, "alias_src", std::vector<std::string>{ scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/cell_t_prev_states", scope + "/" + scope + "/cell_t_prev_states" });
+  net_add_arg(*op, "initial_recurrent_state_ids", std::vector<int>{ 1, 2 });
+  return op;
 }
 
 }  // namespace caffe2
