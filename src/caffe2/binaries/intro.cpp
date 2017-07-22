@@ -1,9 +1,14 @@
 #include "caffe2/core/init.h"
+#include "caffe2/core/operator.h"
 #include "caffe2/core/operator_gradient.h"
 
-#include "util/print.h"
-
 namespace caffe2 {
+
+void print(const Blob *blob, const std::string &name) {
+  auto tensor = blob->Get<TensorCPU>();
+  const auto& data = tensor.data<float>();
+  std::cout << name << "(" << tensor.dims() << "): " << std::vector<float>(data, data + tensor.size()) << std::endl;
+}
 
 void run() {
   std::cout << std::endl;
@@ -22,7 +27,7 @@ void run() {
   }
 
   // >>> print(x)
-  print(x, "x");
+  std::cout << x << std::endl;
 
   // >>> workspace.FeedBlob("my_x", x)
   {
@@ -36,7 +41,7 @@ void run() {
   // >>> print(x2)
   {
     const auto blob = workspace.GetBlob("my_x");
-    print(*blob, "my_x");
+    print(blob, "my_x");
   }
 
   // >>> data = np.random.rand(16, 100).astype(np.float32)
@@ -206,12 +211,12 @@ void run() {
   std::cout << std::endl;
 
   // >>> print(workspace.FetchBlob("softmax"))
-  print(*(workspace.GetBlob("softmax")), "softmax");
+  print(workspace.GetBlob("softmax"), "softmax");
 
   std::cout << std::endl;
 
   // >>> print(workspace.FetchBlob("loss"))
-  print(*(workspace.GetBlob("loss")), "loss");
+  print(workspace.GetBlob("loss"), "loss");
 }
 
 }  // namespace caffe2

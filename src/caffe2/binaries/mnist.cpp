@@ -2,12 +2,13 @@
 #include "caffe2/core/operator_gradient.h"
 #include "caffe2/core/operator.h"
 
-#include "util/print.h"
-#include "util/cuda.h"
+#ifdef WITH_CUDA
+  #include "caffe2/core/context_gpu.h"
+#endif
 
 CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb", "The given path to the training leveldb.");
 CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb", "The given path to the testing leveldb.");
-CAFFE2_DEFINE_int(train_runs, 100 * caffe2::cuda_multipier, "The of training runs.");
+CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of test runs.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
@@ -461,6 +462,14 @@ void AddBookkeepingOperators(NetDef &initModel, NetDef &predictModel, std::vecto
   }
 }
 
+TensorCPU GetTensor(const Blob &blob) {
+#ifdef WITH_CUDA
+  return TensorCPU(blob.Get<TensorCUDA>());
+#else
+  return blob.Get<TensorCPU>();
+#endif
+}
+
 void run() {
   std::cout << std::endl;
   std::cout << "## Caffe2 MNIST Tutorial ##" << std::endl;
@@ -473,7 +482,14 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
 
-  if (!FLAGS_force_cpu) setupCUDA();
+#ifdef WITH_CUDA
+  if (!FLAGS_force_cpu) {
+    DeviceOption option;
+    option.set_device_type(CUDA);
+    new CUDAContext(option);
+    std::cout << std::endl << "using CUDA" << std::endl;
+  }
+#endif
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize, brew
   // >>> workspace.ResetWorkspace(root_folder)
@@ -499,11 +515,6 @@ void run() {
 
   // >>> AddBookkeepingOperators(train_model)
   AddBookkeepingOperators(initTrainModel, predictTrainModel, params);
-
-//   std::cout << "initTrainModel -------------" << std::endl;
-//   print(initTrainModel);
-//   std::cout << "predictTrainModel -------------" << std::endl;
-//   print(predictTrainModel);
 
   // >>> test_model = model_helper.ModelHelper(name="mnist_test", arg_scope=arg_scope, init_params=False)
   NetDef initTestModel;
@@ -531,12 +542,14 @@ void run() {
   std::vector<OperatorDef *> gradient_ops_deploy;
   AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_deploy, false);
 
+#ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
-    set_device_cuda_model(initTrainModel);
-    set_device_cuda_model(predictTrainModel);
-    set_device_cuda_model(initTestModel);
-    set_device_cuda_model(predictTestModel);
+    initTrainModel.mutable_device_option()->set_device_type(CUDA);
+    predictTrainModel.mutable_device_option()->set_device_type(CUDA);
+    initTestModel.mutable_device_option()->set_device_type(CUDA);
+    predictTestModel.mutable_device_option()->set_device_type(CUDA);
   }
+#endif
 
   std::cout << std::endl;
 
@@ -556,9 +569,9 @@ void run() {
 
     // >>> accuracy[i] = workspace.FetchBlob('accuracy')
     // >>> loss[i] = workspace.FetchBlob('loss')
-    if (i % (10 * cuda_multipier) == 0) {
-      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
+    if (i % 10 == 0) {
+      auto accuracy = GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto loss = GetTensor(*workspace.GetBlob("loss")).data<float>()[0];
       std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -581,7 +594,7 @@ void run() {
 
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
-      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto accuracy = GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
       std::cout << "step: " << i << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -590,7 +603,7 @@ void run() {
     // fid.write(str(deploy_model.net.Proto()))
   std::vector<string> external(initDeployModel.external_input().begin(), initDeployModel.external_input().end());
   for (auto &param: external) {
-    auto tensor = get_tensor_blob(*workspace.GetBlob(param));
+    auto tensor = GetTensor(*workspace.GetBlob(param));
     auto op = initDeployModel.add_op();
     op->set_type("GivenTensorFill");
     auto arg1 = op->add_arg();
@@ -608,8 +621,6 @@ void run() {
   WriteProtoToTextFile(predictDeployModel, "tmp/mnist_predict_net.pbtxt");
   WriteProtoToBinaryFile(initDeployModel, "tmp/mnist_init_net.pb");
   WriteProtoToBinaryFile(predictDeployModel, "tmp/mnist_predict_net.pb");
-  // print(initDeployModel);
-  // print(predictDeployModel);
 }
 
 }  // namespace caffe2
