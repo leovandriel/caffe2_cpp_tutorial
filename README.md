@@ -22,6 +22,10 @@ Check out the actual tutorials at [https://caffe2.ai/docs/tutorials.html](https:
 
         apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev libeigen3-dev
 
+    In case you're using CUDA an run into CMake issues with `NCCL`, try adding this to your `.bashrc` (assuming Caffe2 at `$HOME/caffe2`):
+
+        export CMAKE_LIBRARY_PATH=$CMAKE_LIBRARY_PATH:$HOME/caffe2/third_party/nccl/build/lib
+
 2. Install Caffe2
 
     Follow the Caffe2 installation instructions: [https://caffe2.ai/docs/getting-started.html](https://caffe2.ai/docs/getting-started.html)
@@ -49,11 +53,11 @@ For example, to run the MNIST tutorial, run:
 
 The following tutorials have been transcribed:
 
-* `intro`: [Intro Tutorial](https://caffe2.ai/docs/intro-tutorial.html)
-* `toy`: [Toy Regression](https://caffe2.ai/docs/tutorial-toy-regression.html)
-* `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html)
-* `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html)
-* `rnn`: [RNNs and LSTM Networks](https://caffe2.ai/docs/RNNs-and-LSTM-networks.html)
+* `intro`: [Intro Tutorial](https://caffe2.ai/docs/intro-tutorial.html) in [intro.cpp](src/caffe2/binaries/intro.cpp)
+* `toy`: [Toy Regression](https://caffe2.ai/docs/tutorial-toy-regression.html) in [toy.cpp](src/caffe2/binaries/toy.cpp)
+* `pretrained`: [Loading Pre-Trained Models](https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html) in [pretrained.cpp](src/caffe2/binaries/pretrained.cpp)
+* `mnist`: [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html) in [mnist.cpp](src/caffe2/binaries/mnist.cpp)
+* `rnn`: [RNNs and LSTM Networks](https://caffe2.ai/docs/RNNs-and-LSTM-networks.html) in [rnn.cpp](src/caffe2/binaries/rnn.cpp)
 
 ## ImageNet
 
