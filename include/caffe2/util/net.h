@@ -19,6 +19,8 @@ class NetUtil {
   OperatorDef* AddShowWorstOp(const std::string& pred, const std::string& label, const std::string& data);
   OperatorDef* AddEnsureCpuOutputOp(const std::string& input, const std::string& output);
   OperatorDef* AddCopyFromCpuInputOp(const std::string& input, const std::string& output);
+  OperatorDef* AddCopyOp(const std::string& input, const std::string& output);
+  OperatorDef* AddCreateMutexOp(const std::string& param);
 
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape, const std::string& param);
   OperatorDef* AddXavierFillOp(const std::vector<int>& shape, const std::string& param);
@@ -34,14 +36,14 @@ class NetUtil {
   OperatorDef* AddLrnOp(const std::string& input, const std::string& output, int size, float alpha, float beta, float bias, const std::string& order = "NCHW");
   OperatorDef* AddMaxPoolOp(const std::string& input, const std::string& output, int stride, int padding, int kernel, const std::string& order = "NCHW");
   OperatorDef* AddAveragePoolOp(const std::string& input, const std::string& output, int stride, int padding, int kernel, const std::string& order = "NCHW");
-  OperatorDef* AddFcOp(const std::string& input, const std::string& w, const std::string& b, const std::string& output);
+  OperatorDef* AddFcOp(const std::string& input, const std::string& w, const std::string& b, const std::string& output, int axis = 1);
   OperatorDef* AddDropoutOp(const std::string& input, const std::string& output, float ratio);
-  OperatorDef* AddSoftmaxOp(const std::string& input, const std::string& output);
+  OperatorDef* AddSoftmaxOp(const std::string& input, const std::string& output, int axis = 1);
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs, const std::string& output, const std::string& order = "NCHW");
 
   OperatorDef* AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k = 0);
   OperatorDef* AddLabelCrossEntropyOp(const std::string& pred, const std::string& label, const std::string& xent);
-  OperatorDef* AddAveragedLoss(const std::string& input, const std::string& loss);
+  OperatorDef* AddAveragedLossOp(const std::string& input, const std::string& loss);
   OperatorDef* AddDiagonalOp(const std::string& input, const std::string& diagonal, const std::vector<int>& offset);
   OperatorDef* AddBackMeanOp(const std::string& input, const std::string& mean, int count = 1);
   OperatorDef* AddMeanStdevOp(const std::string& input, const std::string& mean, const std::string& scale);
@@ -50,6 +52,7 @@ class NetUtil {
   OperatorDef* AddReshapeOp(const std::string& input, const std::string& output, const std::vector<int>& shape);
 
   OperatorDef* AddWeightedSumOp(const std::vector<std::string>& inputs, const std::string& sum);
+  OperatorDef* AddSumOp(const std::vector<std::string>& inputs, const std::string& sum);
   OperatorDef* AddMomentumSgdOp(const std::string& param, const std::string& moment, const std::string& grad, const std::string& lr);
   OperatorDef* AddAdagradOp(const std::string& param, const std::string& moment, const std::string& grad, const std::string& lr);
   OperatorDef* AddAdamOp(const std::string& param, const std::vector<std::string>& moments, const std::string& grad, const std::string& lr, const std::string& iter);
@@ -57,11 +60,13 @@ class NetUtil {
   OperatorDef* AddClipOp(const std::string& input, const std::string& output, float min, float max);
   OperatorDef* AddCastOp(const std::string& input, const std::string& output, TensorProto::DataType type);
   OperatorDef* AddIterOp(const std::string& iter);
-  OperatorDef* AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate);
+  OperatorDef* AddAtomicIterOp(const std::string& mutex, const std::string& iter);
+  OperatorDef* AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate, float gamma = 0.999f);
 
   void AddInput(const std::string input);
   void AddOutput(const std::string output);
   void SetName(const std::string name);
+  void SetType(const std::string type);
 
   void SetFillToTrain();
   void SetRenameInplace();

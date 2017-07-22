@@ -40,9 +40,9 @@ TensorCPU get_tensor_blob(const Blob &blob) {
   return blob.Get<TensorCPU>();
 }
 
-void set_tensor_blob(Blob &blob, const TensorCPU &value) {
+void set_tensor_blob(Blob &blob, const TensorCPU &value, bool force_cuda = false) {
 #ifdef WITH_CUDA
-  if (blob.IsType<TensorCUDA>()) {
+  if (force_cuda || blob.IsType<TensorCUDA>()) {
     auto tensor = blob.GetMutable<TensorCUDA>();
     tensor->ResizeLike(value);
     tensor->ShareData(value);
