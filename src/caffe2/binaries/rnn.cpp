@@ -1,6 +1,4 @@
 #include "caffe2/core/init.h"
-#include "caffe2/core/operator_gradient.h"
-#include "caffe2/core/operator.h"
 
 #include "caffe2/util/net.h"
 #include "util/print.h"
@@ -11,7 +9,7 @@ CAFFE2_DEFINE_string(train_data, "res/shakespeare.txt", "Path to training data i
 
 CAFFE2_DEFINE_int(train_runs, 10 * 1000, "The of training runs.");
 CAFFE2_DEFINE_int(seq_length, 25, "One training example sequence length");
-CAFFE2_DEFINE_int(batch_size, 1 * caffe2::cuda_multipier, "Training batch size");
+CAFFE2_DEFINE_int(batch_size, 1, "Training batch size");
 CAFFE2_DEFINE_int(iters_to_report, 500, "How often to report loss and generate text");
 CAFFE2_DEFINE_int(hidden_size, 100, "Dimension of the hidden representation");
 CAFFE2_DEFINE_int(gen_length, 500, "One forward example sequence length");
@@ -101,6 +99,7 @@ void run() {
   for (auto c: vocab) {
     char_to_idx[c] = index;
     idx_to_char[index++] = c;
+    // std::cout << c;
   }
 
   // >>> self.D = len(self.char_to_idx)
