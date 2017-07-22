@@ -46,7 +46,7 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
   // add reduce mean as score
   dream.AddBackMeanOp(output, "mean", 2);
   dream.AddDiagonalOp("mean", "diagonal", { 0, FLAGS_channel });
-  dream.AddAveragedLoss("diagonal", "score");
+  dream.AddAveragedLossOp("diagonal", "score");
   dream.AddConstantFillWithOp(1.f, "score", "score_grad");
 
   // add back prop

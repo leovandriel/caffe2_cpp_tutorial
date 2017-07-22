@@ -28,7 +28,7 @@ void ModelUtil::AddTestOps(const std::string &output) {
 
 void ModelUtil::AddXentOps(const std::string &output) {
   predict_.AddLabelCrossEntropyOp(output, label_name, xent_name);
-  predict_.AddAveragedLoss(xent_name, loss_name);
+  predict_.AddAveragedLossOp(xent_name, loss_name);
   predict_.AddAccuracyOp(output, label_name, accuracy_name);
   predict_.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
 }

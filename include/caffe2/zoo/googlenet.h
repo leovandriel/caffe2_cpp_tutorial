@@ -80,7 +80,7 @@ class GoogleNetModel : public ModelUtil {
     std::string layer = input;
     layer = predict_.AddSoftmaxOp(layer, output + "softmax")->output(0);
     layer = predict_.AddLabelCrossEntropyOp(layer, "label", output + "xent")->output(0);
-    layer = predict_.AddAveragedLoss(layer, output + "loss" + prefix)->output(0);
+    layer = predict_.AddAveragedLossOp(layer, output + "loss" + prefix)->output(0);
     predict_.AddAccuracyOp(output + "classifier", "label", output + "top-1");
     return predict_.AddAccuracyOp(output + "classifier", "label", output + "top-5", 5);
   }

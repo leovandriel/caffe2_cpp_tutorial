@@ -1,5 +1,8 @@
 #include "caffe2/util/net.h"
 
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/text_format.h"
+
 namespace caffe2 {
 
 const std::set<std::string> trainable_ops({
@@ -18,6 +21,7 @@ const std::set<std::string> trainable_ops({
   "LRN",
   "MaxPool",
   "Mul",
+  "RecurrentNetwork",
   "Relu",
   "Reshape",
   "Slice",
@@ -146,23 +150,27 @@ OperatorDef* NetUtil::AddCoutOp(const std::vector<std::string>& params) {
 }
 
 OperatorDef* NetUtil::AddZeroOneOp(const std::string& pred, const std::string& label) {
-  auto op = AddOp("ZeroOne", { pred, label }, {});
-  return op;
+  return AddOp("ZeroOne", { pred, label }, {});
 }
 
 OperatorDef* NetUtil::AddShowWorstOp(const std::string& pred, const std::string& label, const std::string& data) {
-  auto op = AddOp("ShowWorst", { pred, label, data }, {});
-  return op;
+  return AddOp("ShowWorst", { pred, label, data }, {});
 }
 
 OperatorDef* NetUtil::AddEnsureCpuOutputOp(const std::string& input, const std::string& output) {
-  auto op = AddOp("EnsureCPUOutput", { input }, { output });
-  return op;
+  return AddOp("EnsureCPUOutput", { input }, { output });
 }
 
 OperatorDef* NetUtil::AddCopyFromCpuInputOp(const std::string& input, const std::string& output) {
-  auto op = AddOp("CopyFromCPUInput", { input }, { output });
-  return op;
+  return AddOp("CopyFromCPUInput", { input }, { output });
+}
+
+OperatorDef* NetUtil::AddCopyOp(const std::string& input, const std::string& output) {
+  return AddOp("Copy", { input }, { output });
+}
+
+OperatorDef* NetUtil::AddCreateMutexOp(const std::string& param) {
+  return AddOp("CreateMutex", {}, { param });
 }
 
 // Initialization
@@ -271,8 +279,12 @@ OperatorDef* NetUtil::AddAveragePoolOp(const std::string& input, const std::stri
   return op;
 }
 
-OperatorDef* NetUtil::AddFcOp(const std::string& input, const std::string& w, const std::string& b, const std::string& output) {
-  return AddOp("FC", { input, w, b }, { output });
+OperatorDef* NetUtil::AddFcOp(const std::string& input, const std::string& w, const std::string& b, const std::string& output, int axis) {
+  auto op = AddOp("FC", { input, w, b }, { output });
+  if (axis != 1) {
+    net_add_arg(*op, "axis", axis);
+  }
+  return op;
 }
 
 OperatorDef* NetUtil::AddDropoutOp(const std::string& input, const std::string& output, float ratio) {
@@ -282,8 +294,12 @@ OperatorDef* NetUtil::AddDropoutOp(const std::string& input, const std::string& 
   return op;
 }
 
-OperatorDef* NetUtil::AddSoftmaxOp(const std::string& input, const std::string& output) {
-  return AddOp("Softmax", { input }, { output });
+OperatorDef* NetUtil::AddSoftmaxOp(const std::string& input, const std::string& output, int axis) {
+  auto op = AddOp("Softmax", { input }, { output });
+  if (axis != 1) {
+    net_add_arg(*op, "axis", axis);
+  }
+  return op;
 }
 
 OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs, const std::string& output, const std::string& order) {
@@ -306,7 +322,7 @@ OperatorDef* NetUtil::AddLabelCrossEntropyOp(const std::string& pred, const std:
   return AddOp("LabelCrossEntropy", { pred, label }, { xent });
 }
 
-OperatorDef* NetUtil::AddAveragedLoss(const std::string& input, const std::string& loss) {
+OperatorDef* NetUtil::AddAveragedLossOp(const std::string& input, const std::string& loss) {
   return AddOp("AveragedLoss", { input }, { loss });
 }
 
@@ -351,6 +367,10 @@ OperatorDef* NetUtil::AddReshapeOp(const std::string& input, const std::string& 
 
 OperatorDef* NetUtil::AddWeightedSumOp(const std::vector<std::string>& inputs, const std::string& sum) {
   return AddOp("WeightedSum", inputs, { sum });
+}
+
+OperatorDef* NetUtil::AddSumOp(const std::vector<std::string>& inputs, const std::string& sum) {
+  return AddOp("Sum", inputs, { sum });
 }
 
 OperatorDef* NetUtil::AddMomentumSgdOp(const std::string& param, const std::string& moment, const std::string& grad, const std::string& lr) {
@@ -398,12 +418,16 @@ OperatorDef* NetUtil::AddIterOp(const std::string& iter) {
   return AddOp("Iter", { iter }, { iter });
 }
 
-OperatorDef* NetUtil::AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate) {
+OperatorDef* NetUtil::AddAtomicIterOp(const std::string& mutex, const std::string& iter) {
+  return AddOp("AtomicIter", { mutex, iter }, { iter });
+}
+
+OperatorDef* NetUtil::AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate, float gamma) {
   auto op = AddOp("LearningRate", { iter }, { rate });
   net_add_arg(*op, "policy", "step");
   net_add_arg(*op, "stepsize", 1);
   net_add_arg(*op, "base_lr", -base_rate);
-  net_add_arg(*op, "gamma", 0.999f);
+  net_add_arg(*op, "gamma", gamma);
   return op;
 }
 
@@ -417,6 +441,10 @@ void NetUtil::AddOutput(const std::string output) {
 
 void NetUtil::SetName(const std::string name) {
   net_.set_name(name);
+}
+
+void NetUtil::SetType(const std::string type) {
+  net_.set_type(type);
 }
 
 void NetUtil::SetFillToTrain() {
