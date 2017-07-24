@@ -32,8 +32,12 @@ const std::set<std::string> trainable_ops({
 
 const std::set<std::string> non_trainable_ops({
   "Accuracy",
+  "Cast",
   "Cout",
   "ConstantFill",
+  "Iter",
+  "Scale",
+  "StopGradient",
   "TensorProtosDBInput",
 });
 
@@ -171,6 +175,22 @@ OperatorDef* NetUtil::AddCopyOp(const std::string& input, const std::string& out
 
 OperatorDef* NetUtil::AddCreateMutexOp(const std::string& param) {
   return AddOp("CreateMutex", {}, { param });
+}
+
+OperatorDef* NetUtil::AddPrintOp(const std::string& param, bool to_file) {
+  auto op = AddOp("Print", { param }, {});
+  if (to_file) {
+    net_add_arg(*op, "to_file", 1);
+  }
+  return op;
+}
+
+OperatorDef* NetUtil::AddSummarizeOp(const std::string& param, bool to_file) {
+  auto op = AddOp("Summarize", { param }, {});
+  if (to_file) {
+    net_add_arg(*op, "to_file", 1);
+  }
+  return op;
 }
 
 // Initialization
@@ -376,6 +396,14 @@ OperatorDef* NetUtil::AddWeightedSumOp(const std::vector<std::string>& inputs, c
   return AddOp("WeightedSum", inputs, { sum });
 }
 
+OperatorDef* NetUtil::AddCheckpointOp(const std::vector<std::string>& inputs, int every, const std::string &db_type, const std::string &db) {
+  auto op = AddOp("Checkpoint", inputs, {});
+  net_add_arg(*op, "every", every);
+  net_add_arg(*op, "db_type", db_type);
+  net_add_arg(*op, "db", db);
+  return op;
+}
+
 OperatorDef* NetUtil::AddSumOp(const std::vector<std::string>& inputs, const std::string& sum) {
   return AddOp("Sum", inputs, { sum });
 }
@@ -419,6 +447,10 @@ OperatorDef* NetUtil::AddCastOp(const std::string& input, const std::string& out
   auto op = AddOp("Cast", { input }, { output });
   net_add_arg(*op, "to", type);
   return op;
+}
+
+OperatorDef* NetUtil::AddStopGradientOp(const std::string& param) {
+  return AddOp("StopGradient", { param }, { param });
 }
 
 OperatorDef* NetUtil::AddIterOp(const std::string& iter) {

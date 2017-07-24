@@ -21,6 +21,8 @@ class NetUtil {
   OperatorDef* AddCopyFromCpuInputOp(const std::string& input, const std::string& output);
   OperatorDef* AddCopyOp(const std::string& input, const std::string& output);
   OperatorDef* AddCreateMutexOp(const std::string& param);
+  OperatorDef* AddPrintOp(const std::string& param, bool to_file = false);
+  OperatorDef* AddSummarizeOp(const std::string& param, bool to_file = false);
 
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape, const std::string& param);
   OperatorDef* AddXavierFillOp(const std::vector<int>& shape, const std::string& param);
@@ -61,9 +63,11 @@ class NetUtil {
   OperatorDef* AddScaleOp(const std::string& input, const std::string& output, float scale);
   OperatorDef* AddClipOp(const std::string& input, const std::string& output, float min, float max);
   OperatorDef* AddCastOp(const std::string& input, const std::string& output, TensorProto::DataType type);
+  OperatorDef* AddStopGradientOp(const std::string& param);
   OperatorDef* AddIterOp(const std::string& iter);
   OperatorDef* AddAtomicIterOp(const std::string& mutex, const std::string& iter);
   OperatorDef* AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate, float gamma = 0.999f);
+  OperatorDef* AddCheckpointOp(const std::vector<std::string>& inputs, int every, const std::string &db_type, const std::string &db);
 
   void AddInput(const std::string input);
   void AddOutput(const std::string output);
