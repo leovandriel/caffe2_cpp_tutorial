@@ -4,6 +4,7 @@
 #include "caffe2/util/net.h"
 #include "caffe2/zoo/alexnet.h"
 #include "caffe2/zoo/googlenet.h"
+#include "caffe2/zoo/vgg.h"
 
 #ifdef WITH_CURL
   #include <curl/curl.h>
@@ -109,6 +110,10 @@ void add_model(const std::string &name, NetDef &init_model, NetDef &predict_mode
     AlexNetModel(init_model, predict_model).Add();
   } else if (name == "googlenet") {
     GoogleNetModel(init_model, predict_model).Add();
+  } else if (name == "vgg16") {
+    VGGModel(init_model, predict_model).Add(16);
+  } else if (name == "vgg19") {
+    VGGModel(init_model, predict_model).Add(19);
   } else {
     std::cerr << "model " << name << " not implemented";
   }
