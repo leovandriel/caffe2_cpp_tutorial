@@ -85,7 +85,7 @@ Make sure the databases folders `res/mnist-*-nchw-leveldb` are present. These sh
 
     ./bin/mnist
 
-This performs 100 training runs, which should provide about 90% accuracy. The MNIST transcript is fairly verbose as it does not use any model helpers, like `NetUtil` and `ModelUtil`.
+This performs 100 training runs, which should provide about 90% accuracy.
 
 ## RNNs and LSTM Networks
 

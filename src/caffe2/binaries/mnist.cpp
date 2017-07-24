@@ -1,6 +1,5 @@
 #include "caffe2/core/init.h"
-#include "caffe2/core/operator_gradient.h"
-#include "caffe2/core/operator.h"
+#include "caffe2/util/net.h"
 
 #ifdef WITH_CUDA
   #include "caffe2/core/context_gpu.h"
@@ -15,450 +14,140 @@ CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 namespace caffe2 {
 
 // >> def AddInput(model, batch_size, db, db_type):
-void AddInput(NetDef &initModel, NetDef &predictModel, int batch_size, const std::string &db, const std::string& db_type) {
+void AddInput(NetUtil &init, NetUtil &predict, int batch_size, const std::string &db, const std::string& db_type) {
   // Setup database connection
-  {
-    auto op = initModel.add_op();
-    op->set_type("CreateDB");
-    auto arg1 = op->add_arg();
-    arg1->set_name("db_type");
-    arg1->set_s(db_type);
-    auto arg2 = op->add_arg();
-    arg2->set_name("db");
-    arg2->set_s(db);
-    op->add_output("dbreader");
-  }
+  init.AddCreateDbOp("dbreader", db_type, db);
+  predict.AddInput("dbreader");
 
   // >>> data_uint8, label = model.TensorProtosDBInput([], ["data_uint8", "label"], batch_size=batch_size, db=db, db_type=db_type)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("TensorProtosDBInput");
-    auto arg = op->add_arg();
-    arg->set_name("batch_size");
-    arg->set_i(batch_size);
-    op->add_input("dbreader");
-    op->add_output("data_uint8");
-    op->add_output("label");
-  }
+  predict.AddTensorProtosDbInputOp("dbreader", "data_uint8", "label", batch_size);
 
   // >>> data = model.Cast(data_uint8, "data", to=core.DataType.FLOAT)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Cast");
-    auto arg = op->add_arg();
-    arg->set_name("to");
-    arg->set_i(TensorProto_DataType_FLOAT);
-    op->add_input("data_uint8");
-    op->add_output("data");
-  }
+  predict.AddCastOp("data_uint8", "data", TensorProto_DataType_FLOAT);
 
   // >>> data = model.Scale(data, data, scale=float(1./256))
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Scale");
-    auto arg = op->add_arg();
-    arg->set_name("scale");
-    arg->set_f(static_cast<float>(1) / static_cast<float>(256));
-    op->add_input("data");
-    op->add_output("data");
-  }
+  predict.AddScaleOp("data", "data", 1.f / 256);
 
   // >>> data = model.StopGradient(data, data)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("StopGradient");
-    op->add_input("data");
-    op->add_output("data");
-  }
+  predict.AddStopGradientOp("data");
 }
 
 // def AddLeNetModel(model, data):
-void AddLeNetModel(NetDef &initModel, NetDef &predictModel, std::vector<OperatorDef *> &gradient_ops, bool training) {
+void AddLeNetModel(NetUtil &init, NetUtil &predict, bool training) {
   // >>> conv1 = brew.conv(model, data, 'conv1', dim_in=1, dim_out=20, kernel=5)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Conv");
-    auto arg = op->add_arg();
-    arg->set_name("kernel");
-    arg->set_i(5);
-    op->add_input("data");
-    op->add_input("conv1_w");
-    op->add_input("conv1_b");
-    op->add_output("conv1");
-    gradient_ops.push_back(op);
-  }
+  predict.AddConvOp("data", "conv1_w", "conv1_b", "conv1", 1, 0, 5);
+  predict.AddInput("conv1_w");
+  predict.AddInput("conv1_b");
   if (training) {
-    auto op = initModel.add_op();
-    op->set_type("XavierFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(20);
-    arg->add_ints(1);
-    arg->add_ints(5);
-    arg->add_ints(5);
-    op->add_output("conv1_w");
-  } else {
-    initModel.add_external_input("conv1_w");
-  }
-  if (training) {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(20);
-    op->add_output("conv1_b");
-  } else {
-    initModel.add_external_input("conv1_b");
+    init.AddXavierFillOp({ 20, 1, 5, 5 }, "conv1_w");
+    init.AddConstantFillOp({ 20 }, "conv1_b");
   }
 
   // >>> pool1 = brew.max_pool(model, conv1, 'pool1', kernel=2, stride=2)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("MaxPool");
-    auto arg1 = op->add_arg();
-    arg1->set_name("kernel");
-    arg1->set_i(2);
-    auto arg2 = op->add_arg();
-    arg2->set_name("stride");
-    arg2->set_i(2);
-    op->add_input("conv1");
-    op->add_output("pool1");
-    gradient_ops.push_back(op);
-  }
+  predict.AddMaxPoolOp("conv1", "pool1", 2, 0, 2);
 
   // >>> conv2 = brew.conv(model, pool1, 'conv2', dim_in=20, dim_out=50, kernel=5)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Conv");
-    auto arg = op->add_arg();
-    arg->set_name("kernel");
-    arg->set_i(5);
-    op->add_input("pool1");
-    op->add_input("conv2_w");
-    op->add_input("conv2_b");
-    op->add_output("conv2");
-    gradient_ops.push_back(op);
-  }
+  predict.AddConvOp("pool1", "conv2_w", "conv2_b", "conv2", 1, 0, 5);
+  predict.AddInput("conv2_w");
+  predict.AddInput("conv2_b");
   if (training) {
-    auto op = initModel.add_op();
-    op->set_type("XavierFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(50);
-    arg->add_ints(20);
-    arg->add_ints(5);
-    arg->add_ints(5);
-    op->add_output("conv2_w");
-  } else {
-    initModel.add_external_input("conv2_w");
-  }
-  if (training) {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(50);
-    op->add_output("conv2_b");
-  } else {
-    initModel.add_external_input("conv2_b");
+    init.AddXavierFillOp({ 50, 20, 5, 5 }, "conv2_w");
+    init.AddConstantFillOp({ 50 }, "conv2_b");
   }
 
   // >>> pool2 = brew.max_pool(model, conv2, 'pool2', kernel=2, stride=2)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("MaxPool");
-    auto arg1 = op->add_arg();
-    arg1->set_name("kernel");
-    arg1->set_i(2);
-    auto arg2 = op->add_arg();
-    arg2->set_name("stride");
-    arg2->set_i(2);
-    op->add_input("conv2");
-    op->add_output("pool2");
-    gradient_ops.push_back(op);
-  }
+  predict.AddMaxPoolOp("conv2", "pool2", 2, 0, 2);
 
   // >>> fc3 = brew.fc(model, pool2, 'fc3', dim_in=50 * 4 * 4, dim_out=500)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("FC");
-    op->add_input("pool2");
-    op->add_input("fc3_w");
-    op->add_input("fc3_b");
-    op->add_output("fc3");
-    gradient_ops.push_back(op);
-  }
+  predict.AddFcOp("pool2", "fc3_w", "fc3_b", "fc3");
+  predict.AddInput("fc3_w");
+  predict.AddInput("fc3_b");
   if (training) {
-    auto op = initModel.add_op();
-    op->set_type("XavierFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(500);
-    arg->add_ints(800);
-    op->add_output("fc3_w");
-  } else {
-    initModel.add_external_input("fc3_w");
-  }
-  if (training) {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(500);
-    op->add_output("fc3_b");
-  } else {
-    initModel.add_external_input("fc3_b");
+    init.AddXavierFillOp({ 500, 800 }, "fc3_w");
+    init.AddConstantFillOp({ 500 }, "fc3_b");
   }
 
   // >>> fc3 = brew.relu(model, fc3, fc3)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Relu");
-    op->add_input("fc3");
-    op->add_output("fc3");
-    gradient_ops.push_back(op);
-  }
+  predict.AddReluOp("fc3", "fc3");
 
   // >>> pred = brew.fc(model, fc3, 'pred', 500, 10)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("FC");
-    op->add_input("fc3");
-    op->add_input("pred_w");
-    op->add_input("pred_b");
-    op->add_output("pred");
-    gradient_ops.push_back(op);
-  }
+  predict.AddFcOp("fc3", "pred_w", "pred_b", "pred");
+  predict.AddInput("pred_w");
+  predict.AddInput("pred_b");
   if (training) {
-    auto op = initModel.add_op();
-    op->set_type("XavierFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(10);
-    arg->add_ints(500);
-    op->add_output("pred_w");
-  } else {
-    initModel.add_external_input("pred_w");
-  }
-  if (training) {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(10);
-    op->add_output("pred_b");
-  } else {
-    initModel.add_external_input("pred_b");
+    init.AddXavierFillOp({ 10, 500 }, "pred_w");
+    init.AddConstantFillOp({ 10 }, "pred_b");
   }
 
   // >>> softmax = brew.softmax(model, pred, 'softmax')
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Softmax");
-    op->add_input("pred");
-    op->add_output("softmax");
-    gradient_ops.push_back(op);
-  }
+  predict.AddSoftmaxOp("pred", "softmax");
 }
 
 // def AddAccuracy(model, softmax, label):
-void AddAccuracy(NetDef &initModel, NetDef &predictModel) {
+void AddAccuracy(NetUtil &init, NetUtil &predict) {
   // >>> accuracy = model.Accuracy([softmax, label], "accuracy")
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Accuracy");
-    op->add_input("softmax");
-    op->add_input("label");
-    op->add_output("accuracy");
-  }
+  predict.AddAccuracyOp("softmax", "label", "accuracy");
 
   // Moved ITER to AddAccuracy function, so it's also available on test runs
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_i(0);
-    auto arg3 = op->add_arg();
-    arg3->set_name("dtype");
-    arg3->set_i(TensorProto_DataType_INT64);
-    op->add_output("ITER");
-    op->mutable_device_option()->set_device_type(CPU);
-  }
+  init.AddConstantFillOp({ 1 }, (int64_t)0, "ITER")->mutable_device_option()->set_device_type(CPU);
+  predict.AddInput("ITER");
+
   // >>> ITER = model.Iter("iter")
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Iter");
-    op->add_input("ITER");
-    op->add_output("ITER");
-  }
+  predict.AddIterOp("ITER");
 }
 
 // >>> def AddTrainingOperators(model, softmax, label):
-void AddTrainingOperators(NetDef &initModel, NetDef &predictModel, std::vector<string> params, std::vector<OperatorDef *> &gradient_ops) {
+void AddTrainingOperators(NetUtil &init, NetUtil &predict, std::vector<string> params) {
   // >>> xent = model.LabelCrossEntropy([softmax, label], 'xent')
-  {
-    auto op = predictModel.add_op();
-    op->set_type("LabelCrossEntropy");
-    op->add_input("softmax");
-    op->add_input("label");
-    op->add_output("xent");
-    gradient_ops.push_back(op);
-  }
+  predict.AddLabelCrossEntropyOp("softmax", "label", "xent");
 
   // >>> loss = model.AveragedLoss(xent, "loss")
-  {
-    auto op = predictModel.add_op();
-    op->set_type("AveragedLoss");
-    op->add_input("xent");
-    op->add_output("loss");
-    gradient_ops.push_back(op);
-  }
+  predict.AddAveragedLossOp("xent", "loss");
 
   // >>> AddAccuracy(model, softmax, label)
-  AddAccuracy(initModel, predictModel);
+  AddAccuracy(init, predict);
 
   // >>> model.AddGradientOperators([loss])
-  {
-    auto op = predictModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("value");
-    arg->set_f(1.0);
-    op->add_input("loss");
-    op->add_output("loss_grad");
-    op->set_is_gradient_op(true);
-  }
-  std::reverse(gradient_ops.begin(), gradient_ops.end());
-  for (auto op: gradient_ops) {
-    vector<GradientWrapper> output(op->output_size());
-    for (auto i = 0; i < output.size(); i++) {
-      output[i].dense_ = op->output(i) + "_grad";
-    }
-    GradientOpsMeta meta = GetGradientForOp(*op, output);
-    auto grad = predictModel.add_op();
-    grad->CopyFrom(meta.ops_[0]);
-    grad->set_is_gradient_op(true);
-    op->set_engine("CUDNN");
-    grad->set_engine("CUDNN");
-  }
+  predict.AddConstantFillWithOp(1.f, "loss", "loss_grad");
+  predict.AddGradientOps();
 
   // >>> LR = model.LearningRate(ITER, "LR", base_lr=-0.1, policy="step", stepsize=1, gamma=0.999 )
-  {
-    auto op = predictModel.add_op();
-    op->set_type("LearningRate");
-    auto arg1 = op->add_arg();
-    arg1->set_name("policy");
-    arg1->set_s("step");
-    auto arg2 = op->add_arg();
-    arg2->set_name("stepsize");
-    arg2->set_i(1);
-    auto arg3 = op->add_arg();
-    arg3->set_name("base_lr");
-    arg3->set_f(-0.1);
-    auto arg4 = op->add_arg();
-    arg4->set_name("gamma");
-    arg4->set_f(0.999);
-    op->add_input("ITER");
-    op->add_output("LR");
-  }
+  predict.AddLearningRateOp("ITER", "LR", 0.1);
 
   // >>> ONE = model.param_init_net.ConstantFill([], "ONE", shape=[1], value=1.0)
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_f(1.0);
-    op->add_output("ONE");
-  }
+  init.AddConstantFillOp({ 1 }, 1.f, "ONE");
+  predict.AddInput("ONE");
 
   // >>> for param in model.params:
   for (auto param: params) {
     // >>> param_grad = model.param_to_grad[param]
     // >>> model.WeightedSum([param, ONE, param_grad, LR], param)
-    {
-      auto op = predictModel.add_op();
-      op->set_type("WeightedSum");
-      op->add_input(param);
-      op->add_input("ONE");
-      op->add_input(param + "_grad");
-      op->add_input("LR");
-      op->add_output(param);
-    }
+    predict.AddWeightedSumOp({ param, "ONE", param + "_grad", "LR" }, param);
   }
 
   return; // Checkpoint causes problems on subsequent runs
 
   // >>> model.Checkpoint([ITER] + model.params, [],
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Checkpoint");
-    auto arg1 = op->add_arg();
-    arg1->set_name("every");
-    arg1->set_i(20);
-    auto arg2 = op->add_arg();
-    arg2->set_name("db_type");
-    arg2->set_s("leveldb");
-    auto arg3 = op->add_arg();
-    arg3->set_name("db");
-    arg3->set_s("mnist_lenet_checkpoint_%05d.leveldb");
-    op->add_input("ITER");
-    for (auto param: params) {
-      op->add_input(param);
-    }
-  }
+  std::vector<std::string> inputs({ "ITER" });
+  inputs.insert(inputs.end(), params.begin(), params.end());
+  predict.AddCheckpointOp(inputs, 20, "leveldb", "mnist_lenet_checkpoint_%05d.leveldb");
 }
 
 // >>> def AddBookkeepingOperators(model):
-void AddBookkeepingOperators(NetDef &initModel, NetDef &predictModel, std::vector<string> params) {
+void AddBookkeepingOperators(NetUtil &init, NetUtil &predict, std::vector<string> params) {
   // >>> model.Print('accuracy', [], to_file=1)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Print");
-    auto arg = op->add_arg();
-    arg->set_name("to_file");
-    arg->set_i(1);
-    op->add_input("accuracy");
-  }
+  predict.AddPrintOp("accuracy", true);
 
   // >>> model.Print('loss', [], to_file=1)
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Print");
-    auto arg = op->add_arg();
-    arg->set_name("to_file");
-    arg->set_i(1);
-    op->add_input("loss");
-  }
+  predict.AddPrintOp("loss", true);
 
   // >>> for param in model.params:
   for (auto param: params) {
     // >>> model.Summarize(param, [], to_file=1)
-    {
-      auto op = predictModel.add_op();
-      op->set_type("Summarize");
-      auto arg = op->add_arg();
-      arg->set_name("to_file");
-      arg->set_i(1);
-      op->add_input(param);
-    }
+    predict.AddSummarizeOp(param, true);
 
     // >>> model.Summarize(model.param_to_grad[param], [], to_file=1)
-    {
-      auto op = predictModel.add_op();
-      op->set_type("Summarize");
-      auto arg = op->add_arg();
-      arg->set_name("to_file");
-      arg->set_i(1);
-      op->add_input(param + "_grad");
-    }
+    predict.AddSummarizeOp(param + "_grad", true);
   }
 }
 
@@ -497,50 +186,53 @@ void run() {
 
   // >>> train_model = model_helper.ModelHelper(name="mnist_train", arg_scope={"order": "NCHW"})
   NetDef initTrainModel;
-  initTrainModel.set_name("mnist_train_init");
+  NetUtil initTrain(initTrainModel);
+  initTrain.SetName("mnist_train_init");
   NetDef predictTrainModel;
-  predictTrainModel.set_name("mnist_train_predict");
+  NetUtil predictTrain(predictTrainModel);
+  predictTrain.SetName("mnist_train_predict");
 
   std::vector<string> params({"conv1_w", "conv1_b", "conv2_w", "conv2_b", "fc3_w", "fc3_b", "pred_w", "pred_b"});
 
   // >>> data, label = AddInput(train_model, batch_size=64, db=os.path.join(data_folder, 'mnist-train-nchw-leveldb'), db_type='leveldb')
-  AddInput(initTrainModel, predictTrainModel, 64, FLAGS_train_db, "leveldb");
+  AddInput(initTrain, predictTrain, 64, FLAGS_train_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(train_model, data)
-  std::vector<OperatorDef *> gradient_ops;
-  AddLeNetModel(initTrainModel, predictTrainModel, gradient_ops, true);
+  AddLeNetModel(initTrain, predictTrain, true);
 
   // >>> AddTrainingOperators(train_model, softmax, label)
-  AddTrainingOperators(initTrainModel, predictTrainModel, params, gradient_ops);
+  AddTrainingOperators(initTrain, predictTrain, params);
 
   // >>> AddBookkeepingOperators(train_model)
-  AddBookkeepingOperators(initTrainModel, predictTrainModel, params);
+  AddBookkeepingOperators(initTrain, predictTrain, params);
 
   // >>> test_model = model_helper.ModelHelper(name="mnist_test", arg_scope=arg_scope, init_params=False)
   NetDef initTestModel;
-  initTestModel.set_name("mnist_test_init");
+  NetUtil initTest(initTestModel);
+  initTest.SetName("mnist_test_init");
   NetDef predictTestModel;
-  predictTestModel.set_name("mnist_test_predict");
+  NetUtil predictTest(predictTestModel);
+  predictTest.SetName("mnist_test_predict");
 
   // >>> data, label = AddInput(test_model, batch_size=100, db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
-  AddInput(initTestModel, predictTestModel, 100, FLAGS_test_db, "leveldb");
+  AddInput(initTest, predictTest, 100, FLAGS_test_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(test_model, data)
-  std::vector<OperatorDef *> gradient_ops_test;
-  AddLeNetModel(initTestModel, predictTestModel, gradient_ops_test, false);
+  AddLeNetModel(initTest, predictTest, false);
 
   // >>> AddAccuracy(test_model, softmax, label)
-  AddAccuracy(initTestModel, predictTestModel);
+  AddAccuracy(initTest, predictTest);
 
   // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy", arg_scope=arg_scope, init_params=False)
   NetDef initDeployModel;
-  initDeployModel.set_name("mnist_model_init");
+  NetUtil initDeploy(initDeployModel);
+  initDeploy.SetName("mnist_model_init");
   NetDef predictDeployModel;
-  predictDeployModel.set_name("mnist_model_predict");
+  NetUtil predictDeploy(predictDeployModel);
+  predictDeploy.SetName("mnist_model_predict");
 
   // >>> AddLeNetModel(deploy_model, "data")
-  std::vector<OperatorDef *> gradient_ops_deploy;
-  AddLeNetModel(initDeployModel, predictDeployModel, gradient_ops_deploy, false);
+  AddLeNetModel(initDeploy, predictDeploy, false);
 
 #ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
