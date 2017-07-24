@@ -9,8 +9,18 @@ Caffe2 has a strong C++ core but most tutorials only cover the outer Python laye
 
 Some higher level tools, like brewing models and adding gradient operations are currently not available in Caffe2's C++. This repo therefore provides some model helpers and other utilities as replacements.
 
-Check out the actual Caffe2 Python tutorials at [https://caffe2.ai/docs/tutorials.html](https://caffe2.ai/docs/tutorials.html).
+Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutorials.html](https://caffe2.ai/docs/tutorials.html).
 
+## Tutorials
+
+1. [Intro Tutorial](#intro-tutorial)
+2. [Toy Regression](#toy-regression)
+3. [Pre-trained models](#loading-pre-trained-models)
+4. [MNIST from scratch](#mnist---create-a-cnn-from-scratch)
+5. [RNNs and LSTM](#rnns-and-lstm-networks)
+6. [ImageNet Classifiers](#imagenet-classifiers)
+7. [Fast Retrain](#fast-retrain)
+8. [Deep Dream](#deep-dream)
 
 ## Build
 
@@ -109,17 +119,15 @@ The file `res/dickens.txt` contains a larger volume of text. Because the writing
 
 After 200K runs, the loss has not dropped below 36, in contrast to the shakespeare text. Perhaps this requires an additional hidden layer in the LSTM model.
 
-## ImageNet
+## ImageNet Classifiers
 
-To classify images using pre-trained ImageNet models, use:
+Much of the progress in image recognition is published after the yearly [ImageNet Large Scale Visual Recognition Challenge](http://www.image-net.org/challenges/LSVRC/) (ILSVRC). This competion is based on the [ImageNet](http://www.image-net.org/) dataset, which is a large volume of labeled images of nearly everything. The models for this challenge form the basis of much image recognition and processing research. One of the most basic challenges is classifying an image, which is covered in this example.
 
-    ./bin/imagenet --model <name-of-model>
+To classify the content of an image, run:
 
-First download additional models:
+    ./bin/imagenet --model <name-of-model> --image_file <some-image>
 
-	./script/download_extra.sh
-
-All available models:
+Where the model name is one of the following:
 
 * `alexnet`: [AlexNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_alexnet)
 * `googlenet`: [GoogleNet](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet)
@@ -127,9 +135,19 @@ All available models:
 * `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 * `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
 
-These models are taken from the [Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo) and [Caffe2 Models](https://github.com/leonardvandriel/caffe2_models).
+The pre-trained weights for these models are automatically downloaded and stored in the `res/` folder. If you wish to download all models in one go, run:
 
-## Retrain
+	./script/download_extra.sh
+
+Additional models can be made available on request!
+
+See also:
+
+- [Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo)
+- [Caffe2 Models](https://github.com/leonardvandriel/caffe2_models)
+- [Neural Network Architectures](https://medium.com/towards-data-science/neural-network-architectures-156e5bad51ba)
+
+## Fast Retrain
 
 The article [DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition](https://arxiv.org/pdf/1310.1531v1.pdf) describes how to get good results on new datasets with minimal training efforts by reusing trained parameters of an existing model. For example, the above models are all trained on ImageNet data, which means they will only be able to classify ImageNet labels. However, by retraining just the top half of the model we can get high accuracy in a fraction of the time. If the image data has similar characteristics, it's possible to get good results by only retraining the top 'FC' layer.
 
@@ -143,7 +161,10 @@ If you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
     ./bin/retrain --model vgg16 --folder <image-folder> --layer fc6
 
-This
+See also:
+
+- [How to Retrain Inception's Final Layer for New Categories](https://www.tensorflow.org/tutorials/image_retraining)
+- [Train your own image classifier with Inception in TensorFlow](https://research.googleblog.com/2016/03/train-your-own-image-classifier-with.html)
 
 ## Deep Dream
 
