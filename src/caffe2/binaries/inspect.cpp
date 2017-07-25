@@ -1,6 +1,6 @@
 #include "util/misc.h"
 
-CAFFE2_DEFINE_string(path, "", "path of the database");
+CAFFE2_DEFINE_string(path, "res/mnist-test-nchw-leveldb", "path of the database");
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 
 namespace caffe2 {

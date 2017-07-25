@@ -9,20 +9,31 @@ namespace caffe2 {
 const auto screen_width = 1600;
 const auto window_padding = 4;
 
-cv::Mat to_image(const Tensor<CPUContext>& tensor, int index, float mean) {
+template<typename T>
+cv::Mat to_image(const Tensor<CPUContext>& tensor, int index, float mean, int type) {
   CHECK(tensor.ndim() == 4);
   auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2), width = tensor.dim(3);
   CHECK(index < count);
-  auto data = tensor.data<float>() + (index * width * height * depth);
+  auto data = tensor.data<T>() + (index * width * height * depth);
   vector<cv::Mat> channels(depth);
   for (auto& j: channels) {
-    j = cv::Mat(height, width, CV_32F, (void*)data);
+    j = cv::Mat(height, width, type, (void*)data);
     data += (width * height);
   }
   cv::Mat image;
   cv::merge(channels, image);
   image.convertTo(image, CV_8UC3, 1.0, mean);
   return image;
+}
+
+cv::Mat to_image(const Tensor<CPUContext>& tensor, int index, float mean) {
+  if (tensor.IsType<float>()) {
+    return to_image<float>(tensor, index, mean, CV_32F);
+  }
+  if (tensor.IsType<uchar>()) {
+    return to_image<uchar>(tensor, index, mean, CV_8UC1);
+  }
+  LOG(FATAL) << "tensor to image for type " << tensor.meta().name() << " not implemented";
 }
 
 void TensorUtil::ShowImage(int width, int height, int index, const std::string& title, int offset, int wait, float mean) {
