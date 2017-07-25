@@ -87,6 +87,9 @@ class NetUtil {
   std::set<std::string> CollectLayers(const std::string &layer, bool forward = false);
 
   void CheckLayerAvailable(const std::string &layer);
+  std::string Proto();
+  void Print();
+
 
  protected:
    NetDef& net_;
