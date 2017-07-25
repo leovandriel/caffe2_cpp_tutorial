@@ -652,6 +652,18 @@ void NetUtil::CheckLayerAvailable(const std::string &layer) {
   }
 }
 
+std::string NetUtil::Proto() {
+  std::string string;
+  google::protobuf::io::StringOutputStream stream(&string);
+  google::protobuf::TextFormat::Print(net_, &stream);
+  return string;
+}
+
+void NetUtil::Print() {
+  google::protobuf::io::OstreamOutputStream stream(&std::cout);
+  google::protobuf::TextFormat::Print(net_, &stream);
+}
+
 OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, const std::string &hidden_init, const std::string &cell_init, const std::string &scope, const std::string &hidden_output, const std::string &cell_state, bool force_cpu) {
   NetDef forwardModel;
   NetUtil forward(forwardModel);
@@ -678,9 +690,6 @@ OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, cons
       forwardModel.mutable_device_option()->set_device_type(CUDA);
     }
   #endif
-  std::string forwardString;
-  google::protobuf::io::StringOutputStream forwardStream(&forwardString);
-  google::protobuf::TextFormat::Print(forwardModel, &forwardStream);
 
   NetDef backwardModel;
   NetUtil backward(backwardModel);
@@ -707,9 +716,6 @@ OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, cons
       backwardModel.mutable_device_option()->set_device_type(CUDA);
     }
   #endif
-  std::string backwardString;
-  google::protobuf::io::StringOutputStream backwardStream(&backwardString);
-  google::protobuf::TextFormat::Print(backwardModel, &backwardStream);
 
   auto op = AddOp("RecurrentNetwork", { scope + "/i2h", hidden_init, cell_init, scope + "/gates_t_w", scope + "/gates_t_b", seq_lengths }, { scope + "/hidden_t_all", hidden_output, scope + "/cell_t_all", cell_state, scope + "/step_workspaces" });
   net_add_arg(*op, "outputs_with_grads", std::vector<int>{ 0 });
@@ -726,8 +732,8 @@ OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, cons
   net_add_arg(*op, "param_grads", std::vector<std::string>{ scope + "/gates_t_w_grad", scope + "/gates_t_b_grad" });
   net_add_arg(*op, "backward_link_internal", std::vector<std::string>{ scope + "/hidden_t_grad", scope + "/hidden_t_prev_grad", scope + "/cell_t_grad", scope + "/cell_t_prev_grad", scope + "/gates_t_grad" });
   net_add_arg(*op, "param", std::vector<int>{ 3, 4 });
-  net_add_arg(*op, "step_net", forwardString);
-  net_add_arg(*op, "backward_step_net", backwardString);
+  net_add_arg(*op, "step_net", forward.Proto());
+  net_add_arg(*op, "backward_step_net", backward.Proto());
   net_add_arg(*op, "alias_src", std::vector<std::string>{ scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/hidden_t_prev_states", scope + "/" + scope + "/cell_t_prev_states", scope + "/" + scope + "/cell_t_prev_states" });
   net_add_arg(*op, "initial_recurrent_state_ids", std::vector<int>{ 1, 2 });
   return op;
