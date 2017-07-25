@@ -234,8 +234,8 @@ void dump_database(const std::string db_path, const std::string &db_type) {
     auto dims = tensor.dims();
     dims.insert(dims.begin(), 1);
     tensor.Resize(dims);
-    std::cout << key << "  " << (value.size() / 1000) << "K  (" << tensor.dims() << ")  " << label << std::endl;
-    TensorUtil(tensor).ShowImage(200, 200, 0, "inspect", 0, 1000);
+    std::cout << key << "  " << (value.size() > 1000 ? value.size() / 1000 : value.size()) << (value.size() > 1000 ? "K" : "B") << "  (" << tensor.dims() << ")  " << label << std::endl;
+    TensorUtil(tensor).ShowImage(200, 200, 0, "inspect", 0, 1000, 0);
   }
 }
 
