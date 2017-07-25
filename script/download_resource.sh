@@ -22,17 +22,5 @@ test -f res/t10k-images-idx3-ubyte || curl --progress-bar http://yann.lecun.com/
 test -f res/t10k-labels-idx1-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz | gunzip > res/t10k-labels-idx1-ubyte
 test -d res/mnist-test-nchw-leveldb || make_mnist_db --image_file=res/t10k-images-idx3-ubyte --label_file=res/t10k-labels-idx1-ubyte --output_file=res/mnist-test-nchw-leveldb --channel_first --db leveldb
 
-test -f res/shakespeare.txt || echo "downloading RNN and LSTM test data (11)"
-test -f res/dickens.txt || echo "" > res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/98/98-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/1400/1400-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/766/766-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/786/786-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/580/580-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/883/883-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/967/967-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/963/963-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/700/700-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/821/821-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || cat res/dickens.tmp | tr -cd 'A-Za-z0-9 \n!?,.:;()-' | tr -d '\r' | tr '\n' '~' | sed -e 's/~~/^/g' | tr '^' '\n' | tr '~' ' ' > res/dickens.txt && rm res/dickens.tmp
+test -f res/shakespeare.txt || echo "downloading RNN and LSTM test data (1)"
 test -f res/shakespeare.txt || curl --progress-bar --output res/shakespeare.txt https://caffe2.ai/static/datasets/shakespeare.txt
