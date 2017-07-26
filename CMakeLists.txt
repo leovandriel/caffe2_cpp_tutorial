@@ -23,7 +23,6 @@ find_library(CAFFE2_GPU_LIB Caffe2_GPU)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
 find_library(NCCL_LIB nccl)
-find_library(CURAND_LIB curand)
 
 if(NOT CAFFE2_LIB)
   message(FATAL_ERROR "Caffe2 lib not found")
@@ -75,7 +74,7 @@ if(OpenCV_LIBS)
 endif()
 
 if(CUDA_LIBRARIES)
-  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${NCCL_LIB} ${CURAND_LIB})
+  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${NCCL_LIB} ${CUDA_curand_LIBRARY})
   add_definitions(-DWITH_CUDA)
 endif()
 
