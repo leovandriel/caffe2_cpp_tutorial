@@ -20,7 +20,8 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 5. [RNNs and LSTM](#rnns-and-lstm-networks)
 6. [ImageNet Classifiers](#imagenet-classifiers)
 7. [Fast Retrain](#fast-retrain)
-8. [Deep Dream](#deep-dream)
+8. [Training from scratch](#training-from-scratch)
+9. [Deep Dream](#deep-dream)
 
 ## Build
 
@@ -174,6 +175,14 @@ See also:
 
 - [How to Retrain Inception's Final Layer for New Categories](https://www.tensorflow.org/tutorials/image_retraining)
 - [Train your own image classifier with Inception in TensorFlow](https://research.googleblog.com/2016/03/train-your-own-image-classifier-with.html)
+
+## Training from scratch
+
+To fully train an existing image classification model from scratch, run:
+
+    ./bin/train --model <model-name> --folder <image-folder>
+
+The models currently available for training are the ones listed in the [ImageNet](#imagenet-classifiers) section. This will take a lot of time even when runnning on the GPU.
 
 ## Deep Dream
 
