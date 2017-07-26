@@ -165,6 +165,12 @@ void run() {
   std::cout << "https://caffe2.ai/docs/tutorial-MNIST.html" << std::endl;
   std::cout << std::endl;
 
+  if (!std::ifstream(FLAGS_train_db).good() || !std::ifstream(FLAGS_test_db).good()) {
+    std::cerr << "error: MNIST database missing: " << (std::ifstream(FLAGS_train_db).good() ? FLAGS_test_db : FLAGS_train_db) << std::endl;
+    std::cerr << "Make sure to first run ./scrips/download_resource.sh" << std::endl;
+    return;
+  }
+
   std::cout << "train_db: " << FLAGS_train_db << std::endl;
   std::cout << "test_db: " << FLAGS_test_db << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;

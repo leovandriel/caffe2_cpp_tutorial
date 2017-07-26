@@ -21,6 +21,17 @@ void run() {
   std::cout << "https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html" << std::endl;
   std::cout << std::endl;
 
+  if (!std::ifstream(FLAGS_init_net).good() || !std::ifstream(FLAGS_predict_net).good()) {
+    std::cerr << "error: Squeezenet model file missing: " << (std::ifstream(FLAGS_init_net).good() ? FLAGS_predict_net : FLAGS_init_net) << std::endl;
+    std::cerr << "Make sure to first run ./scrips/download_resource.sh" << std::endl;
+    return;
+  }
+
+  if (!std::ifstream(FLAGS_image_file).good()) {
+    std::cerr << "error: Image file missing: " << FLAGS_image_file << std::endl;
+    return;
+  }
+
   std::cout << "init_net: " << FLAGS_init_net << std::endl;
   std::cout << "predict_net: " << FLAGS_predict_net << std::endl;
   std::cout << "image_file: " << FLAGS_image_file << std::endl;

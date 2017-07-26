@@ -60,6 +60,12 @@ void run() {
   std::cout << "https://caffe2.ai/docs/RNNs-and-LSTM-networks.html" << std::endl;
   std::cout << std::endl;
 
+  if (!std::ifstream(FLAGS_train_data).good()) {
+    std::cerr << "error: Text file missing: " << FLAGS_train_data << std::endl;
+    std::cerr << "Make sure to first run ./scrips/download_resource.sh" << std::endl;
+    return;
+  }
+
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "train_data: " << FLAGS_train_data << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
