@@ -32,6 +32,11 @@ void run() {
     return;
   }
 
+  if (!std::ifstream(FLAGS_image_file).good()) {
+    std::cerr << "error: Image file missing: " << FLAGS_image_file << std::endl;
+    return;
+  }
+
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
