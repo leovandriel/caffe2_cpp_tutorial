@@ -48,4 +48,5 @@ test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/9
 test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/963/963-0.txt >> res/dickens.tmp
 test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/700/700-0.txt >> res/dickens.tmp
 test -f res/dickens.txt || curl --progress-bar https://www.gutenberg.org/files/821/821-0.txt >> res/dickens.tmp
-test -f res/dickens.txt || cat res/dickens.tmp | tr -cd 'A-Za-z0-9 \n!?,.:;()-' | tr -d '\r' | tr '\n' '~' | sed -e 's/~~/^/g' | tr '^' '\n' | tr '~' ' ' > res/dickens.txt && rm res/dickens.tmp
+test -f res/dickens.txt || cat res/dickens.tmp | tr -cd 'A-Za-z0-9 \n!?,.:;()-' | tr -d '\r' | tr '\n' '~' | sed -e 's/~~/^/g' | tr '^' '\n' | tr '~' ' ' > res/dickens.txt
+test -f res/dickens.tmp && rm res/dickens.tmp

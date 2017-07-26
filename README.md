@@ -50,6 +50,15 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     Internally it creates a `build` folder and runs CMake from there. This also downloads the resources that are required for running some of the tutorials.
 
+    If you wish to run CMake manually:
+
+        mkdir -p build
+        cd build
+        cmake ..
+        make
+        cd ..
+        ./script/download_resource.sh
+
 Note: sources are developed and tested on macOS and Ubuntu.
 
 
