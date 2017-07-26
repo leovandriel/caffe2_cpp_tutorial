@@ -1,7 +1,7 @@
 # Proxy to CMake
 
 all:
-	@test -d build || (mkdir -p build && cd build && cmake .. && cd .. && ./script/download_resource.sh); cd build && make
+	@test -f build/Makefile || (mkdir -p build && cd build && cmake .. && cd .. && ./script/download_resource.sh); cd build && make
 
 clean:
 	@rm -rf build
