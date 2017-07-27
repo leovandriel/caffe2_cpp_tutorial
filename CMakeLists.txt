@@ -84,7 +84,7 @@ endif()
 
 file(GLOB BIN_SOURCES "${CMAKE_SOURCE_DIR}/src/caffe2/binaries/*.cc")
 foreach(filename ${BIN_SOURCES})
-  get_filename_component(name ${filename} NAME)
+  get_filename_component(name ${filename} NAME_WE)
   add_executable(${name} ${filename})
   target_link_libraries(${name} ${ALL_LIBRARIES})
 endforeach()
