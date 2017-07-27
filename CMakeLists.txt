@@ -29,13 +29,13 @@ endif()
 
 set(ALL_LIBRARIES)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
-  file(DOWNLOAD https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h ${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h)
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h")
+  file(DOWNLOAD "https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h" "${CMAKE_SOURCE_DIR}/include/res/imagenet_classes.h")
 endif()
 
-file(GLOB LIB_SOURCES "src/caffe2/util/*.cc" "src/caffe2/operator/*.cc")
+file(GLOB LIB_SOURCES "${CMAKE_SOURCE_DIR}/src/caffe2/util/*.cc" "${CMAKE_SOURCE_DIR}/src/caffe2/operator/*.cc")
 add_library(caffe2_cpp ${LIB_SOURCES})
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND ALL_LIBRARIES -Wl,-force_load caffe2_cpp)
@@ -47,7 +47,7 @@ if(CUDA_LIBRARIES)
   # set(CUDA_PROPAGATE_HOST_FLAGS OFF)
   list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
   list(APPEND CUDA_NVCC_FLAGS "-Wno-deprecated-gpu-targets")
-  file(GLOB CUDA_SOURCES "src/caffe2/operator/*.cu")
+  file(GLOB CUDA_SOURCES "${CMAKE_SOURCE_DIR}/src/caffe2/operator/*.cu")
   cuda_add_library(caffe2_cpp_gpu ${CUDA_SOURCES})
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND ALL_LIBRARIES -Wl,-force_load caffe2_cpp_gpu)
@@ -82,35 +82,9 @@ if(CURL_LIBRARIES)
   add_definitions(-DWITH_CURL)
 endif()
 
-add_executable(intro src/caffe2/binaries/intro.cpp)
-target_link_libraries(intro ${ALL_LIBRARIES})
-
-add_executable(toy src/caffe2/binaries/toy.cpp)
-target_link_libraries(toy ${ALL_LIBRARIES})
-
-add_executable(pretrained src/caffe2/binaries/pretrained.cpp)
-target_link_libraries(pretrained ${ALL_LIBRARIES})
-
-add_executable(mnist src/caffe2/binaries/mnist.cpp)
-target_link_libraries(mnist ${ALL_LIBRARIES})
-
-add_executable(rnn src/caffe2/binaries/rnn.cpp)
-target_link_libraries(rnn ${ALL_LIBRARIES})
-
-add_executable(imagenet src/caffe2/binaries/imagenet.cpp)
-target_link_libraries(imagenet ${ALL_LIBRARIES})
-
-add_executable(retrain src/caffe2/binaries/retrain.cpp)
-target_link_libraries(retrain ${ALL_LIBRARIES})
-
-add_executable(dream src/caffe2/binaries/dream.cpp)
-target_link_libraries(dream ${ALL_LIBRARIES})
-
-add_executable(train src/caffe2/binaries/train.cpp)
-target_link_libraries(train ${ALL_LIBRARIES})
-
-add_executable(diff src/caffe2/binaries/diff.cpp)
-target_link_libraries(diff ${ALL_LIBRARIES})
-
-add_executable(inspect src/caffe2/binaries/inspect.cpp)
-target_link_libraries(inspect ${ALL_LIBRARIES})
+file(GLOB BIN_SOURCES "${CMAKE_SOURCE_DIR}/src/caffe2/binaries/*.cc")
+foreach(filename ${BIN_SOURCES})
+  get_filename_component(name ${filename} NAME)
+  add_executable(${name} ${filename})
+  target_link_libraries(${name} ${ALL_LIBRARIES})
+endforeach()
