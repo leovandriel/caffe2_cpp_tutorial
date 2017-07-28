@@ -1,5 +1,9 @@
 #include "caffe2/util/net.h"
 
+#ifdef WITH_CUDA
+  #include "caffe2/core/context_gpu.h"
+#endif
+
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
 
@@ -662,6 +666,12 @@ std::string NetUtil::Proto() {
 void NetUtil::Print() {
   google::protobuf::io::OstreamOutputStream stream(&std::cout);
   google::protobuf::TextFormat::Print(net_, &stream);
+}
+
+void NetUtil::SetDeviceCUDA() {
+#ifdef WITH_CUDA
+  net_.mutable_device_option()->set_device_type(CUDA);
+#endif
 }
 
 OperatorDef *NetUtil::AddRecurrentNetworkOp(const std::string &seq_lengths, const std::string &hidden_init, const std::string &cell_init, const std::string &scope, const std::string &hidden_output, const std::string &cell_state, bool force_cpu) {

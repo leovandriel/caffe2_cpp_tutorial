@@ -7,11 +7,11 @@
 
 #include "caffe2/util/model.h"
 #include "caffe2/util/tensor.h"
+#include "caffe2/util/blob.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "util/cuda.h"
 #include "util/print.h"
 
 namespace caffe2 {
@@ -129,9 +129,9 @@ void write_batch(Workspace &workspace, NetBase *predict_net, std::string &input_
   TensorUtil(input).ReadImages(filenames, size_to_fit, indices);
   TensorCPU output;
   if (predict_net) {
-    set_tensor_blob(*workspace.GetBlob(input_name), input);
+    BlobUtil(*workspace.GetBlob(input_name)).Set(input);
     predict_net->Run();
-    auto tensor = get_tensor_blob(*workspace.GetBlob(output_name));
+    auto tensor = BlobUtil(*workspace.GetBlob(output_name)).Get();
     output.ResizeLike(tensor);
     output.ShareData(tensor);
   } else {

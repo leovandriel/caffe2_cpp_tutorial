@@ -1,15 +1,14 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
 #include "caffe2/utils/proto_utils.h"
+#include "caffe2/util/tensor.h"
+#include "caffe2/util/blob.h"
 #include "caffe2/zoo/keeper.h"
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "caffe2/util/tensor.h"
-
 #include "util/print.h"
-#include "util/cuda.h"
 #include "util/misc.h"
 #include "res/imagenet_classes.h"
 
@@ -130,9 +129,9 @@ void run() {
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
-    set_device_cuda_model(init_model);
-    set_device_cuda_model(dream_model);
-    set_device_cuda_model(display_model);
+    NetUtil(init_model).SetDeviceCUDA();
+    NetUtil(dream_model).SetDeviceCUDA();
+    NetUtil(display_model).SetDeviceCUDA();
     // NetUtil(dream_model).SetEngineCudnnOps();
   }
 
@@ -157,18 +156,16 @@ void run() {
   // auto &input_name = dream_model.external_input(0);
   // TensorCPU input;
   // TensorUtil(input).ReadImage(FLAGS_image_file, FLAGS_size / 10);
-  // set_tensor_blob(*workspace.GetBlob(input_name), input);
+  // BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   // TensorUtil(input).ShowImages(0);
 
   std::cout << "start size: " << image_size << std::endl;
 
   if (FLAGS_show_image) {
-#ifndef WITH_CUDA
     // show current images
     display_net->Run();
-    auto image = get_tensor_blob(*workspace.GetBlob("image"));
+    auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
-#endif
   }
 
   // run predictor
@@ -176,9 +173,9 @@ void run() {
 
     // scale up image tiny bit
     image_size = std::min(image_size * (100 + FLAGS_percent_incr) / 100, FLAGS_size);
-    auto data = get_tensor_blob(*workspace.GetBlob("data"));
+    auto data = BlobUtil(*workspace.GetBlob("data")).Get();
     auto scaled = TensorUtil(data).ScaleImageTensor(image_size, image_size);
-    set_tensor_blob(*workspace.GetBlob("data"), scaled);
+    BlobUtil(*workspace.GetBlob("data")).Set(scaled);
 
     for (int i = 0; i < FLAGS_scale_runs; i++, step++) {
       dream_time -= clock();
@@ -187,36 +184,36 @@ void run() {
 
 
       if (!step) {
-        auto depth = get_tensor_blob(*workspace.GetBlob(FLAGS_layer)).dim(1);
+        auto depth = BlobUtil(*workspace.GetBlob(FLAGS_layer)).Get().dim(1);
         std::cout << "channel depth: " << depth << std::endl;
 
-        // print(get_tensor_blob(*workspace.GetBlob(FLAGS_layer)), FLAGS_layer);
-        // print(get_tensor_blob(*workspace.GetBlob("mean")), "mean");
-        // print(get_tensor_blob(*workspace.GetBlob("diagonal")), "diagonal");
-        // print(get_tensor_blob(*workspace.GetBlob("score")), "score");
-        // print(get_tensor_blob(*workspace.GetBlob("score_grad")), "score_grad");
-        // print(get_tensor_blob(*workspace.GetBlob("diagonal_grad")), "diagonal_grad");
-        // print(get_tensor_blob(*workspace.GetBlob("mean_grad")), "mean_grad");
-        // print(get_tensor_blob(*workspace.GetBlob(FLAGS_layer + "_grad")), FLAGS_layer + "_grad");
-        // print(get_tensor_blob(*workspace.GetBlob("data_grad")), "data_grad");
-        // print(get_tensor_blob(*workspace.GetBlob("data")), "data");
+        // print(BlobUtil(*workspace.GetBlob(FLAGS_layer)).Get(), FLAGS_layer);
+        // print(BlobUtil(*workspace.GetBlob("mean")).Get(), "mean");
+        // print(BlobUtil(*workspace.GetBlob("diagonal")).Get(), "diagonal");
+        // print(BlobUtil(*workspace.GetBlob("score")).Get(), "score");
+        // print(BlobUtil(*workspace.GetBlob("score_grad")).Get(), "score_grad");
+        // print(BlobUtil(*workspace.GetBlob("diagonal_grad")).Get(), "diagonal_grad");
+        // print(BlobUtil(*workspace.GetBlob("mean_grad")).Get(), "mean_grad");
+        // print(BlobUtil(*workspace.GetBlob(FLAGS_layer +.Get() "_grad")), FLAGS_layer + "_grad");
+        // print(BlobUtil(*workspace.GetBlob("data_grad")).Get(), "data_grad");
+        // print(BlobUtil(*workspace.GetBlob("data")).Get(), "data");
       }
     }
 
-    auto score = get_tensor_blob(*workspace.GetBlob("score")).data<float>()[0];
+    auto score = BlobUtil(*workspace.GetBlob("score")).Get().data<float>()[0];
     std::cout << "step: " << step << "  score: " << score << "  size: " << image_size << std::endl;
 
     // show current images
     if (FLAGS_show_image) {
       display_net->Run();
-      auto image = get_tensor_blob(*workspace.GetBlob("image"));
+      auto image = BlobUtil(*workspace.GetBlob("image")).Get();
       TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
     }
   }
 
   {
     display_net->Run();
-    auto image = get_tensor_blob(*workspace.GetBlob("image"));
+    auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
     TensorUtil(image).WriteImages("output/" + safe_layer + "_" + std::to_string(FLAGS_channel));

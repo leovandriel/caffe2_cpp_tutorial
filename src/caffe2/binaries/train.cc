@@ -6,7 +6,6 @@
 #include "caffe2/core/operator_gradient.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "util/cuda.h"
 #include "util/print.h"
 #include "res/imagenet_classes.h"
 
@@ -108,8 +107,8 @@ void run() {
 
   if (FLAGS_device != "cpu") {
     for (int i = 0; i < kRunNum; i++) {
-      set_device_cuda_model(init_model[i]);
-      set_device_cuda_model(predict_model[i]);
+      NetUtil(init_model[i]).SetDeviceCUDA();
+      NetUtil(predict_model[i]).SetDeviceCUDA();
     }
   }
 
@@ -147,15 +146,15 @@ void run() {
 
     auto steps_time = (float)(clock() - last_time) / CLOCKS_PER_SEC;
     if (steps_time > 5) {
-      auto iter = get_tensor_blob(*workspace.GetBlob("iter")).data<int64_t>()[0];
-      auto lr = get_tensor_blob(*workspace.GetBlob("lr")).data<float>()[0];
-      auto train_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto train_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
+      auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
+      auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
+      auto train_accuracy = BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+      auto train_loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
       validate_time -= clock();
       predict_net[kRunValidate]->Run();
       validate_time += clock();
-      auto validate_accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto validate_loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
+      auto validate_accuracy = BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+      auto validate_loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
       std::cout << "step: " << iter << "  rate: " << lr << "  loss: " << train_loss << " | " << validate_loss << "  accuracy: " << train_accuracy << " | " << validate_accuracy << "  step_time: " << std::setprecision(3) << steps_time / (i - last_i) << "s" << std::endl;
       last_i = i;
       last_time = clock();
@@ -171,8 +170,8 @@ void run() {
     test_time += clock();
 
     if (i % 10 == 0) {
-      auto accuracy = get_tensor_blob(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto loss = get_tensor_blob(*workspace.GetBlob("loss")).data<float>()[0];
+      auto accuracy = BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+      auto loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
       std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
     }
   }
@@ -183,7 +182,7 @@ void run() {
     auto &output = op.output(0);
     auto blob = workspace.GetBlob(output);
     if (blob) {
-      auto tensor = get_tensor_blob(*blob);
+      auto tensor = BlobUtil(*blob).Get();
       auto init_op = deploy_init_model.add_op();
       init_op->set_type("GivenTensorFill");
       auto arg1 = init_op->add_arg();

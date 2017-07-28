@@ -2,20 +2,19 @@
 #include "caffe2/core/net.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/util/tensor.h"
+#include "caffe2/util/blob.h"
 #include "caffe2/zoo/keeper.h"
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "util/print.h"
-#include "util/cuda.h"
+#include "util/cmd.h"
 #include "res/imagenet_classes.h"
-
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 
 namespace caffe2 {
 
@@ -40,9 +39,9 @@ void run() {
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "image_file: " << FLAGS_image_file << std::endl;
   std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
+  std::cout << "device: " << FLAGS_device << std::endl;
 
-  if (!FLAGS_force_cpu) setupCUDA();
+  if (FLAGS_device != "cpu") cmd_setup_cuda();
 
   std::cout << std::endl;
 
@@ -65,9 +64,14 @@ void run() {
   auto model_size = init_size + predict_size;
 
   // set model to use CUDA
-  if (!FLAGS_force_cpu) {
-    set_device_cuda_model(init_model);
-    set_device_cuda_model(predict_model);
+  if (FLAGS_device != "cpu") {
+    NetUtil(init_model).SetDeviceCUDA();
+    NetUtil(predict_model).SetDeviceCUDA();
+  }
+
+  if (FLAGS_dump_model) {
+    std::cout << join_net(init_model);
+    std::cout << join_net(predict_model);
   }
 
   std::cout << "running model.." << std::endl;
@@ -82,11 +86,11 @@ void run() {
   init_net->Run();
 
   // run predictor
-  set_tensor_blob(*workspace.GetBlob(input_name), input);
+  BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   predict_time -= clock();
   predict_net->Run();
   predict_time += clock();
-  auto output = get_tensor_blob(*workspace.GetBlob(output_name));
+  auto output = BlobUtil(*workspace.GetBlob(output_name)).Get();
 
   std::cout << std::endl;
 
