@@ -1,4 +1,5 @@
 #include "caffe2/util/blob.h"
+#include "caffe2/util/tensor.h"
 
 #ifdef WITH_CUDA
   #include "caffe2/core/context_gpu.h"
@@ -27,6 +28,11 @@ void BlobUtil::Set(const TensorCPU &value, bool force_cuda) {
   auto tensor = blob_.GetMutable<TensorCPU>();
   tensor->ResizeLike(value);
   tensor->ShareData(value);
+}
+
+void BlobUtil::Print(const std::string &name, int max) {
+  auto tensor = Get();
+  TensorUtil(tensor).Print(name, max);
 }
 
 }  // namespace caffe2

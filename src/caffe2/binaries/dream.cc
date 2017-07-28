@@ -8,7 +8,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "util/print.h"
 #include "util/misc.h"
 #include "res/imagenet_classes.h"
 
@@ -33,9 +32,7 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model, in
   auto &input = dream_model.external_input(0);
   auto &output = dream_model.external_output(0);
 
-  NetUtil init(init_model);
-  NetUtil dream(dream_model);
-  NetUtil display(display_model);
+  NetUtil init(init_model), dream(dream_model), display(display_model);
 
   // initialize input data
   init.AddUniformFillOp({ FLAGS_batch, 3, size, size }, FLAGS_initial, FLAGS_initial + 1, input);
@@ -109,12 +106,10 @@ void run() {
   Keeper(FLAGS_model).AddModel(base_init_model, base_predict_model, true);
   load_time += clock();
 
-  // std::cout << join_net(base_init_model);
-  // std::cout << join_net(base_predict_model);
-
   // extract dream model
   NetUtil(base_predict_model).CheckLayerAvailable(FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
+  NetUtil init(init_model), dream(dream_model), display(display_model);
   split_model(base_init_model, base_predict_model, FLAGS_layer, init_model, dream_model, unused_model, unused_model, FLAGS_device != "cudnn", false);
 
   // add_cout_op(dream_model, { "_conv2/norm2_scale" })->set_engine("CUDNN");
@@ -129,16 +124,16 @@ void run() {
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
-    NetUtil(init_model).SetDeviceCUDA();
-    NetUtil(dream_model).SetDeviceCUDA();
-    NetUtil(display_model).SetDeviceCUDA();
-    // NetUtil(dream_model).SetEngineCudnnOps();
+    init.SetDeviceCUDA();
+    dream.SetDeviceCUDA();
+    display.SetDeviceCUDA();
+    // dream.SetEngineCudnnOps();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << join_net(init_model);
-    std::cout << join_net(dream_model);
-    std::cout << join_net(display_model);
+    std::cout << init.Short();
+    std::cout << dream.Short();
+    std::cout << display.Short();
   }
 
   std::cout << "running model.." << std::endl;

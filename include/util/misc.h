@@ -12,8 +12,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "util/print.h"
-
 namespace caffe2 {
 
 enum {

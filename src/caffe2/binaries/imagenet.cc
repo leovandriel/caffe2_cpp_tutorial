@@ -8,7 +8,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "util/print.h"
 #include "util/cmd.h"
 #include "res/imagenet_classes.h"
 
@@ -17,6 +16,25 @@ CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 
 namespace caffe2 {
+
+template<typename C>
+void printBest(const Tensor<C> &tensor, const char **classes, const std::string &name = "") {
+    // sort top results
+  const auto &probs = tensor.template data<float>();
+  std::vector<std::pair<int, int>> pairs;
+  for (auto i = 0; i < tensor.size(); i++) {
+    if (probs[i] > 0.01) {
+      pairs.push_back(std::make_pair(probs[i] * 100, i));
+    }
+  }
+  std:sort(pairs.begin(), pairs.end());
+
+  // show results
+  if (name.length() > 0) std::cout << name << ": " << std::endl;
+  for (auto pair: pairs) {
+    std::cout << pair.first << "% '" << classes[pair.second] << "' (" << pair.second << ")" << std::endl;
+  }
+}
 
 void run() {
   std::cout << std::endl;
@@ -52,6 +70,7 @@ void run() {
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
   NetDef init_model, predict_model;
+  NetUtil init(init_model), predict(predict_model);
 
   // read model files
   load_time -= clock();
@@ -65,13 +84,13 @@ void run() {
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
-    NetUtil(init_model).SetDeviceCUDA();
-    NetUtil(predict_model).SetDeviceCUDA();
+    init.SetDeviceCUDA();
+    predict.SetDeviceCUDA();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << join_net(init_model);
-    std::cout << join_net(predict_model);
+    std::cout << init.Short();
+    std::cout << predict.Short();
   }
 
   std::cout << "running model.." << std::endl;

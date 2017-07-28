@@ -6,7 +6,6 @@
 #include "caffe2/core/operator_gradient.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "util/print.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
@@ -78,8 +77,8 @@ void run() {
   }
 
   if (FLAGS_dump_model) {
-    std::cout << join_net(full_init_model);
-    std::cout << join_net(full_predict_model);
+    std::cout << NetUtil(full_init_model).Short();
+    std::cout << NetUtil(full_predict_model).Short();
   }
 
   NetDef init_model[kRunNum];
@@ -111,15 +110,6 @@ void run() {
       NetUtil(predict_model[i]).SetDeviceCUDA();
     }
   }
-
-  // std::cout << join_net(init_model[kRunTrain]);
-  // std::cout << join_net(predict_model[kRunTrain]);
-
-  // std::cout << join_net(init_model[kRunValidate]);
-  // std::cout << join_net(predict_model[kRunValidate]);
-
-  // std::cout << join_net(init_model[kRunTest]);
-  // std::cout << join_net(predict_model[kRunTest]);
 
   std::cout << std::endl;
 
@@ -201,9 +191,6 @@ void run() {
       deploy_init_model.add_op()->CopyFrom(op);
     }
   }
-
-  // std::cout << join_net(full_init_model);
-  // std::cout << join_net(deploy_init_model);
 
   WriteProtoToBinaryFile(deploy_init_model, path_prefix + "init_net.pb");
   WriteProtoToBinaryFile(full_predict_model, path_prefix + "predict_net.pb");

@@ -191,11 +191,9 @@ void run() {
   Workspace workspace("tmp");
 
   // >>> train_model = model_helper.ModelHelper(name="mnist_train", arg_scope={"order": "NCHW"})
-  NetDef initTrainModel;
-  NetUtil initTrain(initTrainModel);
+  NetDef initTrainModel, predictTrainModel;
+  NetUtil initTrain(initTrainModel), predictTrain(predictTrainModel);
   initTrain.SetName("mnist_train_init");
-  NetDef predictTrainModel;
-  NetUtil predictTrain(predictTrainModel);
   predictTrain.SetName("mnist_train_predict");
 
   std::vector<string> params({"conv1_w", "conv1_b", "conv2_w", "conv2_b", "fc3_w", "fc3_b", "pred_w", "pred_b"});
@@ -213,11 +211,9 @@ void run() {
   AddBookkeepingOperators(initTrain, predictTrain, params);
 
   // >>> test_model = model_helper.ModelHelper(name="mnist_test", arg_scope=arg_scope, init_params=False)
-  NetDef initTestModel;
-  NetUtil initTest(initTestModel);
+  NetDef initTestModel, predictTestModel;
+  NetUtil initTest(initTestModel), predictTest(predictTestModel);
   initTest.SetName("mnist_test_init");
-  NetDef predictTestModel;
-  NetUtil predictTest(predictTestModel);
   predictTest.SetName("mnist_test_predict");
 
   // >>> data, label = AddInput(test_model, batch_size=100, db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
@@ -230,11 +226,9 @@ void run() {
   AddAccuracy(initTest, predictTest);
 
   // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy", arg_scope=arg_scope, init_params=False)
-  NetDef initDeployModel;
-  NetUtil initDeploy(initDeployModel);
+  NetDef initDeployModel, predictDeployModel;
+  NetUtil initDeploy(initDeployModel), predictDeploy(predictDeployModel);
   initDeploy.SetName("mnist_model_init");
-  NetDef predictDeployModel;
-  NetUtil predictDeploy(predictDeployModel);
   predictDeploy.SetName("mnist_model_predict");
 
   // >>> AddLeNetModel(deploy_model, "data")
