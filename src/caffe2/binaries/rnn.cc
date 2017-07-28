@@ -1,8 +1,9 @@
 #include "caffe2/core/init.h"
-
 #include "caffe2/util/net.h"
+#include "caffe2/util/blob.h"
+
 #include "util/print.h"
-#include "util/cuda.h"
+#include "util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "char_rnn", "The RNN model.");
 CAFFE2_DEFINE_string(train_data, "res/shakespeare.txt", "Path to training data in a text file format");
@@ -13,9 +14,6 @@ CAFFE2_DEFINE_int(batch_size, 1, "Training batch size");
 CAFFE2_DEFINE_int(iters_to_report, 500, "How often to report loss and generate text");
 CAFFE2_DEFINE_int(hidden_size, 100, "Dimension of the hidden representation");
 CAFFE2_DEFINE_int(gen_length, 500, "One forward example sequence length");
-
-CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
-CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
 
 namespace caffe2 {
 
@@ -36,7 +34,7 @@ void AddLSTM(NetUtil &init, NetUtil &predict, const std::string &input_blob, con
   predict.AddInput(scope + "/gates_t_w");
   init.AddConstantFillOp({ 4 * hidden_size }, scope + "/gates_t_b");
   predict.AddInput(scope + "/gates_t_b");
-  predict.AddRecurrentNetworkOp(seq_lengths, hidden_init, cell_init, scope, *hidden_output, *cell_state, FLAGS_force_cpu);
+  predict.AddRecurrentNetworkOp(seq_lengths, hidden_init, cell_init, scope, *hidden_output, *cell_state, FLAGS_device == "cpu");
 }
 
 void AddSGD(NetUtil &init, NetUtil &predict, float base_learning_rate, const std::string &policy, int stepsize, float gamma) {
@@ -75,10 +73,10 @@ void run() {
   std::cout << "hidden_size: " << FLAGS_hidden_size << std::endl;
   std::cout << "gen_length: " << FLAGS_gen_length << std::endl;
 
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
+  std::cout << "device: " << FLAGS_device << std::endl;
   std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
 
-  if (!FLAGS_force_cpu) setupCUDA();
+  if (FLAGS_device != "cpu") cmd_setup_cuda();
 
   std::cout << std::endl;
 
@@ -178,11 +176,11 @@ void run() {
   prepare.AddInput(hidden_output);
   prepare.AddInput(cell_state);
 
-  if (!FLAGS_force_cpu) {
-    set_device_cuda_model(initModel);
-    set_device_cuda_model(forwardModel);
-    set_device_cuda_model(trainModel);
-    set_device_cuda_model(prepareModel);
+  if (FLAGS_device != "cpu") {
+    NetUtil(initModel).SetDeviceCUDA();
+    NetUtil(forwardModel).SetDeviceCUDA();
+    NetUtil(trainModel).SetDeviceCUDA();
+    NetUtil(prepareModel).SetDeviceCUDA();
   }
 
   if (FLAGS_dump_model) {
@@ -232,13 +230,13 @@ void run() {
   {
     std::vector<float> data(FLAGS_batch_size * FLAGS_hidden_size);
     auto value = TensorCPU({ 1, FLAGS_batch_size, FLAGS_hidden_size }, data, NULL);
-    set_tensor_blob(*workspace.CreateBlob(hidden_output), value, true);
+    BlobUtil(*workspace.CreateBlob(hidden_output)).Set(value, true);
   }
   // >>> workspace.FeedBlob(self.cell_state, np.zeros([1, self.batch_size, self.hidden_size], dtype=np.float32))
   {
     std::vector<float> data(FLAGS_batch_size * FLAGS_hidden_size);
     auto value = TensorCPU({ 1, FLAGS_batch_size, FLAGS_hidden_size }, data, NULL);
-    set_tensor_blob(*workspace.CreateBlob(cell_state), value, true);
+    BlobUtil(*workspace.CreateBlob(cell_state)).Set(value, true);
   }
   // >>> workspace.CreateNet(self.prepare_state)
   auto prepareNet = CreateNet(prepareModel, &workspace);
@@ -263,7 +261,7 @@ void run() {
     {
       std::vector<int> data(FLAGS_batch_size, FLAGS_seq_length);
       auto value = TensorCPU({ FLAGS_batch_size }, data, NULL);
-      set_tensor_blob(*workspace.CreateBlob("seq_lengths"), value, true);
+      BlobUtil(*workspace.CreateBlob("seq_lengths")).Set(value, true);
     }
 
     // >>> workspace.RunNet(self.prepare_state.Name())
@@ -294,12 +292,12 @@ void run() {
     // >>> workspace.FeedBlob('input_blob', input)
     {
       auto value = TensorCPU({ FLAGS_seq_length, FLAGS_batch_size, D }, input, NULL);
-      set_tensor_blob(*workspace.CreateBlob("input_blob"), value, true);
+      BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
     }
     // >>> workspace.FeedBlob('target', target)
     {
       auto value = TensorCPU({ FLAGS_seq_length * FLAGS_batch_size }, target, NULL);
-      set_tensor_blob(*workspace.CreateBlob("target"), value, true);
+      BlobUtil(*workspace.CreateBlob("target")).Set(value, true);
     }
 
     // >>> workspace.RunNet(self.model.net.Name())
@@ -328,7 +326,7 @@ void run() {
     }
 
     // >>> loss = workspace.FetchBlob(self.loss) * self.seq_length
-    auto loss = get_tensor_blob(*workspace.GetBlob(loss_name)).data<float>()[0] * FLAGS_seq_length;
+    auto loss = BlobUtil(*workspace.GetBlob(loss_name)).Get().data<float>()[0] * FLAGS_seq_length;
     // >>> smooth_loss = 0.999 * smooth_loss + 0.001 * loss
     smooth_loss = 0.999 * smooth_loss + 0.001 * loss;
     // >>> last_n_loss += loss
@@ -347,7 +345,7 @@ void run() {
         {
           std::vector<int> data(FLAGS_batch_size, 1);
           auto value = TensorCPU({ FLAGS_batch_size }, data, NULL);
-          set_tensor_blob(*workspace.CreateBlob("seq_lengths"), value, true);
+          BlobUtil(*workspace.CreateBlob("seq_lengths")).Set(value, true);
         }
 
         // >>> workspace.RunNet(self.prepare_state.Name())
@@ -361,13 +359,13 @@ void run() {
         // >>> workspace.FeedBlob("input_blob", input)
         {
           auto value = TensorCPU({ 1, FLAGS_batch_size, D }, input, NULL);
-          set_tensor_blob(*workspace.CreateBlob("input_blob"), value, true);
+          BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
         }
         // >>> workspace.RunNet(self.forward_net.Name())
         forwardNet->Run();
 
         // >>> p = workspace.FetchBlob(self.predictions)
-        auto p = get_tensor_blob(*workspace.GetBlob(predictions));
+        auto p = BlobUtil(*workspace.GetBlob(predictions)).Get();
 
         // >>> next = np.random.choice(self.D, p=p[0][0])
         auto data = p.data<float>();

@@ -89,7 +89,7 @@ class NetUtil {
   void CheckLayerAvailable(const std::string &layer);
   std::string Proto();
   void Print();
-
+  void SetDeviceCUDA();
 
  protected:
    NetDef& net_;
