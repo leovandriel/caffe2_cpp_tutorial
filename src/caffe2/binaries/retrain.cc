@@ -6,7 +6,6 @@
 #include "caffe2/core/operator_gradient.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "util/print.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
@@ -78,10 +77,8 @@ void run() {
   load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
 
   std::cout << "load model.." << std::endl;
-  NetDef full_init_model; // the original imagenet initialization model
-  NetDef full_predict_model; // the original imagenet prediction model
-  NetDef init_model[kRunNum];
-  NetDef predict_model[kRunNum];
+  NetDef full_init_model, full_predict_model;
+  NetDef init_model[kRunNum], predict_model[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     init_model[i].set_name(name_for_run[i] + "_init_model");
     predict_model[i].set_name(name_for_run[i] + "_predict_model");
@@ -89,9 +86,6 @@ void run() {
   Keeper(FLAGS_model).AddModel(full_init_model, full_predict_model, true);
 
   NetUtil(full_predict_model).CheckLayerAvailable(FLAGS_layer);
-
-  // std::cout << join_net(full_init_model);
-  // std::cout << join_net(full_predict_model);
 
   NetDef first_init_model, first_predict_model, second_init_model, second_predict_model;
   split_model(full_init_model, full_predict_model, FLAGS_layer, first_init_model, first_predict_model, second_init_model, second_predict_model, FLAGS_device != "cudnn");
@@ -103,11 +97,6 @@ void run() {
 
   pre_process(image_files, db_paths, first_init_model, first_predict_model, FLAGS_db_type, FLAGS_batch_size, FLAGS_size_to_fit);
   load_time += clock();
-
-  // std::cout << join_net(first_init_model);
-  // std::cout << join_net(first_predict_model);
-  // std::cout << join_net(second_init_model);
-  // std::cout << join_net(second_predict_model);
 
   for (int i = 0; i < kRunNum; i++) {
     ModelUtil(init_model[i], predict_model[i]).AddDatabaseOps(name_for_run[i], FLAGS_layer, db_paths[i], FLAGS_db_type, FLAGS_batch_size);
@@ -124,10 +113,8 @@ void run() {
   }
 
   if (FLAGS_dump_model) {
-    std::cout << join_net(init_model[kRunTrain]);
-    std::cout << join_net(predict_model[kRunTrain]);
-    // std::cout << join_net(init_model[kRunValidate]);
-    // std::cout << join_net(init_model[kRunTest]);
+    std::cout << NetUtil(init_model[kRunTrain]).Short();
+    std::cout << NetUtil(predict_model[kRunTrain]).Short();
   }
 
   std::cout << std::endl;
@@ -210,9 +197,6 @@ void run() {
       deploy_init_model.add_op()->CopyFrom(op);
     }
   }
-
-  // std::cout << join_net(full_init_model);
-  // std::cout << join_net(deploy_init_model);
 
   WriteProtoToBinaryFile(deploy_init_model, path_prefix + "init_net.pb");
   WriteProtoToBinaryFile(full_predict_model, path_prefix + "predict_net.pb");

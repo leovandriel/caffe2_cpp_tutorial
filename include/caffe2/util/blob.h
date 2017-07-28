@@ -13,6 +13,7 @@ class BlobUtil {
 
   TensorCPU Get();
   void Set(const TensorCPU &value, bool force_cuda = false);
+  void Print(const std::string &name = "", int max = 100);
 
  protected:
    Blob &blob_;

@@ -191,4 +191,33 @@ void TensorUtil::ReadImage(const std::string &filename, int size) {
   ReadImages({ filename }, size, indices);
 }
 
+template<typename T, typename C>
+void tensor_print_type(const Tensor<C> &tensor, const std::string &name, int max) {
+  const auto& data = tensor.template data<T>();
+  if (name.length() > 0) std::cout << name << "(" << tensor.dims() << "): ";
+  for (auto i = 0; i < (tensor.size() > max ? max : tensor.size()); ++i) {
+    std::cout << (float)data[i] << ' ';
+  }
+  if (tensor.size() > max) {
+    std::cout << "... (" << *std::min_element(data, data + tensor.size()) << "," << *std::max_element(data, data + tensor.size()) << ")";
+  }
+  if (name.length() > 0) std::cout << std::endl;
+}
+
+void TensorUtil::Print(const std::string &name, int max) {
+  if (tensor_.template IsType<float>()) {
+    return tensor_print_type<float>(tensor_, name, max);
+  }
+  if (tensor_.template IsType<int>()) {
+    return tensor_print_type<int>(tensor_, name, max);
+  }
+  if (tensor_.template IsType<uint8_t>()) {
+    return tensor_print_type<uint8_t>(tensor_, name, max);
+  }
+  if (tensor_.template IsType<int8_t>()) {
+    return tensor_print_type<int8_t>(tensor_, name, max);
+  }
+  std::cout << name << "?" << std::endl;
+}
+
 }  // namespace caffe2

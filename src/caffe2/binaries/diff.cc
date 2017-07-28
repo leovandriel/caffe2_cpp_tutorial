@@ -2,8 +2,6 @@
 #include "caffe2/core/net.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "util/print.h"
-
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
 
@@ -28,8 +26,8 @@ void run() {
   }
 
   if (FLAGS_short) {
-    std::cout << join_net(init_model);
-    std::cout << join_net(predict_model);
+    std::cout << NetUtil(init_model).Short();
+    std::cout << NetUtil(predict_model).Short();
   } else {
     google::protobuf::io::OstreamOutputStream stream(&std::cout);
     google::protobuf::TextFormat::Print(init_model, &stream);

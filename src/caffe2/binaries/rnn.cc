@@ -2,7 +2,6 @@
 #include "caffe2/util/net.h"
 #include "caffe2/util/blob.h"
 
-#include "util/print.h"
 #include "util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "char_rnn", "The RNN model.");
@@ -117,8 +116,7 @@ void run() {
 
   // >>> model = model_helper.ModelHelper(name="char_rnn")
   NetDef initModel, forwardModel;
-  NetUtil init(initModel);
-  NetUtil forward(forwardModel);
+  NetUtil init(initModel), forward(forwardModel);
   init.SetName("char_rnn_init");
   forward.SetName("char_rnn");
 
@@ -177,16 +175,16 @@ void run() {
   prepare.AddInput(cell_state);
 
   if (FLAGS_device != "cpu") {
-    NetUtil(initModel).SetDeviceCUDA();
-    NetUtil(forwardModel).SetDeviceCUDA();
-    NetUtil(trainModel).SetDeviceCUDA();
-    NetUtil(prepareModel).SetDeviceCUDA();
+    init.SetDeviceCUDA();
+    forward.SetDeviceCUDA();
+    train.SetDeviceCUDA();
+    prepare.SetDeviceCUDA();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << join_net(initModel);
-    std::cout << join_net(trainModel);
-    std::cout << join_net(prepareModel);
+    std::cout << init.Short();
+    std::cout << train.Short();
+    std::cout << prepare.Short();
   }
 
   // >>> from caffe2.python import core, workspace, model_helper, utils, brew

@@ -663,6 +663,98 @@ std::string NetUtil::Proto() {
   return string;
 }
 
+template<typename T>
+std::string net_short_values(const T &values, const std::string &separator = " ", const std::string &prefix = "[", const std::string &suffix = "]", int collapse = 64) {
+  std::stringstream stream;
+  if (values.size() > collapse) {
+    stream << "[#" << values.size() << "]";
+  } else {
+    bool is_next = false;
+    for (const auto &v: values) {
+      if (is_next) {
+        stream << separator;
+      } else {
+        stream << prefix;
+        is_next = true;
+      }
+      stream << v;
+    }
+    if (is_next) {
+        stream << suffix;
+    }
+  }
+  return stream.str();
+}
+
+std::string net_short_op(const OperatorDef &def) {
+  std::stringstream stream;
+  stream << "op: " << def.type();
+  if (def.name().size()) {
+    stream << " " << '"' << def.name() << '"';
+  }
+  if (def.input_size() || def.output_size()) {
+    stream << " " << net_short_values(def.input(), " ", "(", ")") << "->" << net_short_values(def.output(), " ", "(", ")");
+  }
+  if (def.arg_size()) {
+    for (const auto &arg: def.arg()) {
+      stream << " " << arg.name() << ":";
+      if (arg.has_f()) {
+        stream << arg.f();
+      } else if (arg.has_i()) {
+        stream << arg.i();
+      } else if (arg.has_s()) {
+        stream << arg.s();
+      } else {
+        stream << net_short_values(arg.ints());
+        stream << net_short_values(arg.floats());
+        stream << net_short_values(arg.strings());
+      }
+    }
+  }
+  if (def.has_engine()) {
+    stream << " engine:" << def.engine();
+  }
+  if (def.has_device_option() && def.device_option().has_device_type()) {
+    stream << " device_type:" << def.device_option().device_type();
+  }
+  if (def.has_device_option() && def.device_option().has_cuda_gpu_id()) {
+    stream << " cuda_gpu_id:" << def.device_option().cuda_gpu_id();
+  }
+  if (def.has_is_gradient_op()) {
+    stream << " is_gradient_op:true";
+  }
+  stream << std::endl;
+  return stream.str();
+}
+
+std::string net_short_net(const NetDef &def) {
+  std::stringstream stream;
+  stream << "net: ------------- " << def.name() << " -------------" << std::endl;
+  for (const auto &op: def.op()) {
+    stream << net_short_op(op);
+  }
+  if (def.has_device_option() && def.device_option().has_device_type()) {
+    stream << "device_type:" << def.device_option().device_type() << std::endl;
+  }
+  if (def.has_device_option() && def.device_option().has_cuda_gpu_id()) {
+    stream << "cuda_gpu_id:" << def.device_option().cuda_gpu_id() << std::endl;
+  }
+  if (def.has_num_workers()) {
+    stream << "num_workers: " << def.num_workers() << std::endl;
+  }
+  if (def.external_input_size()) {
+    stream << "external_input: " << net_short_values(def.external_input()) << std::endl;
+  }
+  if (def.external_output_size()) {
+    stream << "external_output: " << net_short_values(def.external_output()) << std::endl;
+  }
+  return stream.str();
+}
+
+std::string NetUtil::Short() {
+  return net_short_net(net_);
+}
+
 void NetUtil::Print() {
   google::protobuf::io::OstreamOutputStream stream(&std::cout);
   google::protobuf::TextFormat::Print(net_, &stream);

@@ -88,6 +88,7 @@ class NetUtil {
 
   void CheckLayerAvailable(const std::string &layer);
   std::string Proto();
+  std::string Short();
   void Print();
   void SetDeviceCUDA();
 
