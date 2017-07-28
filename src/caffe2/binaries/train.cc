@@ -8,7 +8,6 @@
 #include "util/zoo.h"
 #include "util/cuda.h"
 #include "util/print.h"
-#include "util/image.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");

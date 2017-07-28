@@ -9,7 +9,6 @@
 
 #include "util/zoo.h"
 #include "util/print.h"
-#include "util/image.h"
 #include "util/cuda.h"
 #include "util/misc.h"
 #include "res/imagenet_classes.h"
@@ -162,7 +161,8 @@ void run() {
 
   // read image as tensor
   // auto &input_name = dream_model.external_input(0);
-  // auto input = readImageTensor(FLAGS_image_file, FLAGS_size / 10);
+  // TensorCPU input;
+  // TensorUtil(input).ReadImage(FLAGS_image_file, FLAGS_size / 10);
   // set_tensor_blob(*workspace.GetBlob(input_name), input);
   // TensorUtil(input).ShowImages(0);
 
