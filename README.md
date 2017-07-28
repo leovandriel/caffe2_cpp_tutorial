@@ -93,6 +93,10 @@ This should output something along the lines of `96% 'daisy'`. To classify `gira
 
 This tutorial is also a good test to see if OpenCV is working properly.
 
+See also:
+
+- [Image Pre-Processing](https://caffe2.ai/docs/tutorial-image-pre-processing.html)
+
 ## MNIST - Create a CNN from Scratch
 
 A classical machine learning dataset is the [MNIST database of handwritten digits](http://yann.lecun.com/exdb/mnist/) by Yann LeCun. The Caffe2 tutorial [MNIST - Create a CNN from Scratch](https://caffe2.ai/docs/tutorial-MNIST.html) shows how to build a basic convolutional neural network (CNN) to recognize these handwritten digits. This tutorial is transcribed in [mnist.cc](src/caffe2/binaries/mnist.cc).
