@@ -22,6 +22,8 @@ void run() {
   std::cout << "https://caffe2.ai/docs/zoo.html" << std::endl;
   std::cout << "https://caffe2.ai/docs/tutorial-loading-pre-trained-models.html"
             << std::endl;
+  std::cout << "https://caffe2.ai/docs/tutorial-image-pre-processing.html"
+            << std::endl;
   std::cout << std::endl;
 
   if (!std::ifstream(FLAGS_init_net).good() ||
