@@ -20,3 +20,8 @@ test: all
 
 output: all
 	@find bin -regex "bin/[a-z]*" -type f -exec bash -c './{} > test/$(echo {} | cut -d/ -f2).log' \;
+
+format:
+	@find . -iname "*.h" -o -iname "*.cc" | xargs clang-format --style=Google -i
+
+# for i in "LLVM" "Google" "Chromium" "Mozilla" "WebKit"; do; git reset --hard; echo $i; find . -iname "*.h" -o -iname "*.cc" | xargs clang-format --style=$i -i; git diff --shortstat | cat; done

@@ -7,22 +7,27 @@ namespace caffe2 {
 
 class VGGModel : public ModelUtil {
  public:
-  VGGModel(NetDef& init_net, NetDef& predict_net):
-    ModelUtil(init_net, predict_net) {}
+  VGGModel(NetDef &init_net, NetDef &predict_net)
+      : ModelUtil(init_net, predict_net) {}
 
-  OperatorDef *AddConvOps(const std::string &input, const std::string &output, int in_size, int out_size, int stride, int padding, int kernel) {
-    init_.AddXavierFillOp({ out_size, in_size, kernel, kernel }, output + "_w");
+  OperatorDef *AddConvOps(const std::string &input, const std::string &output,
+                          int in_size, int out_size, int stride, int padding,
+                          int kernel) {
+    init_.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
     predict_.AddInput(output + "_w");
-    init_.AddConstantFillOp({ out_size }, output + "_b");
+    init_.AddConstantFillOp({out_size}, output + "_b");
     predict_.AddInput(output + "_b");
-    predict_.AddConvOp(input, output + "_w", output + "_b", output, stride, padding, kernel);
+    predict_.AddConvOp(input, output + "_w", output + "_b", output, stride,
+                       padding, kernel);
     return predict_.AddReluOp(output, output);
   }
 
-  OperatorDef *AddFcOps(const std::string &input, const std::string &output, int in_size, int out_size, bool relu = false, float dropout = 0.5) {
-    init_.AddXavierFillOp({ out_size, in_size }, output + "_w");
+  OperatorDef *AddFcOps(const std::string &input, const std::string &output,
+                        int in_size, int out_size, bool relu = false,
+                        float dropout = 0.5) {
+    init_.AddXavierFillOp({out_size, in_size}, output + "_w");
     predict_.AddInput(output + "_w");
-    init_.AddConstantFillOp({ out_size }, output + "_b");
+    init_.AddConstantFillOp({out_size}, output + "_b");
     predict_.AddInput(output + "_b");
     auto op = predict_.AddFcOp(input, output + "_w", output + "_b", output);
     if (!relu) return op;
@@ -42,7 +47,8 @@ class VGGModel : public ModelUtil {
   void Add(int type, int out_size = 1000, bool train = false) {
     predict_.SetName("VGG" + std::to_string(type));
     auto input = "data";
-    std:string layer = input;
+  std:
+    string layer = input;
     predict_.AddInput(layer);
 
     layer = AddConvOps(layer, "conv1_1", 3, 64, 1, 1, 3)->output(0);
@@ -82,9 +88,8 @@ class VGGModel : public ModelUtil {
       layer = predict_.AddSoftmaxOp(layer, "prob")->output(0);
     }
     predict_.AddOutput(layer);
-    init_.AddConstantFillOp({ 1 }, input);
+    init_.AddConstantFillOp({1}, input);
   }
-
 };
 
 }  // namespace caffe2

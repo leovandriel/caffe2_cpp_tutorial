@@ -10,7 +10,7 @@ class AffineScaleOp final : public Operator<Context> {
  public:
   AffineScaleOp(const OperatorDef& operator_def, Workspace* ws)
       : Operator<Context>(operator_def, ws),
-      inverse_(OperatorBase::GetSingleArgument<int>("inverse", 0)) {}
+        inverse_(OperatorBase::GetSingleArgument<int>("inverse", 0)) {}
   USE_OPERATOR_CONTEXT_FUNCTIONS;
   bool RunOnDevice() override;
 
@@ -23,7 +23,7 @@ class AffineScaleGradientOp final : public Operator<Context> {
  public:
   AffineScaleGradientOp(const OperatorDef& operator_def, Workspace* ws)
       : Operator<Context>(operator_def, ws),
-      inverse_(OperatorBase::GetSingleArgument<int>("inverse", 0)) {}
+        inverse_(OperatorBase::GetSingleArgument<int>("inverse", 0)) {}
   USE_OPERATOR_CONTEXT_FUNCTIONS;
   bool RunOnDevice() override;
 
@@ -31,6 +31,6 @@ class AffineScaleGradientOp final : public Operator<Context> {
   int inverse_;
 };
 
-} // namespace caffe2
+}  // namespace caffe2
 
-#endif // OPERATOR_AFFINE_SCALE_OP_H
+#endif  // OPERATOR_AFFINE_SCALE_OP_H

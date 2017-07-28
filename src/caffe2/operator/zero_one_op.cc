@@ -37,14 +37,16 @@ namespace {
 REGISTER_CPU_OPERATOR(ZeroOne, ZeroOneOp<float, CPUContext>);
 
 OPERATOR_SCHEMA(ZeroOne)
-  .NumInputs(2)
-  .NumOutputs(0)
-  .ScalarType(TensorProto::FLOAT)
-  .SetDoc("Display classification success of batch with zeros and ones.")
-  .Input(0, "predictions", "2-D tensor (Tensor<float>) of size "
-         "(num_batches x num_classes) containing scores")
-  .Input(1, "labels", "1-D tensor (Tensor<int>) of size (num_batches) having "
-        "the indices of true labels");
+    .NumInputs(2)
+    .NumOutputs(0)
+    .ScalarType(TensorProto::FLOAT)
+    .SetDoc("Display classification success of batch with zeros and ones.")
+    .Input(0, "predictions",
+           "2-D tensor (Tensor<float>) of size "
+           "(num_batches x num_classes) containing scores")
+    .Input(1, "labels",
+           "1-D tensor (Tensor<int>) of size (num_batches) having "
+           "the indices of true labels");
 
 SHOULD_NOT_DO_GRADIENT(ZeroOne);
 

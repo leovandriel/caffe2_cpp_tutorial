@@ -31,6 +31,6 @@ class BackMeanGradientOp final : public Operator<Context> {
   int count_;
 };
 
-} // namespace caffe2
+}  // namespace caffe2
 
-#endif // OPERATOR_BACK_MEAN_OP_H
+#endif  // OPERATOR_BACK_MEAN_OP_H

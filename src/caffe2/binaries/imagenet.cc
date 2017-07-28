@@ -1,15 +1,15 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
-#include "caffe2/utils/proto_utils.h"
-#include "caffe2/util/tensor.h"
 #include "caffe2/util/blob.h"
+#include "caffe2/util/tensor.h"
+#include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "util/cmd.h"
 #include "res/imagenet_classes.h"
+#include "util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
@@ -17,9 +17,10 @@ CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
 
 namespace caffe2 {
 
-template<typename C>
-void printBest(const Tensor<C> &tensor, const char **classes, const std::string &name = "") {
-    // sort top results
+template <typename C>
+void printBest(const Tensor<C> &tensor, const char **classes,
+               const std::string &name = "") {
+  // sort top results
   const auto &probs = tensor.template data<float>();
   std::vector<std::pair<int, int>> pairs;
   for (auto i = 0; i < tensor.size(); i++) {
@@ -27,12 +28,14 @@ void printBest(const Tensor<C> &tensor, const char **classes, const std::string 
       pairs.push_back(std::make_pair(probs[i] * 100, i));
     }
   }
-  std:sort(pairs.begin(), pairs.end());
+std:
+  sort(pairs.begin(), pairs.end());
 
   // show results
   if (name.length() > 0) std::cout << name << ": " << std::endl;
-  for (auto pair: pairs) {
-    std::cout << pair.first << "% '" << classes[pair.second] << "' (" << pair.second << ")" << std::endl;
+  for (auto pair : pairs) {
+    std::cout << pair.first << "% '" << classes[pair.second] << "' ("
+              << pair.second << ")" << std::endl;
   }
 }
 
@@ -43,7 +46,7 @@ void run() {
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
-    for (auto const &pair: keeper_model_lookup) {
+    for (auto const &pair : keeper_model_lookup) {
       std::cerr << "  " << pair.first << std::endl;
     }
     return;
@@ -78,8 +81,12 @@ void run() {
   load_time += clock();
 
   // get model size
-  auto init_size = std::ifstream("res/" + FLAGS_model + "_init_net.pb", std::ifstream::ate | std::ifstream::binary).tellg();
-  auto predict_size = std::ifstream("res/" + FLAGS_model + "_predict_net.pb", std::ifstream::ate | std::ifstream::binary).tellg();
+  auto init_size = std::ifstream("res/" + FLAGS_model + "_init_net.pb",
+                                 std::ifstream::ate | std::ifstream::binary)
+                       .tellg();
+  auto predict_size = std::ifstream("res/" + FLAGS_model + "_predict_net.pb",
+                                    std::ifstream::ate | std::ifstream::binary)
+                          .tellg();
   auto model_size = init_size + predict_size;
 
   // set model to use CUDA
@@ -119,15 +126,15 @@ void run() {
   std::cout << std::endl;
 
   std::cout << std::setprecision(3)
-    << "load: " << ((float)load_time / CLOCKS_PER_SEC)
-    << "s  predict: " << ((float)predict_time / CLOCKS_PER_SEC)
-    << "s  model: " << ((float)model_size / 1000000) << "MB"
-    << std::endl;
+            << "load: " << ((float)load_time / CLOCKS_PER_SEC)
+            << "s  predict: " << ((float)predict_time / CLOCKS_PER_SEC)
+            << "s  model: " << ((float)model_size / 1000000) << "MB"
+            << std::endl;
 }
 
 }  // namespace caffe2
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
   google::protobuf::ShutdownProtobufLibrary();

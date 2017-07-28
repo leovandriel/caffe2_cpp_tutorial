@@ -2,13 +2,15 @@
 
 namespace caffe2 {
 
-template<typename C>
-void get_mean_stdev_tensor(const Tensor<C> &tensor, Tensor<C> &mean, Tensor<C> &stdev) {
+template <typename C>
+void get_mean_stdev_tensor(const Tensor<C>& tensor, Tensor<C>& mean,
+                           Tensor<C>& stdev) {
   auto data = tensor.template data<float>();
   auto size = tensor.size() / tensor.dim(0);
   auto mean_data = mean.template mutable_data<float>();
   auto stdev_data = stdev.template mutable_data<float>();
-  for (auto e = data + tensor.size(); data != e; data += size, mean_data++, stdev_data++) {
+  for (auto e = data + tensor.size(); data != e;
+       data += size, mean_data++, stdev_data++) {
     auto sum = 0.f;
     for (auto d = data, e = data + size; d != e; d++) {
       sum += *d;
@@ -40,14 +42,14 @@ namespace {
 REGISTER_CPU_OPERATOR(MeanStdev, MeanStdevOp<float, CPUContext>);
 
 OPERATOR_SCHEMA(MeanStdev)
-  .NumInputs(1)
-  .NumOutputs(2)
-  .SetDoc(R"DOC(
+    .NumInputs(1)
+    .NumOutputs(2)
+    .SetDoc(R"DOC(
 The operator computes the mean and stdev over the batch.
 )DOC")
-  .Input(0, "input", "The input data as N-D Tensor<float>.")
-  .Output(0, "mean", "The mean in Tensor of batch size.")
-  .Output(1, "stdev", "The stdev in Tensor of batch size.");
+    .Input(0, "input", "The input data as N-D Tensor<float>.")
+    .Output(0, "mean", "The mean in Tensor of batch size.")
+    .Output(1, "stdev", "The stdev in Tensor of batch size.");
 
 SHOULD_NOT_DO_GRADIENT(MeanStdev);
 

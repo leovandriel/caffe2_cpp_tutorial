@@ -31,6 +31,6 @@ class DiagonalGradientOp final : public Operator<Context> {
   std::vector<TIndex> offset_;
 };
 
-} // namespace caffe2
+}  // namespace caffe2
 
-#endif // OPERATOR_DIAGONAL_OP_H
+#endif  // OPERATOR_DIAGONAL_OP_H

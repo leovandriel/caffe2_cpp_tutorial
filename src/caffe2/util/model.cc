@@ -13,7 +13,9 @@ const std::string label_name("label");
 const std::string xent_name("xent");
 const std::string accuracy_name("accuracy");
 
-void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data, const std::string &db, const std::string &db_type, int batch_size) {
+void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data,
+                               const std::string &db,
+                               const std::string &db_type, int batch_size) {
   auto reader = name + reader_suffix;
   init_.AddCreateDbOp(reader, db_type, db);
   predict_.AddInput(reader);
@@ -34,52 +36,58 @@ void ModelUtil::AddXentOps(const std::string &output) {
 }
 
 void ModelUtil::AddIterLrOps(float base_rate) {
-  init_.AddConstantFillOp({ 1 }, (int64_t)0, iter_name)->mutable_device_option()->set_device_type(CPU);
+  init_.AddConstantFillOp({1}, (int64_t)0, iter_name)
+      ->mutable_device_option()
+      ->set_device_type(CPU);
   predict_.AddInput(iter_name);
   predict_.AddIterOp(iter_name);
   predict_.AddLearningRateOp(iter_name, lr_name, base_rate);
 }
 
 void ModelUtil::AddSgdOps() {
-  init_.AddConstantFillOp({ 1 }, 1.f, one_name);
+  init_.AddConstantFillOp({1}, 1.f, one_name);
   predict_.AddInput(one_name);
-  for (auto &param: predict_.CollectParams()) {
-    predict_.AddWeightedSumOp({ param, one_name, param + gradient_suffix, lr_name }, param);
+  for (auto &param : predict_.CollectParams()) {
+    predict_.AddWeightedSumOp(
+        {param, one_name, param + gradient_suffix, lr_name}, param);
   }
 }
 
 void ModelUtil::AddMomentumOps() {
   auto sizes = init_.CollectParamSizes();
-  for (auto &param: predict_.CollectParams()) {
+  for (auto &param : predict_.CollectParams()) {
     auto size = sizes[param];
-    init_.AddConstantFillOp({ size }, 0.f, param + moment_suffix);
+    init_.AddConstantFillOp({size}, 0.f, param + moment_suffix);
     predict_.AddInput(param + moment_suffix);
-    predict_.AddMomentumSgdOp(param, param + moment_suffix, param + gradient_suffix, lr_name);
+    predict_.AddMomentumSgdOp(param, param + moment_suffix,
+                              param + gradient_suffix, lr_name);
   }
 }
 
 void ModelUtil::AddAdagradOps() {
   auto sizes = init_.CollectParamSizes();
-  for (auto &param: predict_.CollectParams()) {
+  for (auto &param : predict_.CollectParams()) {
     auto size = sizes[param];
-    init_.AddConstantFillOp({ size }, 0.f, param + moment_suffix);
+    init_.AddConstantFillOp({size}, 0.f, param + moment_suffix);
     predict_.AddInput(param + moment_suffix);
-    predict_.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix, lr_name);
+    predict_.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix,
+                          lr_name);
   }
 }
 
 void ModelUtil::AddAdamOps() {
   auto sizes = init_.CollectParamSizes();
-  for (auto &param: predict_.CollectParams()) {
+  for (auto &param : predict_.CollectParams()) {
     auto size = sizes[param];
     std::vector<std::string> moments(2);
     auto i = 0;
-    for (auto &moment: moments) {
+    for (auto &moment : moments) {
       moment = param + moment_suffix + "_" + std::to_string(++i);
-      init_.AddConstantFillOp({ size }, 0.f, moment);
+      init_.AddConstantFillOp({size}, 0.f, moment);
       predict_.AddInput(moment);
     }
-    predict_.AddAdamOp(param, moments, param + gradient_suffix, lr_name, iter_name);
+    predict_.AddAdamOp(param, moments, param + gradient_suffix, lr_name,
+                       iter_name);
   }
 }
 
@@ -97,7 +105,8 @@ void ModelUtil::AddOptimizerOps(std::string &optimizer) {
   }
 }
 
-void ModelUtil::AddTrainOps(const std::string &output, float base_rate, std::string &optimizer) {
+void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
+                            std::string &optimizer) {
   AddXentOps(output);
   predict_.AddGradientOps();
   AddIterLrOps(base_rate);

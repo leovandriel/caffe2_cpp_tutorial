@@ -6,14 +6,17 @@ namespace caffe2 {
 
 void print(const Blob *blob, const std::string &name) {
   auto tensor = blob->Get<TensorCPU>();
-  const auto& data = tensor.data<float>();
-  std::cout << name << "(" << tensor.dims() << "): " << std::vector<float>(data, data + tensor.size()) << std::endl;
+  const auto &data = tensor.data<float>();
+  std::cout << name << "(" << tensor.dims()
+            << "): " << std::vector<float>(data, data + tensor.size())
+            << std::endl;
 }
 
 void run() {
   std::cout << std::endl;
   std::cout << "## Caffe2 Toy Regression Tutorial ##" << std::endl;
-  std::cout << "https://caffe2.ai/docs/tutorial-toy-regression.html" << std::endl;
+  std::cout << "https://caffe2.ai/docs/tutorial-toy-regression.html"
+            << std::endl;
   std::cout << std::endl;
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize
@@ -23,7 +26,8 @@ void run() {
   NetDef initModel;
   initModel.set_name("init");
 
-  // >>> W_gt = init_net.GivenTensorFill([], "W_gt", shape=[1, 2], values=[2.0, 1.5])
+  // >>> W_gt = init_net.GivenTensorFill([], "W_gt", shape=[1, 2],
+  // values=[2.0, 1.5])
   {
     auto op = initModel.add_op();
     op->set_type("GivenTensorFill");
@@ -64,7 +68,8 @@ void run() {
     op->add_output("ONE");
   }
 
-  // >>> ITER = init_net.ConstantFill([], "ITER", shape=[1], value=0, dtype=core.DataType.INT32)
+  // >>> ITER = init_net.ConstantFill([], "ITER", shape=[1], value=0,
+  // dtype=core.DataType.INT32)
   {
     auto op = initModel.add_op();
     op->set_type("ConstantFill");
@@ -116,7 +121,8 @@ void run() {
   NetDef trainModel;
   trainModel.set_name("train");
 
-  // >>> X = train_net.GaussianFill([], "X", shape=[64, 2], mean=0.0, std=1.0, run_once=0)
+  // >>> X = train_net.GaussianFill([], "X", shape=[64, 2], mean=0.0, std=1.0,
+  // run_once=0)
   {
     auto op = trainModel.add_op();
     op->set_type("GaussianFill");
@@ -146,7 +152,8 @@ void run() {
     op->add_output("Y_gt");
   }
 
-  // >>> noise = train_net.GaussianFill([], "noise", shape=[64, 1], mean=0.0, std=1.0, run_once=0)
+  // >>> noise = train_net.GaussianFill([], "noise", shape=[64, 1], mean=0.0,
+  // std=1.0, run_once=0)
   {
     auto op = trainModel.add_op();
     op->set_type("GaussianFill");
@@ -227,7 +234,7 @@ void run() {
     op->set_is_gradient_op(true);
   }
   std::reverse(gradient_ops.begin(), gradient_ops.end());
-  for (auto op: gradient_ops) {
+  for (auto op : gradient_ops) {
     vector<GradientWrapper> output(op->output_size());
     for (auto i = 0; i < output.size(); i++) {
       output[i].dense_ = op->output(i) + "_grad";
@@ -246,7 +253,8 @@ void run() {
     op->add_output("ITER");
   }
 
-  // >>> LR = train_net.LearningRate(ITER, "LR", base_lr=-0.1, policy="step", stepsize=20, gamma=0.9)
+  // >>> LR = train_net.LearningRate(ITER, "LR", base_lr=-0.1, policy="step",
+  // stepsize=20, gamma=0.9)
   {
     auto op = trainModel.add_op();
     op->set_type("LearningRate");
@@ -312,7 +320,8 @@ void run() {
       float w = workspace.GetBlob("W")->Get<TensorCPU>().data<float>()[0];
       float b = workspace.GetBlob("B")->Get<TensorCPU>().data<float>()[0];
       float loss = workspace.GetBlob("loss")->Get<TensorCPU>().data<float>()[0];
-      std::cout << "step: " << i << " W: " << w << " B: " << b << " loss: " << loss << std::endl;
+      std::cout << "step: " << i << " W: " << w << " B: " << b
+                << " loss: " << loss << std::endl;
     }
   }
 
@@ -331,7 +340,7 @@ void run() {
 
 }  // namespace caffe2
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
   google::protobuf::ShutdownProtobufLibrary();

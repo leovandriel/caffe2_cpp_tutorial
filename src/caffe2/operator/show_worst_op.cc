@@ -13,7 +13,8 @@
 
 namespace caffe2 {
 
-void show_worst(const TensorCPU &X, const TensorCPU &label, const TensorCPU &image) {
+void show_worst(const TensorCPU &X, const TensorCPU &label,
+                const TensorCPU &image) {
   // auto iter = -1;
   // if (InputSize() > 3) {
   //   iter = Input(ITER).data<int64_t>()[0];
@@ -80,7 +81,8 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
 #ifdef WITH_CUDA
 template <>
 bool ShowWorstOp<float, CUDAContext>::RunOnDevice() {
-  show_worst(TensorCPU(Input(PREDICTION)), TensorCPU(Input(LABEL)), TensorCPU(Input(DATA)));
+  show_worst(TensorCPU(Input(PREDICTION)), TensorCPU(Input(LABEL)),
+             TensorCPU(Input(DATA)));
   return true;
 }
 #endif
@@ -94,19 +96,26 @@ REGISTER_CUDA_OPERATOR(ShowWorst, ShowWorstOp<float, CUDAContext>);
 #endif
 
 OPERATOR_SCHEMA(ShowWorst)
-  .NumInputs(3, 4)
-  .NumOutputs(0)
-  .ScalarType(TensorProto::FLOAT)
-  .SetDoc("Show worst correct and incorrect classification within the batch.")
-  .Input(0, "predictions", "2-D tensor (Tensor<float>) of size "
-         "(num_batches x num_classes) containing scores")
-  .Input(1, "labels", "1-D tensor (Tensor<int>) of size (num_batches) having "
-        "the indices of true labels")
-  .Input(2, "data", "4-D tensor (Tensor<float>) of size "
-        "(N x C x H x Wwidth), where N is the batch size, C is the number of channels, and"
-        " H and W are the height and width. Note that this is for the NCHW usage. On "
-        "the other hand, the NHWC Op has a different set of dimension constraints.");
-  // .Input(3, "iter", "1-D tensor (Tensor<int>) of size (1) having training iteraton");
+    .NumInputs(3, 4)
+    .NumOutputs(0)
+    .ScalarType(TensorProto::FLOAT)
+    .SetDoc("Show worst correct and incorrect classification within the batch.")
+    .Input(0, "predictions",
+           "2-D tensor (Tensor<float>) of size "
+           "(num_batches x num_classes) containing scores")
+    .Input(1, "labels",
+           "1-D tensor (Tensor<int>) of size (num_batches) having "
+           "the indices of true labels")
+    .Input(2, "data",
+           "4-D tensor (Tensor<float>) of size "
+           "(N x C x H x Wwidth), where N is the batch size, C is the number "
+           "of channels, and"
+           " H and W are the height and width. Note that this is for the NCHW "
+           "usage. On "
+           "the other hand, the NHWC Op has a different set of dimension "
+           "constraints.");
+// .Input(3, "iter", "1-D tensor (Tensor<int>) of size (1) having training
+// iteraton");
 
 SHOULD_NOT_DO_GRADIENT(ShowWorst);
 

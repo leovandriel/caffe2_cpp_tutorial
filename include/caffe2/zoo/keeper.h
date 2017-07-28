@@ -7,66 +7,95 @@
 #include "caffe2/zoo/vgg.h"
 
 #ifdef WITH_CURL
-  #include <curl/curl.h>
+#include <curl/curl.h>
 #endif
 
 namespace caffe2 {
 
 const int bar_length = 64;
 
-const std::map<std::string, std::map<std::string, std::string>> keeper_model_lookup {
-  { "alexnet", {
-    { "res/alexnet_predict_net.pb", "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/predict_net.pb" },
-    { "res/alexnet_init_net.pb", "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/init_net.pb" }
-  }},
-  { "googlenet", {
-    { "res/googlenet_predict_net.pb", "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/predict_net.pb" },
-    { "res/googlenet_init_net.pb", "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/init_net.pb" },
-  }},
-  { "squeezenet", {
-    { "res/squeezenet_predict_net.pb", "https://s3.amazonaws.com/caffe2/models/squeezenet/predict_net.pb" },
-    { "res/squeezenet_init_net.pb", "https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb" },
-  }},
-  { "vgg16", {
-    { "res/vgg16_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg16_predict_net.pb" },
-    { "res/vgg16_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg16_init_net.pb" }
-  }},
-  { "vgg19", {
-    { "res/vgg19_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg19_predict_net.pb" },
-    { "res/vgg19_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg19_init_net.pb" }
-  }},
-  { "resnet50", {
-    { "res/resnet50_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet50_predict_net.pb" },
-    { "res/resnet50_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet50_init_net.pb" }
-  }},
-  { "resnet101", {
-    { "res/resnet101_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet101_predict_net.pb" },
-    { "res/resnet101_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet101_init_net.pb" }
-  }},
-  { "resnet152", {
-    { "res/resnet152_predict_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet152_predict_net.pb" },
-    { "res/resnet152_init_net.pb", "https://github.com/leonardvandriel/caffe2_models/raw/master/model/resnet152_init_net.pb" }
-  }}
-};
+const std::map<std::string, std::map<std::string, std::string>>
+    keeper_model_lookup{
+        {"alexnet",
+         {{"res/alexnet_predict_net.pb",
+           "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/"
+           "predict_net.pb"},
+          {"res/alexnet_init_net.pb",
+           "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/init_net.pb"}}},
+        {"googlenet",
+         {
+             {"res/googlenet_predict_net.pb",
+              "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/"
+              "predict_net.pb"},
+             {"res/googlenet_init_net.pb",
+              "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/"
+              "init_net.pb"},
+         }},
+        {"squeezenet",
+         {
+             {"res/squeezenet_predict_net.pb",
+              "https://s3.amazonaws.com/caffe2/models/squeezenet/"
+              "predict_net.pb"},
+             {"res/squeezenet_init_net.pb",
+              "https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb"},
+         }},
+        {"vgg16",
+         {{"res/vgg16_predict_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "vgg16_predict_net.pb"},
+          {"res/vgg16_init_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "vgg16_init_net.pb"}}},
+        {"vgg19",
+         {{"res/vgg19_predict_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "vgg19_predict_net.pb"},
+          {"res/vgg19_init_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "vgg19_init_net.pb"}}},
+        {"resnet50",
+         {{"res/resnet50_predict_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet50_predict_net.pb"},
+          {"res/resnet50_init_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet50_init_net.pb"}}},
+        {"resnet101",
+         {{"res/resnet101_predict_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet101_predict_net.pb"},
+          {"res/resnet101_init_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet101_init_net.pb"}}},
+        {"resnet152",
+         {{"res/resnet152_predict_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet152_predict_net.pb"},
+          {"res/resnet152_init_net.pb",
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "resnet152_init_net.pb"}}}};
 
-int keeper_progress_func(const char* filename, double total_down, double current_down, double total_up, double current_up)
-{
+int keeper_progress_func(const char *filename, double total_down,
+                         double current_down, double total_up,
+                         double current_up) {
   int length = 72;
   if (total_down) {
     int prom = 1000 * current_down / total_down;
     int bar = bar_length * current_down / total_down;
-    std::cerr << '\r' << std::string(bar, '#') << std::string(bar_length - bar, ' ') << std::setw(5) << ((float)prom / 10) << "%" << " " << filename << std::flush;
+    std::cerr << '\r' << std::string(bar, '#')
+              << std::string(bar_length - bar, ' ') << std::setw(5)
+              << ((float)prom / 10) << "%"
+              << " " << filename << std::flush;
   }
   return 0;
 }
 
 class Keeper {
  public:
-  Keeper(const std::string name):
-    name_(name) {}
+  Keeper(const std::string name) : name_(name) {}
 
   bool download(const std::string &filename, const std::string &url) {
-  #ifdef WITH_CURL
+#ifdef WITH_CURL
     FILE *fp = fopen(filename.c_str(), "wb");
     CURL *curl = curl_easy_init();
     if (!curl) {
@@ -82,12 +111,13 @@ class Keeper {
     CURLcode result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     fclose(fp);
-    std::cerr << '\r' << std::string(filename.length() + bar_length + 7, ' ') << '\r';
+    std::cerr << '\r' << std::string(filename.length() + bar_length + 7, ' ')
+              << '\r';
     return result == CURLE_OK;
-  #else
+#else
     std::cout << "model download not supported, install cURL" << std::endl;
     return false;
-  #endif
+#endif
   }
 
   bool ensureFile(const std::string &filename, const std::string &url) {
@@ -101,9 +131,10 @@ class Keeper {
     if (keeper_model_lookup.find(name_) == keeper_model_lookup.end()) {
       return false;
     }
-    const std::map<std::string, std::string> &pairs = keeper_model_lookup.at(name_);
-    for (const auto &pair: pairs) {
-      if(!ensureFile(pair.first, pair.second)) {
+    const std::map<std::string, std::string> &pairs =
+        keeper_model_lookup.at(name_);
+    for (const auto &pair : pairs) {
+      if (!ensureFile(pair.first, pair.second)) {
         return false;
       }
     }
@@ -141,7 +172,7 @@ class Keeper {
   }
 
  protected:
-   const std::string name_;
+  const std::string name_;
 };
 
 }  // namespace caffe2
