@@ -184,7 +184,7 @@ void run() {
               << (std::ifstream(FLAGS_train_db).good() ? FLAGS_test_db
                                                        : FLAGS_train_db)
               << std::endl;
-    std::cerr << "Make sure to first run ./scrips/download_resource.sh"
+    std::cerr << "Make sure to first run ./script/download_resource.sh"
               << std::endl;
     return;
   }

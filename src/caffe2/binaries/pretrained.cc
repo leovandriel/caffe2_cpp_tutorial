@@ -30,7 +30,7 @@ void run() {
               << (std::ifstream(FLAGS_init_net).good() ? FLAGS_predict_net
                                                        : FLAGS_init_net)
               << std::endl;
-    std::cerr << "Make sure to first run ./scrips/download_resource.sh"
+    std::cerr << "Make sure to first run ./script/download_resource.sh"
               << std::endl;
     return;
   }

@@ -80,7 +80,7 @@ void run() {
 
   if (!std::ifstream(FLAGS_train_data).good()) {
     std::cerr << "error: Text file missing: " << FLAGS_train_data << std::endl;
-    std::cerr << "Make sure to first run ./scrips/download_resource.sh"
+    std::cerr << "Make sure to first run ./script/download_resource.sh"
               << std::endl;
     return;
   }
