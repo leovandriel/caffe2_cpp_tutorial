@@ -1,7 +1,28 @@
 #include "caffe2/operator/mean_stdev_op.h"
-#include "util/math.h"
 
 namespace caffe2 {
+
+template<typename C>
+void get_mean_stdev_tensor(const Tensor<C> &tensor, Tensor<C> &mean, Tensor<C> &stdev) {
+  auto data = tensor.template data<float>();
+  auto size = tensor.size() / tensor.dim(0);
+  auto mean_data = mean.template mutable_data<float>();
+  auto stdev_data = stdev.template mutable_data<float>();
+  for (auto e = data + tensor.size(); data != e; data += size, mean_data++, stdev_data++) {
+    auto sum = 0.f;
+    for (auto d = data, e = data + size; d != e; d++) {
+      sum += *d;
+    }
+    auto mean = sum / size;
+    auto sq_sum = 0.f;
+    for (auto d = data, e = data + size; d != e; d++) {
+      sq_sum += (*d - mean) * (*d - mean);
+    }
+    auto stdev = sqrt(sq_sum / size);
+    *mean_data = mean;
+    *stdev_data = stdev;
+  }
+}
 
 template <>
 bool MeanStdevOp<float, CPUContext>::RunOnDevice() {

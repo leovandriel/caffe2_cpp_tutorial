@@ -1,7 +1,41 @@
 #include "caffe2/operator/affine_scale_op.h"
-#include "util/math.h"
 
 namespace caffe2 {
+
+template<typename C>
+void get_affine_scale_tensor(const Tensor<C> &tensor, const Tensor<C> &mean, const Tensor<C> &scale, Tensor<C> &transformed, bool inverse = false) {
+  auto data = tensor.template data<float>();
+  auto size = tensor.size() / tensor.dim(0);
+  auto mean_data = mean.template data<float>();
+  auto scale_data = scale.template data<float>();
+  auto transformed_data = transformed.template mutable_data<float>();
+  for (auto e = data + tensor.size(); data != e; mean_data++, scale_data++) {
+    for (auto f = data + size; data != f; data++, transformed_data++) {
+      if (inverse) {
+        *transformed_data = (*data - *mean_data) / (*scale_data + 1e-8);
+      } else {
+        *transformed_data = *data * *scale_data + *mean_data;
+      }
+    }
+  }
+}
+
+template<typename C>
+void set_affine_scale_tensor(Tensor<C> &tensor, const Tensor<C> &scale, const Tensor<C> &transformed, bool inverse = false) {
+  auto data = tensor.template mutable_data<float>();
+  auto size = tensor.size() / tensor.dim(0);
+  auto scale_data = scale.template data<float>();
+  auto transformed_data = transformed.template data<float>();
+  for (auto e = data + tensor.size(); data != e; scale_data++) {
+    for (auto f = data + size; data != f; data++, transformed_data++) {
+      if (inverse) {
+        *data = *transformed_data / (*scale_data + 1e-8);
+      } else {
+        *data = *transformed_data * *scale_data;
+      }
+    }
+  }
+}
 
 template <>
 bool AffineScaleOp<float, CPUContext>::RunOnDevice() {
