@@ -1,12 +1,13 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
+#include "caffe2/zoo/keeper.h"
 
-#include "util/zoo.h"
 #include "util/print.h"
 
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
 
+CAFFE2_DEFINE_string(model, "googlenet", "Name of model.");
 CAFFE2_DEFINE_bool(short, false, "use short format.");
 
 CAFFE2_DEFINE_bool(code, false, "use in-code model.");
@@ -18,12 +19,9 @@ void run() {
   NetDef init_model, predict_model;
 
   if (FLAGS_code && !FLAGS_file) {
-    std::string model = "googlenet";
-    add_model(model, init_model, predict_model);
+    Keeper(FLAGS_model).AddModel(init_model, predict_model, false);
   } else if (!FLAGS_code && FLAGS_file) {
-    std::string model = "googlenet";
-    ReadProtoFromFile(("res/" + model + "_init_net.pb").c_str(), &init_model);
-    ReadProtoFromFile(("res/" + model + "_predict_net.pb").c_str(), &predict_model);
+    Keeper(FLAGS_model).AddModel(init_model, predict_model, true);
     NetUtil(init_model).SetFillToTrain();
   } else {
     std::cerr << "set either --code or --file" << std::endl;
