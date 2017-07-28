@@ -10,7 +10,7 @@ class ShowWorstOp final : public Operator<Context> {
  public:
   USE_OPERATOR_CONTEXT_FUNCTIONS;
   ShowWorstOp(const OperatorDef& def, Workspace* ws)
-    : Operator<Context>(def, ws) {}
+      : Operator<Context>(def, ws) {}
 
   bool RunOnDevice() override;
 

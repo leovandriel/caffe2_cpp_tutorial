@@ -2,11 +2,13 @@
 #include "caffe2/util/net.h"
 
 #ifdef WITH_CUDA
-  #include "caffe2/core/context_gpu.h"
+#include "caffe2/core/context_gpu.h"
 #endif
 
-CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb", "The given path to the training leveldb.");
-CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb", "The given path to the testing leveldb.");
+CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb",
+                     "The given path to the training leveldb.");
+CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb",
+                     "The given path to the testing leveldb.");
 CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of test runs.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
@@ -14,13 +16,16 @@ CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 namespace caffe2 {
 
 // >> def AddInput(model, batch_size, db, db_type):
-void AddInput(NetUtil &init, NetUtil &predict, int batch_size, const std::string &db, const std::string& db_type) {
+void AddInput(NetUtil &init, NetUtil &predict, int batch_size,
+              const std::string &db, const std::string &db_type) {
   // Setup database connection
   init.AddCreateDbOp("dbreader", db_type, db);
   predict.AddInput("dbreader");
 
-  // >>> data_uint8, label = model.TensorProtosDBInput([], ["data_uint8", "label"], batch_size=batch_size, db=db, db_type=db_type)
-  predict.AddTensorProtosDbInputOp("dbreader", "data_uint8", "label", batch_size);
+  // >>> data_uint8, label = model.TensorProtosDBInput([], ["data_uint8",
+  // "label"], batch_size=batch_size, db=db, db_type=db_type)
+  predict.AddTensorProtosDbInputOp("dbreader", "data_uint8", "label",
+                                   batch_size);
 
   // >>> data = model.Cast(data_uint8, "data", to=core.DataType.FLOAT)
   predict.AddCastOp("data_uint8", "data", TensorProto_DataType_FLOAT);
@@ -39,20 +44,21 @@ void AddLeNetModel(NetUtil &init, NetUtil &predict, bool training) {
   predict.AddInput("conv1_w");
   predict.AddInput("conv1_b");
   if (training) {
-    init.AddXavierFillOp({ 20, 1, 5, 5 }, "conv1_w");
-    init.AddConstantFillOp({ 20 }, "conv1_b");
+    init.AddXavierFillOp({20, 1, 5, 5}, "conv1_w");
+    init.AddConstantFillOp({20}, "conv1_b");
   }
 
   // >>> pool1 = brew.max_pool(model, conv1, 'pool1', kernel=2, stride=2)
   predict.AddMaxPoolOp("conv1", "pool1", 2, 0, 2);
 
-  // >>> conv2 = brew.conv(model, pool1, 'conv2', dim_in=20, dim_out=50, kernel=5)
+  // >>> conv2 = brew.conv(model, pool1, 'conv2', dim_in=20, dim_out=50,
+  // kernel=5)
   predict.AddConvOp("pool1", "conv2_w", "conv2_b", "conv2", 1, 0, 5);
   predict.AddInput("conv2_w");
   predict.AddInput("conv2_b");
   if (training) {
-    init.AddXavierFillOp({ 50, 20, 5, 5 }, "conv2_w");
-    init.AddConstantFillOp({ 50 }, "conv2_b");
+    init.AddXavierFillOp({50, 20, 5, 5}, "conv2_w");
+    init.AddConstantFillOp({50}, "conv2_b");
   }
 
   // >>> pool2 = brew.max_pool(model, conv2, 'pool2', kernel=2, stride=2)
@@ -63,8 +69,8 @@ void AddLeNetModel(NetUtil &init, NetUtil &predict, bool training) {
   predict.AddInput("fc3_w");
   predict.AddInput("fc3_b");
   if (training) {
-    init.AddXavierFillOp({ 500, 800 }, "fc3_w");
-    init.AddConstantFillOp({ 500 }, "fc3_b");
+    init.AddXavierFillOp({500, 800}, "fc3_w");
+    init.AddConstantFillOp({500}, "fc3_b");
   }
 
   // >>> fc3 = brew.relu(model, fc3, fc3)
@@ -75,8 +81,8 @@ void AddLeNetModel(NetUtil &init, NetUtil &predict, bool training) {
   predict.AddInput("pred_w");
   predict.AddInput("pred_b");
   if (training) {
-    init.AddXavierFillOp({ 10, 500 }, "pred_w");
-    init.AddConstantFillOp({ 10 }, "pred_b");
+    init.AddXavierFillOp({10, 500}, "pred_w");
+    init.AddConstantFillOp({10}, "pred_b");
   }
 
   // >>> softmax = brew.softmax(model, pred, 'softmax')
@@ -89,7 +95,9 @@ void AddAccuracy(NetUtil &init, NetUtil &predict) {
   predict.AddAccuracyOp("softmax", "label", "accuracy");
 
   // Moved ITER to AddAccuracy function, so it's also available on test runs
-  init.AddConstantFillOp({ 1 }, (int64_t)0, "ITER")->mutable_device_option()->set_device_type(CPU);
+  init.AddConstantFillOp({1}, (int64_t)0, "ITER")
+      ->mutable_device_option()
+      ->set_device_type(CPU);
   predict.AddInput("ITER");
 
   // >>> ITER = model.Iter("iter")
@@ -97,7 +105,8 @@ void AddAccuracy(NetUtil &init, NetUtil &predict) {
 }
 
 // >>> def AddTrainingOperators(model, softmax, label):
-void AddTrainingOperators(NetUtil &init, NetUtil &predict, std::vector<string> params) {
+void AddTrainingOperators(NetUtil &init, NetUtil &predict,
+                          std::vector<string> params) {
   // >>> xent = model.LabelCrossEntropy([softmax, label], 'xent')
   predict.AddLabelCrossEntropyOp("softmax", "label", "xent");
 
@@ -111,30 +120,34 @@ void AddTrainingOperators(NetUtil &init, NetUtil &predict, std::vector<string> p
   predict.AddConstantFillWithOp(1.f, "loss", "loss_grad");
   predict.AddGradientOps();
 
-  // >>> LR = model.LearningRate(ITER, "LR", base_lr=-0.1, policy="step", stepsize=1, gamma=0.999 )
+  // >>> LR = model.LearningRate(ITER, "LR", base_lr=-0.1, policy="step",
+  // stepsize=1, gamma=0.999 )
   predict.AddLearningRateOp("ITER", "LR", 0.1);
 
-  // >>> ONE = model.param_init_net.ConstantFill([], "ONE", shape=[1], value=1.0)
-  init.AddConstantFillOp({ 1 }, 1.f, "ONE");
+  // >>> ONE = model.param_init_net.ConstantFill([], "ONE", shape=[1],
+  // value=1.0)
+  init.AddConstantFillOp({1}, 1.f, "ONE");
   predict.AddInput("ONE");
 
   // >>> for param in model.params:
-  for (auto param: params) {
+  for (auto param : params) {
     // >>> param_grad = model.param_to_grad[param]
     // >>> model.WeightedSum([param, ONE, param_grad, LR], param)
-    predict.AddWeightedSumOp({ param, "ONE", param + "_grad", "LR" }, param);
+    predict.AddWeightedSumOp({param, "ONE", param + "_grad", "LR"}, param);
   }
 
-  return; // Checkpoint causes problems on subsequent runs
+  return;  // Checkpoint causes problems on subsequent runs
 
   // >>> model.Checkpoint([ITER] + model.params, [],
-  std::vector<std::string> inputs({ "ITER" });
+  std::vector<std::string> inputs({"ITER"});
   inputs.insert(inputs.end(), params.begin(), params.end());
-  predict.AddCheckpointOp(inputs, 20, "leveldb", "mnist_lenet_checkpoint_%05d.leveldb");
+  predict.AddCheckpointOp(inputs, 20, "leveldb",
+                          "mnist_lenet_checkpoint_%05d.leveldb");
 }
 
 // >>> def AddBookkeepingOperators(model):
-void AddBookkeepingOperators(NetUtil &init, NetUtil &predict, std::vector<string> params) {
+void AddBookkeepingOperators(NetUtil &init, NetUtil &predict,
+                             std::vector<string> params) {
   // >>> model.Print('accuracy', [], to_file=1)
   predict.AddPrintOp("accuracy", true);
 
@@ -142,7 +155,7 @@ void AddBookkeepingOperators(NetUtil &init, NetUtil &predict, std::vector<string
   predict.AddPrintOp("loss", true);
 
   // >>> for param in model.params:
-  for (auto param: params) {
+  for (auto param : params) {
     // >>> model.Summarize(param, [], to_file=1)
     predict.AddSummarizeOp(param, true);
 
@@ -165,9 +178,14 @@ void run() {
   std::cout << "https://caffe2.ai/docs/tutorial-MNIST.html" << std::endl;
   std::cout << std::endl;
 
-  if (!std::ifstream(FLAGS_train_db).good() || !std::ifstream(FLAGS_test_db).good()) {
-    std::cerr << "error: MNIST database missing: " << (std::ifstream(FLAGS_train_db).good() ? FLAGS_test_db : FLAGS_train_db) << std::endl;
-    std::cerr << "Make sure to first run ./scrips/download_resource.sh" << std::endl;
+  if (!std::ifstream(FLAGS_train_db).good() ||
+      !std::ifstream(FLAGS_test_db).good()) {
+    std::cerr << "error: MNIST database missing: "
+              << (std::ifstream(FLAGS_train_db).good() ? FLAGS_test_db
+                                                       : FLAGS_train_db)
+              << std::endl;
+    std::cerr << "Make sure to first run ./scrips/download_resource.sh"
+              << std::endl;
     return;
   }
 
@@ -175,7 +193,8 @@ void run() {
   std::cout << "test_db: " << FLAGS_test_db << std::endl;
   std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false") << std::endl;
+  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false")
+            << std::endl;
 
 #ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
@@ -186,19 +205,24 @@ void run() {
   }
 #endif
 
-  // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize, brew
+  // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize,
+  // brew
   // >>> workspace.ResetWorkspace(root_folder)
   Workspace workspace("tmp");
 
-  // >>> train_model = model_helper.ModelHelper(name="mnist_train", arg_scope={"order": "NCHW"})
+  // >>> train_model = model_helper.ModelHelper(name="mnist_train",
+  // arg_scope={"order": "NCHW"})
   NetDef initTrainModel, predictTrainModel;
   NetUtil initTrain(initTrainModel), predictTrain(predictTrainModel);
   initTrain.SetName("mnist_train_init");
   predictTrain.SetName("mnist_train_predict");
 
-  std::vector<string> params({"conv1_w", "conv1_b", "conv2_w", "conv2_b", "fc3_w", "fc3_b", "pred_w", "pred_b"});
+  std::vector<string> params({"conv1_w", "conv1_b", "conv2_w", "conv2_b",
+                              "fc3_w", "fc3_b", "pred_w", "pred_b"});
 
-  // >>> data, label = AddInput(train_model, batch_size=64, db=os.path.join(data_folder, 'mnist-train-nchw-leveldb'), db_type='leveldb')
+  // >>> data, label = AddInput(train_model, batch_size=64,
+  // db=os.path.join(data_folder, 'mnist-train-nchw-leveldb'),
+  // db_type='leveldb')
   AddInput(initTrain, predictTrain, 64, FLAGS_train_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(train_model, data)
@@ -210,13 +234,15 @@ void run() {
   // >>> AddBookkeepingOperators(train_model)
   AddBookkeepingOperators(initTrain, predictTrain, params);
 
-  // >>> test_model = model_helper.ModelHelper(name="mnist_test", arg_scope=arg_scope, init_params=False)
+  // >>> test_model = model_helper.ModelHelper(name="mnist_test",
+  // arg_scope=arg_scope, init_params=False)
   NetDef initTestModel, predictTestModel;
   NetUtil initTest(initTestModel), predictTest(predictTestModel);
   initTest.SetName("mnist_test_init");
   predictTest.SetName("mnist_test_predict");
 
-  // >>> data, label = AddInput(test_model, batch_size=100, db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
+  // >>> data, label = AddInput(test_model, batch_size=100,
+  // db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
   AddInput(initTest, predictTest, 100, FLAGS_test_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(test_model, data)
@@ -225,7 +251,8 @@ void run() {
   // >>> AddAccuracy(test_model, softmax, label)
   AddAccuracy(initTest, predictTest);
 
-  // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy", arg_scope=arg_scope, init_params=False)
+  // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy",
+  // arg_scope=arg_scope, init_params=False)
   NetDef initDeployModel, predictDeployModel;
   NetUtil initDeploy(initDeployModel), predictDeploy(predictDeployModel);
   initDeploy.SetName("mnist_model_init");
@@ -262,9 +289,11 @@ void run() {
     // >>> accuracy[i] = workspace.FetchBlob('accuracy')
     // >>> loss[i] = workspace.FetchBlob('loss')
     if (i % 10 == 0) {
-      auto accuracy = GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto accuracy =
+          GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
       auto loss = GetTensor(*workspace.GetBlob("loss")).data<float>()[0];
-      std::cout << "step: " << i << " loss: " << loss << " accuracy: " << accuracy << std::endl;
+      std::cout << "step: " << i << " loss: " << loss
+                << " accuracy: " << accuracy << std::endl;
     }
   }
 
@@ -286,21 +315,23 @@ void run() {
 
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
-      auto accuracy = GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
+      auto accuracy =
+          GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
       std::cout << "step: " << i << " accuracy: " << accuracy << std::endl;
     }
   }
 
   // with open(os.path.join(root_folder, "deploy_net.pbtxt"), 'w') as fid:
-    // fid.write(str(deploy_model.net.Proto()))
-  std::vector<string> external(initDeployModel.external_input().begin(), initDeployModel.external_input().end());
-  for (auto &param: external) {
+  // fid.write(str(deploy_model.net.Proto()))
+  std::vector<string> external(initDeployModel.external_input().begin(),
+                               initDeployModel.external_input().end());
+  for (auto &param : external) {
     auto tensor = GetTensor(*workspace.GetBlob(param));
     auto op = initDeployModel.add_op();
     op->set_type("GivenTensorFill");
     auto arg1 = op->add_arg();
     arg1->set_name("shape");
-    for (auto d: tensor.dims()) {
+    for (auto d : tensor.dims()) {
       arg1->add_ints(d);
     }
     auto arg2 = op->add_arg();
@@ -317,7 +348,7 @@ void run() {
 
 }  // namespace caffe2
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
   google::protobuf::ShutdownProtobufLibrary();

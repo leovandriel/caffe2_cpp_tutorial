@@ -2,15 +2,17 @@
 #define CMD_H
 
 #ifdef WITH_CUDA
-  #include "caffe2/core/context_gpu.h"
+#include "caffe2/core/context_gpu.h"
 #endif
 
-CAFFE2_DEFINE_string(optimizer, "adam", "Training optimizer: sgd/momentum/adagrad/adam");
+CAFFE2_DEFINE_string(optimizer, "adam",
+                     "Training optimizer: sgd/momentum/adagrad/adam");
 CAFFE2_DEFINE_string(device, "cudnn", "Computation device: cpu/cuda/cudnn");
 CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
 
-static const std::set<std::string> device_types({ "cpu", "cuda", "cudnn" });
-static const std::set<std::string> optimizer_types({ "sgd", "momentum", "adagrad", "adam" });
+static const std::set<std::string> device_types({"cpu", "cuda", "cudnn"});
+static const std::set<std::string> optimizer_types({"sgd", "momentum",
+                                                    "adagrad", "adam"});
 
 namespace caffe2 {
 
@@ -32,12 +34,18 @@ bool cmd_init(const std::string title) {
   std::cout << std::endl;
 
   if (device_types.find(FLAGS_device) == device_types.end()) {
-    std::cerr << "incorrect device type (" << std::vector<std::string>(device_types.begin(), device_types.end()) << "): " << FLAGS_device << std::endl;
+    std::cerr << "incorrect device type ("
+              << std::vector<std::string>(device_types.begin(),
+                                          device_types.end())
+              << "): " << FLAGS_device << std::endl;
     return false;
   }
 
   if (optimizer_types.find(FLAGS_optimizer) == optimizer_types.end()) {
-    std::cerr << "incorrect optimizer type (" << std::vector<std::string>(optimizer_types.begin(), optimizer_types.end()) << "): " << FLAGS_optimizer << std::endl;
+    std::cerr << "incorrect optimizer type ("
+              << std::vector<std::string>(optimizer_types.begin(),
+                                          optimizer_types.end())
+              << "): " << FLAGS_optimizer << std::endl;
     return false;
   }
 
@@ -45,7 +53,8 @@ bool cmd_init(const std::string title) {
 
   std::cout << "optimizer: " << FLAGS_optimizer << std::endl;
   std::cout << "device: " << FLAGS_device << std::endl;
-  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false") << std::endl;
+  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false")
+            << std::endl;
 
   return true;
 }

@@ -2,8 +2,10 @@
 
 namespace caffe2 {
 
-template<typename C>
-void get_affine_scale_tensor(const Tensor<C> &tensor, const Tensor<C> &mean, const Tensor<C> &scale, Tensor<C> &transformed, bool inverse = false) {
+template <typename C>
+void get_affine_scale_tensor(const Tensor<C>& tensor, const Tensor<C>& mean,
+                             const Tensor<C>& scale, Tensor<C>& transformed,
+                             bool inverse = false) {
   auto data = tensor.template data<float>();
   auto size = tensor.size() / tensor.dim(0);
   auto mean_data = mean.template data<float>();
@@ -20,8 +22,10 @@ void get_affine_scale_tensor(const Tensor<C> &tensor, const Tensor<C> &mean, con
   }
 }
 
-template<typename C>
-void set_affine_scale_tensor(Tensor<C> &tensor, const Tensor<C> &scale, const Tensor<C> &transformed, bool inverse = false) {
+template <typename C>
+void set_affine_scale_tensor(Tensor<C>& tensor, const Tensor<C>& scale,
+                             const Tensor<C>& transformed,
+                             bool inverse = false) {
   auto data = tensor.template mutable_data<float>();
   auto size = tensor.size() / tensor.dim(0);
   auto scale_data = scale.template data<float>();
@@ -62,31 +66,34 @@ bool AffineScaleGradientOp<float, CPUContext>::RunOnDevice() {
 namespace {
 
 REGISTER_CPU_OPERATOR(AffineScale, AffineScaleOp<float, CPUContext>);
-REGISTER_CPU_OPERATOR(AffineScaleGradient, AffineScaleGradientOp<float, CPUContext>);
+REGISTER_CPU_OPERATOR(AffineScaleGradient,
+                      AffineScaleGradientOp<float, CPUContext>);
 
 OPERATOR_SCHEMA(AffineScale)
-  .NumInputs(3)
-  .NumOutputs(1)
-  .AllowInplace({{0, 0}})
-  .IdenticalTypeAndShape()
-  .SetDoc(R"DOC(
+    .NumInputs(3)
+    .NumOutputs(1)
+    .AllowInplace({{0, 0}})
+    .IdenticalTypeAndShape()
+    .SetDoc(R"DOC(
 The operator affine transforms values per batch item.
 )DOC")
-  .Arg("inverse", "apply inverse of affine transform")
-  .Input(0, "input", "The input data as N-D Tensor<float>.")
-  .Input(1, "mean", "The mean values as 1-D Tensor<float> of batch size.")
-  .Input(2, "scale", "The scale values as 1-D Tensor<float> of batch size.")
-  .Output(0, "output", "Scaled N-D Tensor<float>.");
+    .Arg("inverse", "apply inverse of affine transform")
+    .Input(0, "input", "The input data as N-D Tensor<float>.")
+    .Input(1, "mean", "The mean values as 1-D Tensor<float> of batch size.")
+    .Input(2, "scale", "The scale values as 1-D Tensor<float> of batch size.")
+    .Output(0, "output", "Scaled N-D Tensor<float>.");
 
-OPERATOR_SCHEMA(AffineScaleGradient).NumInputs(4).NumOutputs(1).AllowInplace({{0, 0}});
+OPERATOR_SCHEMA(AffineScaleGradient)
+    .NumInputs(4)
+    .NumOutputs(1)
+    .AllowInplace({{0, 0}});
 
 class GetAffineScaleGradient : public GradientMakerBase {
   using GradientMakerBase::GradientMakerBase;
   vector<OperatorDef> GetGradientDefs() override {
-    return SingleGradientDef(
-        def_.type() + "Gradient", "",
-        vector<string>{I(0), I(2), GO(0)},
-        vector<string>{GI(0)});
+    return SingleGradientDef(def_.type() + "Gradient", "",
+                             vector<string>{I(0), I(2), GO(0)},
+                             vector<string>{GI(0)});
   }
 };
 REGISTER_GRADIENT(AffineScale, GetAffineScaleGradient);

@@ -14,6 +14,6 @@ class MeanStdevOp final : public Operator<Context> {
   bool RunOnDevice() override;
 };
 
-} // namespace caffe2
+}  // namespace caffe2
 
-#endif // OPERATOR_MEAN_STDEV_OP_H
+#endif  // OPERATOR_MEAN_STDEV_OP_H
