@@ -1,13 +1,13 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
 #include "caffe2/utils/proto_utils.h"
+#include "caffe2/util/tensor.h"
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "util/zoo.h"
 #include "util/print.h"
-#include "util/image.h"
 #include "util/cuda.h"
 #include "res/imagenet_classes.h"
 
@@ -47,7 +47,8 @@ void run() {
   std::cout << std::endl;
 
   // read image as tensor
-  auto input = readImageTensor(FLAGS_image_file, FLAGS_size_to_fit);
+  TensorCPU input;
+  TensorUtil(input).ReadImage(FLAGS_image_file, FLAGS_size_to_fit);
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;

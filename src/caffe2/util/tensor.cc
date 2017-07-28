@@ -96,5 +96,99 @@ TensorCPU TensorUtil::ScaleImageTensor(int width, int height) {
   return TensorCPU(dims, output, NULL);
 }
 
+template <typename T>
+void image_to_tensor(TensorCPU &tensor, cv::Mat &image, float mean = 128) {
+  std::vector<T> data;
+  image.convertTo(image, CV_32FC3, 1.0, -mean);
+  vector<cv::Mat> channels(3);
+  cv::split(image, channels);
+  for (auto &c: channels) {
+    data.insert(data.end(), (T *)c.datastart, (T *)c.dataend);
+  }
+  std::vector<TIndex> dims({ 1, 3, image.rows, image.cols });
+  TensorCPU t(dims, data, NULL);
+  tensor.ResizeLike(t);
+  tensor.ShareData(t);
+}
+
+template <typename T>
+void read_image_tensor(TensorCPU &tensor, const std::vector<std::string> &filenames, int size, std::vector<int> &indices, float mean, TensorProto::DataType type) {
+  std::vector<T> data;
+  data.reserve(filenames.size() * 3 * size * size);
+  auto count = 0;
+
+  for (auto &filename: filenames) {
+    // load image
+    auto image = cv::imread(filename); // CV_8UC3 uchar
+    // std::cout << "image size: " << image.size() << std::endl;
+
+    if (!image.cols || !image.rows) {
+      count++;
+      continue;
+    }
+
+    // scale image to fit
+    cv::Size scale(std::max(size * image.cols / image.rows, size), std::max(size, size * image.rows / image.cols));
+    cv::resize(image, image, scale);
+    // std::cout << "scaled size: " << image.size() << std::endl;
+
+    // crop image to fit
+    cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
+    image = image(crop);
+    // std::cout << "cropped size: " << image.size() << std::endl;
+
+    switch (type) {
+    case TensorProto_DataType_FLOAT:
+      image.convertTo(image, CV_32FC3, 1.0, -mean);
+      break;
+    case TensorProto_DataType_INT8:
+      image.convertTo(image, CV_8SC3, 1.0, -mean);
+      break;
+    default:
+      break;
+    }
+    // std::cout << "value range: (" << *std::min_element((T *)image.datastart, (T *)image.dataend) << ", " << *std::max_element((T *)image.datastart, (T *)image.dataend) << ")" << std::endl;
+
+    CHECK(image.channels() == 3);
+    CHECK(image.rows == size);
+    CHECK(image.cols == size);
+
+    // convert NHWC to NCHW
+    vector<cv::Mat> channels(3);
+    cv::split(image, channels);
+    for (auto &c: channels) {
+      data.insert(data.end(), (T *)c.datastart, (T *)c.dataend);
+    }
+
+    indices.push_back(count++);
+  }
+
+  // create tensor
+  std::vector<TIndex> dims({ (TIndex)indices.size(), 3, size, size });
+  TensorCPU t(dims, data, NULL);
+  tensor.ResizeLike(t);
+  tensor.ShareData(t);
+}
+
+void TensorUtil::ReadImages(const std::vector<std::string> &filenames, int size, std::vector<int> &indices, float mean, TensorProto::DataType type) {
+    switch (type) {
+    case TensorProto_DataType_FLOAT:
+      read_image_tensor<float>(tensor_, filenames, size, indices, mean, type);
+      break;
+    case TensorProto_DataType_INT8:
+      read_image_tensor<int8_t>(tensor_, filenames, size, indices, mean, type);
+      break;
+    case TensorProto_DataType_UINT8:
+      read_image_tensor<uint8_t>(tensor_, filenames, size, indices, mean, type);
+      break;
+    default:
+      LOG(FATAL) << "datatype " << type << " not implemented";
+    }
+}
+
+void TensorUtil::ReadImage(const std::string &filename, int size) {
+  std::vector<int> indices;
+  ReadImages({ filename }, size, indices);
+}
 
 }  // namespace caffe2

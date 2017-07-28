@@ -11,7 +11,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "util/image.h"
 #include "util/cuda.h"
 #include "util/print.h"
 
@@ -126,7 +125,8 @@ void write_batch(Workspace &workspace, NetBase *predict_net, std::string &input_
     filenames.push_back(pair.first);
   }
   std::vector<int> indices;
-  auto input = readImageTensor(filenames, size_to_fit, indices);
+  TensorCPU input;
+  TensorUtil(input).ReadImages(filenames, size_to_fit, indices);
   TensorCPU output;
   if (predict_net) {
     set_tensor_blob(*workspace.GetBlob(input_name), input);
