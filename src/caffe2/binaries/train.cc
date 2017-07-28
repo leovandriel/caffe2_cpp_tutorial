@@ -4,8 +4,8 @@
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
+#include "caffe2/zoo/keeper.h"
 
-#include "util/zoo.h"
 #include "util/cuda.h"
 #include "util/print.h"
 #include "res/imagenet_classes.h"
@@ -34,7 +34,7 @@ void run() {
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
-    for (auto const &pair: model_lookup) {
+    for (auto const &pair: keeper_model_lookup) {
       std::cerr << "  " << pair.first << std::endl;
     }
     return;
@@ -71,7 +71,7 @@ void run() {
 
   std::cout << "load model.." << std::endl;
   NetDef full_init_model, full_predict_model;
-  add_model(FLAGS_model, full_init_model, full_predict_model);
+  Keeper(FLAGS_model).AddModel(full_init_model, full_predict_model, false);
 
   if (FLAGS_device == "cudnn") {
     NetUtil(full_init_model).SetEngineOps("CUDNN");

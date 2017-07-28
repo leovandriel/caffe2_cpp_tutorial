@@ -4,8 +4,8 @@
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/core/db.h"
 #include "caffe2/core/operator_gradient.h"
+#include "caffe2/zoo/keeper.h"
 
-#include "util/zoo.h"
 #include "util/cuda.h"
 #include "util/print.h"
 #include "res/imagenet_classes.h"
@@ -32,7 +32,7 @@ void run() {
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
-    for (auto const &pair: model_lookup) {
+    for (auto const &pair: keeper_model_lookup) {
       std::cerr << "  " << pair.first << std::endl;
     }
     return;
@@ -79,7 +79,6 @@ void run() {
   load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
 
   std::cout << "load model.." << std::endl;
-  CHECK(ensureModel(FLAGS_model)) << "~ model " << FLAGS_model << " not found";
   NetDef full_init_model; // the original imagenet initialization model
   NetDef full_predict_model; // the original imagenet prediction model
   NetDef init_model[kRunNum];
@@ -88,10 +87,7 @@ void run() {
     init_model[i].set_name(name_for_run[i] + "_init_model");
     predict_model[i].set_name(name_for_run[i] + "_predict_model");
   }
-  std::string init_filename = "res/" + FLAGS_model + "_init_net.pb";
-  std::string predict_filename = "res/" + FLAGS_model + "_predict_net.pb";
-  CHECK(ReadProtoFromFile(init_filename.c_str(), &full_init_model)) << "~ empty init model " << init_filename;
-  CHECK(ReadProtoFromFile(predict_filename.c_str(), &full_predict_model)) << "~ empty predict model " << predict_filename;
+  Keeper(FLAGS_model).AddModel(full_init_model, full_predict_model, true);
 
   NetUtil(full_predict_model).CheckLayerAvailable(FLAGS_layer);
 

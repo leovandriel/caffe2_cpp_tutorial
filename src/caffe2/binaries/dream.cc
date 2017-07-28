@@ -1,13 +1,13 @@
 #include "caffe2/core/init.h"
 #include "caffe2/core/net.h"
 #include "caffe2/utils/proto_utils.h"
+#include "caffe2/zoo/keeper.h"
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "caffe2/util/tensor.h"
 
-#include "util/zoo.h"
 #include "util/print.h"
 #include "util/cuda.h"
 #include "util/misc.h"
@@ -75,7 +75,7 @@ void run() {
 
   if (!FLAGS_model.size()) {
     std::cerr << "specify a model name using --model <name>" << std::endl;
-    for (auto const &pair: model_lookup) {
+    for (auto const &pair: keeper_model_lookup) {
       std::cerr << "  " << pair.first << std::endl;
     }
     return;
@@ -105,15 +105,9 @@ void run() {
   clock_t load_time = 0;
   NetDef base_init_model, base_predict_model;
 
-  // check if model present
-  CAFFE_ENFORCE(ensureModel(FLAGS_model), "model ", FLAGS_model, " not found");
-  std::string init_filename = "res/" + FLAGS_model + "_init_net.pb";
-  std::string predict_filename = "res/" + FLAGS_model + "_predict_net.pb";
-
   // read model files
   load_time -= clock();
-  CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &base_init_model));
-  CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &base_predict_model));
+  Keeper(FLAGS_model).AddModel(base_init_model, base_predict_model, true);
   load_time += clock();
 
   // std::cout << join_net(base_init_model);
