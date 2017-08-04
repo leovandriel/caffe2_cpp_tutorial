@@ -71,8 +71,6 @@ bool DiagonalGradientOp<float, CPUContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CPU_OPERATOR(Diagonal, DiagonalOp<float, CPUContext>);
 REGISTER_CPU_OPERATOR(DiagonalGradient, DiagonalGradientOp<float, CPUContext>);
 
@@ -97,7 +95,5 @@ class GetDiagonalGradient : public GradientMakerBase {
   }
 };
 REGISTER_GRADIENT(Diagonal, GetDiagonalGradient);
-
-}  // namespace
 
 }  // namespace caffe2

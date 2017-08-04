@@ -63,8 +63,6 @@ bool BackMeanGradientOp<float, CPUContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CPU_OPERATOR(BackMean, BackMeanOp<float, CPUContext>);
 REGISTER_CPU_OPERATOR(BackMeanGradient, BackMeanGradientOp<float, CPUContext>);
 
@@ -89,7 +87,5 @@ class GetBackMeanGradient : public GradientMakerBase {
   }
 };
 REGISTER_GRADIENT(BackMean, GetBackMeanGradient);
-
-}  // namespace
 
 }  // namespace caffe2

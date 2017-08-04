@@ -79,12 +79,7 @@ bool DiagonalGradientOp<float, CUDAContext>::RunOnDevice() {
   return true;
 }
 
-
-namespace {
-
 REGISTER_CUDA_OPERATOR(Diagonal, DiagonalOp<float, CUDAContext>);
 REGISTER_CUDA_OPERATOR(DiagonalGradient, DiagonalGradientOp<float, CUDAContext>);
-
-}  // namespace
 
 }  // namespace caffe2

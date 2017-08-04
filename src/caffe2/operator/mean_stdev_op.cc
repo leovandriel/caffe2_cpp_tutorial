@@ -37,8 +37,6 @@ bool MeanStdevOp<float, CPUContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CPU_OPERATOR(MeanStdev, MeanStdevOp<float, CPUContext>);
 
 OPERATOR_SCHEMA(MeanStdev)
@@ -52,7 +50,5 @@ The operator computes the mean and stdev over the batch.
     .Output(1, "stdev", "The stdev in Tensor of batch size.");
 
 SHOULD_NOT_DO_GRADIENT(MeanStdev);
-
-}  // namespace
 
 }  // namespace caffe2

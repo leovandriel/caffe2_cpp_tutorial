@@ -87,8 +87,6 @@ bool ShowWorstOp<float, CUDAContext>::RunOnDevice() {
 }
 #endif
 
-namespace {
-
 REGISTER_CPU_OPERATOR(ShowWorst, ShowWorstOp<float, CPUContext>);
 
 #ifdef WITH_CUDA
@@ -118,7 +116,5 @@ OPERATOR_SCHEMA(ShowWorst)
 // iteraton");
 
 SHOULD_NOT_DO_GRADIENT(ShowWorst);
-
-}  // namespace
 
 }  // namespace caffe2

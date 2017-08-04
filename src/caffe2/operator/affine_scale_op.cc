@@ -63,8 +63,6 @@ bool AffineScaleGradientOp<float, CPUContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CPU_OPERATOR(AffineScale, AffineScaleOp<float, CPUContext>);
 REGISTER_CPU_OPERATOR(AffineScaleGradient,
                       AffineScaleGradientOp<float, CPUContext>);
@@ -97,7 +95,5 @@ class GetAffineScaleGradient : public GradientMakerBase {
   }
 };
 REGISTER_GRADIENT(AffineScale, GetAffineScaleGradient);
-
-}  // namespace
 
 }  // namespace caffe2

@@ -41,8 +41,6 @@ bool CoutOp<CUDAContext>::RunOnDevice() {
 }
 #endif
 
-namespace {
-
 REGISTER_CPU_OPERATOR(Cout, CoutOp<CPUContext>);
 
 #ifdef WITH_CUDA
@@ -56,7 +54,5 @@ OPERATOR_SCHEMA(Cout)
     .Input(0, "tensor", "The tensor to log");
 
 SHOULD_NOT_DO_GRADIENT(Cout);
-
-}  // namespace
 
 }  // namespace caffe2

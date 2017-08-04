@@ -32,8 +32,6 @@ bool ZeroOneOp<float, CPUContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CPU_OPERATOR(ZeroOne, ZeroOneOp<float, CPUContext>);
 
 OPERATOR_SCHEMA(ZeroOne)
@@ -49,7 +47,5 @@ OPERATOR_SCHEMA(ZeroOne)
            "the indices of true labels");
 
 SHOULD_NOT_DO_GRADIENT(ZeroOne);
-
-}  // namespace
 
 }  // namespace caffe2
