@@ -39,10 +39,6 @@ bool MeanStdevOp<float, CUDAContext>::RunOnDevice() {
   return true;
 }
 
-namespace {
-
 REGISTER_CUDA_OPERATOR(MeanStdev, MeanStdevOp<float, CUDAContext>);
-
-}  // namespace
 
 }  // namespace caffe2

@@ -79,12 +79,7 @@ bool AffineScaleGradientOp<float, CUDAContext>::RunOnDevice() {
   return true;
 }
 
-
-namespace {
-
 REGISTER_CUDA_OPERATOR(AffineScale, AffineScaleOp<float, CUDAContext>);
 REGISTER_CUDA_OPERATOR(AffineScaleGradient, AffineScaleGradientOp<float, CUDAContext>);
-
-}  // namespace
 
 }  // namespace caffe2

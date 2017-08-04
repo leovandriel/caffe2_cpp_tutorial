@@ -67,11 +67,7 @@ bool BackMeanGradientOp<float, CUDAContext>::RunOnDevice() {
 }
 
 
-namespace {
-
 REGISTER_CUDA_OPERATOR(BackMean, BackMeanOp<float, CUDAContext>);
 REGISTER_CUDA_OPERATOR(BackMeanGradient, BackMeanGradientOp<float, CUDAContext>);
-
-}  // namespace
 
 }  // namespace caffe2
