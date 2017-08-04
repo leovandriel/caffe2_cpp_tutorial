@@ -8,6 +8,7 @@ find_package(OpenCV REQUIRED)
 find_package(cURL QUIET)
 find_package(CUDA QUIET)
 find_package(Threads)
+find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
 
 include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -73,7 +74,7 @@ if(OpenCV_LIBS)
 endif()
 
 if(CUDA_LIBRARIES)
-  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${CUDA_CURAND_LIBRARY})
+  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${CUDA_curand_LIBRARY} ${NCCL_LIB})
   add_definitions(-DWITH_CUDA)
 endif()
 
