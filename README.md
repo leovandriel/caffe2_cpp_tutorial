@@ -35,6 +35,10 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
         apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev libeigen3-dev
 
+    In case you're using CUDA an run into CMake issues with `NCCL`, try adding this to your `.bashrc` (assuming Caffe2 at `$HOME/caffe2`):
+
+        export CMAKE_LIBRARY_PATH=$CMAKE_LIBRARY_PATH:$HOME/caffe2/third_party/nccl/build/lib
+
 2. Install Caffe2
 
     Follow the Caffe2 installation instructions: [https://caffe2.ai/docs/getting-started.html](https://caffe2.ai/docs/getting-started.html)

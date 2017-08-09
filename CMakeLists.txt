@@ -8,7 +8,6 @@ find_package(OpenCV REQUIRED)
 find_package(cURL QUIET)
 find_package(CUDA QUIET)
 find_package(Threads)
-find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
 
 include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -23,6 +22,7 @@ find_library(CAFFE2_LIB Caffe2_CPU)
 find_library(CAFFE2_GPU_LIB Caffe2_GPU)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
+find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
 
 if(NOT CAFFE2_LIB)
   message(FATAL_ERROR "Caffe2 lib not found")
