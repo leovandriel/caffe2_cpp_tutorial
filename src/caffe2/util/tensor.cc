@@ -59,21 +59,18 @@ void TensorUtil::ShowImages(int width, int height, const std::string &name,
   }
 }
 
-void TensorUtil::WriteImages(const std::string &name, float mean) {
+void TensorUtil::WriteImages(const std::string &name, float mean, bool lossy) {
   auto count = tensor_.dim(0);
   for (int i = 0; i < count; i++) {
-    auto image = to_image(tensor_, i, mean);
-    auto filename = name + "_" + std::to_string(i) + ".jpg";
-    vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
-    CHECK(cv::imwrite(filename, image, params));
-    // vector<uchar> buffer;
-    // cv::imencode(".jpg", image, buffer, params);
-    // std::ofstream image_file(filename, std::ios::out | std::ios::binary);
-    // if (image_file.is_open()) {
-    //   image_file.write((char*)&buffer[0], buffer.size());
-    //   image_file.close();
-    // }
+    WriteImage(name + "_" + std::to_string(i), i, mean, lossy);
   }
+}
+
+void TensorUtil::WriteImage(const std::string &name, int index, float mean, bool lossy) {
+  auto image = to_image(tensor_, index, mean);
+  auto filename = name + (lossy ? ".jpg" : ".png");
+  vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
+  CHECK(cv::imwrite(filename, image, params));
 }
 
 TensorCPU TensorUtil::ScaleImageTensor(int width, int height) {
