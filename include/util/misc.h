@@ -254,7 +254,7 @@ void dump_database(const std::string db_path, const std::string &db_type) {
               << (value.size() > 1000 ? value.size() / 1000 : value.size())
               << (value.size() > 1000 ? "K" : "B") << "  (" << tensor.dims()
               << ")  " << label << std::endl;
-    TensorUtil(tensor).ShowImage(200, 200, 0, "inspect", 0, 1000, 0);
+    TensorUtil(tensor).ShowImage(200, 200, 0, "inspect", 0, 1000, 128);
   }
 }
 
