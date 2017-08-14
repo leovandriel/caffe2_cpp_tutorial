@@ -135,16 +135,18 @@ void read_image_tensor(TensorCPU &tensor,
       continue;
     }
 
-    // scale image to fit
-    cv::Size scale(std::max(size * image.cols / image.rows, size),
-                   std::max(size, size * image.rows / image.cols));
-    cv::resize(image, image, scale);
-    // std::cout << "scaled size: " << image.size() << std::endl;
+    if (image.cols != size || image.rows != size) {
+      // scale image to fit
+      cv::Size scale(std::max(size * image.cols / image.rows, size),
+                     std::max(size, size * image.rows / image.cols));
+      cv::resize(image, image, scale);
+      // std::cout << "scaled size: " << image.size() << std::endl;
 
-    // crop image to fit
-    cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
-    image = image(crop);
-    // std::cout << "cropped size: " << image.size() << std::endl;
+      // crop image to fit
+      cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
+      image = image(crop);
+      // std::cout << "cropped size: " << image.size() << std::endl;
+    }
 
     switch (type) {
       case TensorProto_DataType_FLOAT:
