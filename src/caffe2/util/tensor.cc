@@ -199,7 +199,7 @@ void TensorUtil::ReadImages(const std::vector<std::string> &filenames, int size,
       read_image_tensor<uint8_t>(tensor_, filenames, size, indices, mean, type);
       break;
     default:
-      LOG(FATAL) << "datatype " << type << " not implemented";
+      LOG(FATAL) << "datatype " << type << " not implemented" << std::endl;
   }
 }
 
