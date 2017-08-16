@@ -145,7 +145,7 @@ void run() {
     train_time += clock();
 
     auto steps_time = (float)(clock() - last_time) / CLOCKS_PER_SEC;
-    if (steps_time > 5) {
+    if (steps_time > 5 || i == FLAGS_train_runs) {
       auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
       auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
       auto train_accuracy =
@@ -157,12 +157,10 @@ void run() {
       validate_time += clock();
       auto validate_accuracy =
           BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
-      auto validate_loss =
-          BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
       std::cout << "step: " << iter << "  rate: " << lr
-                << "  loss: " << train_loss << " | " << validate_loss
-                << "  accuracy: " << train_accuracy << " | "
-                << validate_accuracy << "  step_time: " << std::setprecision(3)
+                << "  loss: " << train_loss << "  accuracy: " << train_accuracy
+                << " | " << validate_accuracy
+                << "  step_time: " << std::setprecision(3)
                 << steps_time / (i - last_i) << "s" << std::endl;
       last_i = i;
       last_time = clock();

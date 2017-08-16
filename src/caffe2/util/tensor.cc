@@ -66,7 +66,8 @@ void TensorUtil::WriteImages(const std::string &name, float mean, bool lossy) {
   }
 }
 
-void TensorUtil::WriteImage(const std::string &name, int index, float mean, bool lossy) {
+void TensorUtil::WriteImage(const std::string &name, int index, float mean,
+                            bool lossy) {
   auto image = to_image(tensor_, index, mean);
   auto filename = name + (lossy ? ".jpg" : ".png");
   vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
@@ -143,7 +144,8 @@ void read_image_tensor(TensorCPU &tensor,
       // std::cout << "scaled size: " << image.size() << std::endl;
 
       // crop image to fit
-      cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size, size);
+      cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size,
+                    size);
       image = image(crop);
       // std::cout << "cropped size: " << image.size() << std::endl;
     }
