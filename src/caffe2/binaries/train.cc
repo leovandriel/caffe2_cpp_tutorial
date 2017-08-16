@@ -137,6 +137,7 @@ void run() {
 
   auto last_time = clock();
   auto last_i = 0;
+  auto sum_accuracy = 0.f, sum_loss = 0.f;
 
   std::cout << "training.." << std::endl;
   for (auto i = 1; i <= FLAGS_train_runs; i++) {
@@ -144,14 +145,17 @@ void run() {
     predict_net[kRunTrain]->Run();
     train_time += clock();
 
+    sum_accuracy +=
+        BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+    sum_loss += BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
+
     auto steps_time = (float)(clock() - last_time) / CLOCKS_PER_SEC;
     if (steps_time > 5 || i == FLAGS_train_runs) {
       auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
       auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
-      auto train_accuracy =
-          BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
-      auto train_loss =
-          BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
+      auto train_loss = sum_loss / (i - last_i), train_accuracy = sum_accuracy / (i - last_i);
+      sum_loss = 0;
+      sum_accuracy = 0;
       validate_time -= clock();
       predict_net[kRunValidate]->Run();
       validate_time += clock();
@@ -171,7 +175,6 @@ void run() {
 
   std::cout << "testing.." << std::endl;
   auto test_step = 10;
-  auto sum_accuracy = 0.f, sum_loss = 0.f;
   for (auto i = 1; i <= FLAGS_test_runs; i++) {
     test_time -= clock();
     predict_net[kRunTest]->Run();
