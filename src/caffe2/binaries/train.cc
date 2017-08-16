@@ -56,7 +56,7 @@ void run() {
   std::cout << "show_worst: " << (FLAGS_show_worst ? "true" : "false")
             << std::endl;
 
-  auto path_prefix = FLAGS_folder + '/' + '_' + FLAGS_model + '_';
+  auto path_prefix = FLAGS_folder + '/' + '_';
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
@@ -210,14 +210,16 @@ void run() {
     }
   }
 
-  WriteProtoToBinaryFile(deploy_init_model, path_prefix + "init_net.pb");
-  WriteProtoToBinaryFile(full_predict_model, path_prefix + "predict_net.pb");
-  auto init_size = std::ifstream(path_prefix + "init_net.pb",
-                                 std::ifstream::ate | std::ifstream::binary)
-                       .tellg();
-  auto predict_size = std::ifstream(path_prefix + "predict_net.pb",
-                                    std::ifstream::ate | std::ifstream::binary)
-                          .tellg();
+  auto init_path = path_prefix + FLAGS_model + "_init_net.pb";
+  auto predict_path = path_prefix + FLAGS_model + "_predict_net.pb";
+  WriteProtoToBinaryFile(deploy_init_model, init_path);
+  WriteProtoToBinaryFile(full_predict_model, predict_path);
+  auto init_size =
+      std::ifstream(init_path, std::ifstream::ate | std::ifstream::binary)
+          .tellg();
+  auto predict_size =
+      std::ifstream(predict_path, std::ifstream::ate | std::ifstream::binary)
+          .tellg();
   auto model_size = init_size + predict_size;
 
   std::cout << std::endl;
