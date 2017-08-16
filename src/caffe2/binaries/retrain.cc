@@ -58,11 +58,8 @@ void run() {
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
 
   std::string layer_safe = FLAGS_layer;
-  std::string::size_type index = 0;
-  while ((index = layer_safe.find("/", index)) != std::string::npos) {
-    layer_safe.replace(index, 3, "_");
-    index += 1;
-  }
+  std::replace(layer_safe.begin(), layer_safe.end(), '/', '_');
+  std::replace(layer_safe.begin(), layer_safe.end(), '.', '_');
 
   auto path_prefix =
       FLAGS_folder + '/' + '_' + FLAGS_model + '_' + layer_safe + '_';
