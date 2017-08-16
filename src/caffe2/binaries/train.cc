@@ -170,15 +170,21 @@ void run() {
   std::cout << std::endl;
 
   std::cout << "testing.." << std::endl;
+  auto test_step = 10;
+  auto sum_accuracy = 0.f, sum_loss = 0.f;
   for (auto i = 1; i <= FLAGS_test_runs; i++) {
     test_time -= clock();
     predict_net[kRunTest]->Run();
     test_time += clock();
 
-    if (i % 10 == 0) {
-      auto accuracy =
-          BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
-      auto loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
+    sum_accuracy +=
+        BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+    sum_loss += BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
+
+    if (i % test_step == 0) {
+      auto loss = sum_loss / test_step, accuracy = sum_accuracy / test_step;
+      sum_loss = 0;
+      sum_accuracy = 0;
       std::cout << "step: " << i << " loss: " << loss
                 << " accuracy: " << accuracy << std::endl;
     }
