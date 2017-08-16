@@ -159,7 +159,7 @@ class Keeper {
     } else if (name_ == "vgg19") {
       VGGModel(init_model, predict_model).Add(19);
     } else {
-      std::cerr << "model " << name_ << " not implemented";
+      std::cerr << "model " << name_ << " not implemented" << std::endl;
     }
   }
 
