@@ -24,6 +24,7 @@ class NetUtil {
   OperatorDef* AddZeroOneOp(const std::string& pred, const std::string& label);
   OperatorDef* AddShowWorstOp(const std::string& pred, const std::string& label,
                               const std::string& data);
+  OperatorDef* AddTimePlotOp(const std::vector<std::string>& data);
   OperatorDef* AddEnsureCpuOutputOp(const std::string& input,
                                     const std::string& output);
   OperatorDef* AddCopyFromCpuInputOp(const std::string& input,
