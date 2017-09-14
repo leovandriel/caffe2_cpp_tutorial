@@ -6,7 +6,7 @@
 namespace caffe2 {
 
 namespace {
-WindowUtil shared_window("main");
+WindowUtil shared_window;
 }
 
 void WindowUtil::ResizeWindow(cv::Rect rect) {
@@ -77,7 +77,8 @@ void WindowUtil::ShowText(const std::string &name, const std::string &text,
   int baseline;
   cv::Size size = getTextSize(text, face, scale, thickness, &baseline);
   cv::Point org(rect.x + position.x, rect.y + size.height + position.y);
-  cv::rectangle(buffer_, org + cv::Point(-1, 2), org + cv::Point(size.width + 1, -size.height - 1),
+  cv::rectangle(buffer_, org + cv::Point(-1, 2),
+                org + cv::Point(size.width + 1, -size.height - 1),
                 cv::Scalar::all(224), -1);
   cv::putText(buffer_, text.c_str(), org, face, scale, cv::Scalar::all(32),
               thickness);
