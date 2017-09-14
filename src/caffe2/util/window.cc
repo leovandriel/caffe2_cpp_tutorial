@@ -71,16 +71,14 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
     rect.height = image.rows;
   }
   EnsureWindow(rect);
-  if (rect.width > 0 && rect.height > 0 && image.cols > 0 && image.rows > 0) {
-    if (image.cols != rect.width || image.rows != rect.height) {
-      cv::Mat resized;
-      resize(image, resized, {rect.width, rect.height});
-      resized.copyTo(buffer_(rect));
-    } else {
-      image.copyTo(buffer_(rect));
-    }
-    Show();
+  if (image.cols != rect.width || image.rows != rect.height) {
+    cv::Mat resized;
+    resize(image, resized, {rect.width, rect.height});
+    resized.copyTo(buffer_(rect));
+  } else {
+    image.copyTo(buffer_(rect));
   }
+  Show();
 }
 
 void WindowUtil::SetTitle(const std::string &title) {

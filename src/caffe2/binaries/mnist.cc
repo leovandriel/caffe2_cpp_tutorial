@@ -14,7 +14,7 @@ CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb",
 CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of test runs.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
-CAFFE2_DEFINE_bool(plot_loss, false, "Plot train and validation loss.");
+CAFFE2_DEFINE_bool(display, false, "Display graphical training info.");
 
 namespace caffe2 {
 
@@ -97,7 +97,7 @@ void AddAccuracy(NetUtil &init, NetUtil &predict) {
   // >>> accuracy = model.Accuracy([softmax, label], "accuracy")
   predict.AddAccuracyOp("softmax", "label", "accuracy");
 
-  if (FLAGS_plot_loss) {
+  if (FLAGS_display) {
     NetUtil(predict).AddTimePlotOp("accuracy", {"accuracy"});
   }
 
@@ -120,7 +120,8 @@ void AddTrainingOperators(NetUtil &init, NetUtil &predict,
   // >>> loss = model.AveragedLoss(xent, "loss")
   predict.AddAveragedLossOp("xent", "loss");
 
-  if (FLAGS_plot_loss) {
+  if (FLAGS_display) {
+    NetUtil(predict).AddShowWorstOp("softmax", "label", "data");
     NetUtil(predict).AddTimePlotOp("loss", {"loss"});
   }
 
@@ -206,8 +207,7 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false")
             << std::endl;
-  std::cout << "plot_loss: " << (FLAGS_plot_loss ? "true" : "false")
-            << std::endl;
+  std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
 #ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
@@ -218,8 +218,15 @@ void run() {
   }
 #endif
 
-  superWindow("Caffe2 MNIST Tutorial");
-  moveWindow("loss", 0, 260);
+  if (FLAGS_display) {
+    superWindow("Caffe2 MNIST Tutorial");
+    moveWindow("worst_pos", 0, 0);
+    resizeWindow("worst_pos", 260, 260);
+    moveWindow("worst_neg", 0, 260);
+    resizeWindow("worst_neg", 260, 260);
+    moveWindow("accuracy", 260, 0);
+    moveWindow("loss", 260, 260);
+  }
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize,
   // brew

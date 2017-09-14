@@ -9,10 +9,8 @@ class TensorUtil {
  public:
   TensorUtil(Tensor<CPUContext>& tensor) : tensor_(tensor) {}
 
-  void ShowImages(int width, int height, const std::string& name,
-                  float mean = 128);
-  void ShowImage(int width, int height, int index, const std::string& name,
-                 int offset = 0, int wait = 1, float mean = 128);
+  void ShowImages(const std::string& name, float scale = 1.0, float mean = 128);
+  void ShowImage(const std::string& title, int index, float scale, float mean);
   void WriteImages(const std::string& name, float mean = 128,
                    bool lossy = false);
   void WriteImage(const std::string& name, int index, float mean = 128,
