@@ -36,7 +36,7 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
   file(DOWNLOAD "https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h" "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
 endif()
 
-file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc")
+file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc" "${PROJECT_SOURCE_DIR}/src/cvplot/*.cpp")
 add_library(caffe2_cpp ${LIB_SOURCES})
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND ALL_LIBRARIES -Wl,-force_load caffe2_cpp)

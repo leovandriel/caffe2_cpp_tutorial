@@ -25,7 +25,7 @@ const std::set<std::string> trainable_ops({
 
 const std::set<std::string> non_trainable_ops({
     "Accuracy", "Cast", "Cout", "ConstantFill", "Iter", "Scale", "StopGradient",
-    "TensorProtosDBInput",
+    "TensorProtosDBInput", "TimePlot",
 });
 
 const std::map<std::string, std::string> custom_gradient({
@@ -154,6 +154,10 @@ OperatorDef* NetUtil::AddShowWorstOp(const std::string& pred,
                                      const std::string& label,
                                      const std::string& data) {
   return AddOp("ShowWorst", {pred, label, data}, {});
+}
+
+OperatorDef* NetUtil::AddTimePlotOp(const std::vector<std::string>& data) {
+  return AddOp("TimePlot", data, {});
 }
 
 OperatorDef* NetUtil::AddEnsureCpuOutputOp(const std::string& input,
