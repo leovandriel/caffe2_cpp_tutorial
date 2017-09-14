@@ -22,7 +22,11 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
   vector<cv::Mat> channels(depth);
   for (auto &j : channels) {
     j = cv::Mat(height, width, type, (void *)data);
-    j.convertTo(j, type, scale, mean);
+    if (scale != 1.0 || mean != 0.0) {
+      cv::Mat k;
+      j.convertTo(k, type, scale, mean);
+      j = k;
+    }
     data += (width * height);
   }
   cv::Mat image;
