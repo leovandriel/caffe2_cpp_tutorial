@@ -14,11 +14,6 @@ class WindowUtil {
   };
 
  public:
-  WindowUtil(const std::string &title, cv::Size size = {0, 0}) {
-    SetTitle(title);
-    SizeWindow(size);
-  }
-
   void ResizeWindow(cv::Rect rect);
   void SizeWindow(cv::Size size);
   void PositionWindow(cv::Point position);
