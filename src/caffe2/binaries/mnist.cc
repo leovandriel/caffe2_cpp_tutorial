@@ -222,8 +222,10 @@ void run() {
     superWindow("Caffe2 MNIST Tutorial");
     moveWindow("worst_pos", 0, 0);
     resizeWindow("worst_pos", 260, 260);
+    setWindowTitle("worst_pos", "uncertain but correct");
     moveWindow("worst_neg", 0, 260);
     resizeWindow("worst_neg", 260, 260);
+    setWindowTitle("worst_neg", "certain but incorrect");
     moveWindow("accuracy", 260, 0);
     moveWindow("loss", 260, 260);
   }

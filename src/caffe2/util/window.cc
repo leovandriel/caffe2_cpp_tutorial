@@ -40,32 +40,52 @@ void WindowUtil::Show() {
 }
 
 void WindowUtil::ResizeView(const std::string &name, cv::Rect rect) {
-  rects_[name] = rect;
+  views_[name].rect = rect;
 }
 
 void WindowUtil::SizeView(const std::string &name, cv::Size size) {
-  auto rect = rects_[name];
+  auto rect = views_[name].rect;
   rect.width = size.width;
   rect.height = size.height;
-  rects_[name] = rect;
+  views_[name].rect = rect;
 }
 
 void WindowUtil::OffsetView(const std::string &name, cv::Point offset) {
-  auto rect = rects_[name];
+  auto rect = views_[name].rect;
   rect.x = offset.x;
   rect.y = offset.y;
-  rects_[name] = rect;
+  views_[name].rect = rect;
 }
 
 void WindowUtil::AutosizeView(const std::string &name) {
-  auto rect = rects_[name];
+  auto rect = views_[name].rect;
   rect.width = 0;
   rect.height = 0;
-  rects_[name] = rect;
+  views_[name].rect = rect;
+}
+
+void WindowUtil::TitleView(const std::string &name, const std::string &title) {
+  views_[name].title = title;
+}
+
+void WindowUtil::ShowText(const std::string &name, const std::string &text,
+                          cv::Point position) {
+  auto rect = views_[name].rect;
+  auto face = cv::FONT_HERSHEY_SIMPLEX;
+  auto scale = 0.5;
+  auto thickness = 1.0;
+  int baseline;
+  cv::Size size = getTextSize(text, face, scale, thickness, &baseline);
+  cv::Point org(rect.x + position.x, rect.y + size.height + position.y);
+  cv::rectangle(buffer_, org + cv::Point(-1, 2), org + cv::Point(size.width + 1, -size.height - 1),
+                cv::Scalar::all(224), -1);
+  cv::putText(buffer_, text.c_str(), org, face, scale, cv::Scalar::all(32),
+              thickness);
 }
 
 void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
-  auto rect = rects_[name];
+  auto &view = views_[name];
+  auto rect = view.rect;
   if (rect.width == 0 && rect.height == 0) {
     rect.width = image.cols;
     rect.height = image.rows;
@@ -77,6 +97,9 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
     resized.copyTo(buffer_(rect));
   } else {
     image.copyTo(buffer_(rect));
+  }
+  if (view.title.size() > 0) {
+    ShowText(name, view.title, {5, 5});
   }
   Show();
 }
@@ -100,6 +123,10 @@ void resizeWindow(const char *name, int width, int height) {
 }
 
 void autosizeWindow(const char *name) { shared_window.AutosizeView(name); }
+
+void setWindowTitle(const char *name, const char *title) {
+  shared_window.TitleView(name, title);
+}
 
 void imshow(const char *name, const cv::Mat &mat) {
   shared_window.ShowImage(name, mat);
