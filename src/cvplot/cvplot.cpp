@@ -1,6 +1,7 @@
 // Matlab style plot functions for OpenCV by Changbo (zoccob@gmail).
 
 #include "cvplot/cvplot.h"
+#include "caffe2/util/window.h"
 
 namespace CvPlot
 {
@@ -70,7 +71,7 @@ void Series::SetColor(CvScalar color, bool auto_color)
 	this->auto_color = auto_color;
 }
 
-Figure::Figure(const string name)
+Figure::Figure(const std::string name)
 {
 	figure_name = name;
 
@@ -90,7 +91,7 @@ Figure::~Figure(void)
 {
 }
 
-string Figure::GetFigureName(void)
+std::string Figure::GetFigureName(void)
 {
 	return figure_name;
 }
@@ -123,7 +124,7 @@ void Figure::Initialize()
 	x_min = 0;
 
 	// find maximum/minimum of axes
-	for (vector<Series>::iterator iter = plots.begin();
+	for (std::vector<Series>::iterator iter = plots.begin();
 		iter != plots.end();
 		iter++)
 	{
@@ -269,7 +270,7 @@ void Figure::DrawPlots(IplImage *output)
 	int w = figure_size.width;
 
 	// draw the curves
-	for (vector<Series>::iterator iter = plots.begin();
+	for (std::vector<Series>::iterator iter = plots.begin();
 		iter != plots.end();
 		iter++)
 	{
@@ -305,11 +306,11 @@ void Figure::DrawLabels(IplImage *output, int posx, int posy)
 	// character size
 	int chw = 6, chh = 8;
 
-	for (vector<Series>::iterator iter = plots.begin();
+	for (std::vector<Series>::iterator iter = plots.begin();
 		iter != plots.end();
 		iter++)
 	{
-		string lbl = iter->label;
+		std::string lbl = iter->label;
 		// draw label if one is available
 		if (lbl.length() > 0)
 		{
@@ -339,7 +340,7 @@ void Figure::Show()
 
 	DrawLabels(output, figure_size.width - 100, 10);
 
-	cvShowImage(figure_name.c_str(), output);
+	caffe2::imshow(figure_name.c_str(), cv::cvarrToMat(output));
 	cvWaitKey(1);
 	cvReleaseImage(&output);
 
@@ -347,15 +348,15 @@ void Figure::Show()
 
 
 
-bool PlotManager::HasFigure(string wnd)
+bool PlotManager::HasFigure(std::string wnd)
 {
 	return false;
 }
 
 // search a named window, return null if not found.
-Figure* PlotManager::FindFigure(string wnd)
+Figure* PlotManager::FindFigure(std::string wnd)
 {
-	for(vector<Figure>::iterator iter = figure_list.begin();
+	for(std::vector<Figure>::iterator iter = figure_list.begin();
 		iter != figure_list.end();
 		iter++)
 	{
@@ -367,7 +368,7 @@ Figure* PlotManager::FindFigure(string wnd)
 
 // plot a new curve, if a figure of the specified figure name already exists,
 // the curve will be plot on that figure; if not, a new figure will be created.
-void PlotManager::Plot(const string figure_name, const float *p, int count, int step,
+void PlotManager::Plot(const std::string figure_name, const float *p, int count, int step,
 					   int R, int G, int B)
 {
 	if (count < 1)
@@ -405,7 +406,7 @@ void PlotManager::Plot(const string figure_name, const float *p, int count, int 
 }
 
 // add a label to the most recently added curve
-void PlotManager::Label(string lbl)
+void PlotManager::Label(std::string lbl)
 {
 	if((active_series!=NULL) && (active_figure != NULL))
 	{
@@ -418,7 +419,7 @@ void PlotManager::Label(string lbl)
 // the curve will be plot on that figure; if not, a new figure will be created.
 // static method
 template<typename T>
-void plot(const string figure_name, const T* p, int count, int step,
+void plot(const std::string figure_name, const T* p, int count, int step,
 		  int R, int G, int B)
 {
 	if (step <= 0)
@@ -442,7 +443,7 @@ void plot(const string figure_name, const T* p, int count, int step,
 }
 
 // delete all plots on a specified figure
-void clear(const string figure_name)
+void clear(const std::string figure_name)
 {
 	Figure *fig = pm.FindFigure(figure_name);
 	if (fig != NULL)
@@ -453,26 +454,26 @@ void clear(const string figure_name)
 }
 // add a label to the most recently added curve
 // static method
-void label(string lbl)
+void label(std::string lbl)
 {
 	pm.Label(lbl);
 }
 
 
 template
-void plot(const string figure_name, const unsigned char* p, int count, int step,
+void plot(const std::string figure_name, const unsigned char* p, int count, int step,
 		  int R, int G, int B);
 
 template
-void plot(const string figure_name, const int* p, int count, int step,
+void plot(const std::string figure_name, const int* p, int count, int step,
 		  int R, int G, int B);
 
 template
-void plot(const string figure_name, const short* p, int count, int step,
+void plot(const std::string figure_name, const short* p, int count, int step,
 		  int R, int G, int B);
 
 template
-void plot(const string figure_name, const float* p, int count, int step,
+void plot(const std::string figure_name, const float* p, int count, int step,
 		  int R, int G, int B);
 
 };

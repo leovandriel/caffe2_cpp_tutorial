@@ -1,6 +1,8 @@
 #include "caffe2/core/init.h"
 #include "caffe2/util/net.h"
 
+#include "caffe2/util/window.h"
+
 #ifdef WITH_CUDA
 #include "caffe2/core/context_gpu.h"
 #endif
@@ -95,6 +97,10 @@ void AddAccuracy(NetUtil &init, NetUtil &predict) {
   // >>> accuracy = model.Accuracy([softmax, label], "accuracy")
   predict.AddAccuracyOp("softmax", "label", "accuracy");
 
+  if (FLAGS_plot_loss) {
+    NetUtil(predict).AddTimePlotOp("accuracy", {"accuracy"});
+  }
+
   // Moved ITER to AddAccuracy function, so it's also available on test runs
   init.AddConstantFillOp({1}, (int64_t)0, "ITER")
       ->mutable_device_option()
@@ -115,7 +121,7 @@ void AddTrainingOperators(NetUtil &init, NetUtil &predict,
   predict.AddAveragedLossOp("xent", "loss");
 
   if (FLAGS_plot_loss) {
-    NetUtil(predict).AddTimePlotOp({"loss"});
+    NetUtil(predict).AddTimePlotOp("loss", {"loss"});
   }
 
   // >>> AddAccuracy(model, softmax, label)
@@ -211,6 +217,9 @@ void run() {
     std::cout << std::endl << "using CUDA" << std::endl;
   }
 #endif
+
+  superWindow("Caffe2 MNIST Tutorial");
+  moveWindow("loss", 0, 260);
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize,
   // brew

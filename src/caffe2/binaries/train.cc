@@ -153,7 +153,8 @@ void run() {
     if (steps_time > 5 || i == FLAGS_train_runs) {
       auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
       auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
-      auto train_loss = sum_loss / (i - last_i), train_accuracy = sum_accuracy / (i - last_i);
+      auto train_loss = sum_loss / (i - last_i),
+           train_accuracy = sum_accuracy / (i - last_i);
       sum_loss = 0;
       sum_accuracy = 0;
       validate_time -= clock();
