@@ -156,8 +156,11 @@ OperatorDef* NetUtil::AddShowWorstOp(const std::string& pred,
   return AddOp("ShowWorst", {pred, label, data}, {});
 }
 
-OperatorDef* NetUtil::AddTimePlotOp(const std::vector<std::string>& data) {
-  return AddOp("TimePlot", data, {});
+OperatorDef* NetUtil::AddTimePlotOp(const std::string& name,
+                                    const std::vector<std::string>& data) {
+  auto op = AddOp("TimePlot", data, {});
+  net_add_arg(*op, "name", name);
+  return op;
 }
 
 OperatorDef* NetUtil::AddEnsureCpuOutputOp(const std::string& input,

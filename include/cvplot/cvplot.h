@@ -2,7 +2,7 @@
 // plot and label:
 //
 // template<typename T>
-// void plot(const string figure_name, const T* p, int count, int step = 1,
+// void plot(const std::string figure_name, const T* p, int count, int step = 1,
 //		     int R = -1, int G = -1, int B = -1);
 //
 // figure_name: required. multiple calls of this function with same figure_name
@@ -14,7 +14,7 @@
 //              if not assigned, the curve will be assigned a unique color
 //              automatically.
 //
-// void label(string lbl):
+// void label(std::string lbl):
 //
 // label the most recently added curve with lbl.
 //
@@ -32,7 +32,7 @@
 #include "cv.h"
 #include "highgui.h"
 
-using namespace std;
+// using namespace std;
 
 namespace CvPlot {
 // A curve.
@@ -42,7 +42,7 @@ class Series {
   unsigned int count;
   float *data;
   // name of the curve
-  string label;
+  std::string label;
 
   // allow automatic curve color
   bool auto_color;
@@ -65,7 +65,7 @@ class Series {
 class Figure {
  private:
   // window name
-  string figure_name;
+  std::string figure_name;
   CvSize figure_size;
 
   // margin size
@@ -76,7 +76,7 @@ class Figure {
   CvScalar text_color;
 
   // several curves
-  vector<Series> plots;
+  std::vector<Series> plots;
 
   // manual or automatic range
   bool custom_range_y;
@@ -95,10 +95,10 @@ class Figure {
   int color_index;
 
  public:
-  Figure(const string name);
+  Figure(const std::string name);
   ~Figure();
 
-  string GetFigureName();
+  std::string GetFigureName();
   Series *Add(const Series &s);
   void Clear();
   void DrawLabels(IplImage *output, int posx, int posy);
@@ -119,28 +119,28 @@ class Figure {
 // manage plot windows
 class PlotManager {
  private:
-  vector<Figure> figure_list;
+  std::vector<Figure> figure_list;
   Series *active_series;
   Figure *active_figure;
 
  public:
   // now useless
-  bool HasFigure(string wnd);
-  Figure *FindFigure(string wnd);
+  bool HasFigure(std::string wnd);
+  Figure *FindFigure(std::string wnd);
 
-  void Plot(const string figure_name, const float *p, int count, int step,
+  void Plot(const std::string figure_name, const float *p, int count, int step,
             int R, int G, int B);
 
-  void Label(string lbl);
+  void Label(std::string lbl);
 };
 
 // handle different data types; static mathods;
 
 template <typename T>
-void plot(const string figure_name, const T *p, int count, int step = 1,
+void plot(const std::string figure_name, const T *p, int count, int step = 1,
           int R = -1, int G = -1, int B = -1);
-void clear(const string figure_name);
+void clear(const std::string figure_name);
 
-void label(string lbl);
+void label(std::string lbl);
 
 };  // namespace CvPlot

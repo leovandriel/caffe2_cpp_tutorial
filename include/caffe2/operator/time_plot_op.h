@@ -11,7 +11,7 @@ class TimePlotOp final : public Operator<Context> {
   USE_OPERATOR_CONTEXT_FUNCTIONS;
   TimePlotOp(const OperatorDef& def, Workspace* ws)
       : Operator<Context>(def, ws),
-        title_("Time Plot"),
+        name_(OperatorBase::GetSingleArgument<std::string>("name", "default")),
         labels_(def.input_size()),
         pasts_(def.input_size()) {
     for (auto i = 0; i < labels_.size(); i++) {
@@ -22,7 +22,7 @@ class TimePlotOp final : public Operator<Context> {
 
  protected:
   INPUT_TAGS(VALUES);
-  std::string title_;
+  std::string name_;
   std::vector<std::string> labels_;
   std::vector<std::vector<float>> pasts_;
 };
