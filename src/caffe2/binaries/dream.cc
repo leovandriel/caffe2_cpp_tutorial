@@ -168,7 +168,7 @@ void run() {
     // show current images
     display_net->Run();
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
-    TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
+    TensorUtil(image).ShowImages("dream");
   }
 
   // run predictor
@@ -213,7 +213,7 @@ void run() {
     if (FLAGS_show_image) {
       display_net->Run();
       auto image = BlobUtil(*workspace.GetBlob("image")).Get();
-      TensorUtil(image).ShowImages(FLAGS_size / 2, FLAGS_size / 2, "dream");
+      TensorUtil(image).ShowImages("dream");
     }
   }
 

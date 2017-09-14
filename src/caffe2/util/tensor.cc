@@ -4,14 +4,16 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/opencv.hpp"
 
+#include "caffe2/util/window.h"
+
 namespace caffe2 {
 
 const auto screen_width = 1600;
 const auto window_padding = 4;
 
 template <typename T>
-cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float mean,
-                 int type) {
+cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
+                 float mean, int type) {
   CHECK(tensor.ndim() == 4);
   auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2),
        width = tensor.dim(3);
@@ -20,42 +22,38 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float mean,
   vector<cv::Mat> channels(depth);
   for (auto &j : channels) {
     j = cv::Mat(height, width, type, (void *)data);
+    j.convertTo(j, type, scale, mean);
     data += (width * height);
   }
   cv::Mat image;
   cv::merge(channels, image);
-  image.convertTo(image, CV_8UC3, 1.0, mean);
+  if (depth == 1) {
+    cvtColor(image, image, CV_GRAY2RGB);
+  }
   return image;
 }
 
-cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float mean) {
+cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
+                 float mean) {
   if (tensor.IsType<float>()) {
-    return to_image<float>(tensor, index, mean, CV_32F);
+    return to_image<float>(tensor, index, scale, mean, CV_32F);
   }
   if (tensor.IsType<uchar>()) {
-    return to_image<uchar>(tensor, index, mean, CV_8UC1);
+    return to_image<uchar>(tensor, index, scale, mean, CV_8UC1);
   }
   LOG(FATAL) << "tensor to image for type " << tensor.meta().name()
              << " not implemented";
 }
 
-void TensorUtil::ShowImage(int width, int height, int index,
-                           const std::string &title, int offset, int wait,
+void TensorUtil::ShowImage(const std::string &title, int index, float scale,
                            float mean) {
-  auto image = to_image(tensor_, index, mean);
-  cv::resize(image, image, cv::Size(width, height));
-  cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
-  auto max_cols = screen_width / (image.cols + window_padding);
-  cv::moveWindow(title, (offset % max_cols) * (image.cols + window_padding),
-                 (offset / max_cols) * (image.rows + window_padding));
-  cv::imshow(title, image);
-  cv::waitKey(wait);
+  auto image = to_image(tensor_, index, scale, mean);
+  imshow(title.c_str(), image);
 }
 
-void TensorUtil::ShowImages(int width, int height, const std::string &name,
-                            float mean) {
+void TensorUtil::ShowImages(const std::string &name, float scale, float mean) {
   for (auto i = 0; i < tensor_.dim(0); i++) {
-    ShowImage(width, height, i, name + "-" + std::to_string(i), i, 1, mean);
+    ShowImage(name + "-" + std::to_string(i), i, scale, mean);
   }
 }
 
@@ -68,7 +66,7 @@ void TensorUtil::WriteImages(const std::string &name, float mean, bool lossy) {
 
 void TensorUtil::WriteImage(const std::string &name, int index, float mean,
                             bool lossy) {
-  auto image = to_image(tensor_, index, mean);
+  auto image = to_image(tensor_, index, 1.0, mean);
   auto filename = name + (lossy ? ".jpg" : ".png");
   vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
   CHECK(cv::imwrite(filename, image, params));
