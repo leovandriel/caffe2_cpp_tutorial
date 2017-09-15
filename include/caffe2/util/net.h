@@ -23,7 +23,8 @@ class NetUtil {
   OperatorDef* AddCoutOp(const std::vector<std::string>& params);
   OperatorDef* AddZeroOneOp(const std::string& pred, const std::string& label);
   OperatorDef* AddShowWorstOp(const std::string& pred, const std::string& label,
-                              const std::string& data);
+                              const std::string& data, float scale = 1.0,
+                              float mean = 128.0);
   OperatorDef* AddTimePlotOp(const std::string& name,
                              const std::vector<std::string>& data);
   OperatorDef* AddEnsureCpuOutputOp(const std::string& input,
