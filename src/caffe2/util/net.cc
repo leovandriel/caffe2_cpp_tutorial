@@ -25,7 +25,7 @@ const std::set<std::string> trainable_ops({
 
 const std::set<std::string> non_trainable_ops({
     "Accuracy", "Cast", "Cout", "ConstantFill", "Iter", "Scale", "StopGradient",
-    "TensorProtosDBInput", "TimePlot",
+    "TensorProtosDBInput", "TimePlot", "ShowWorst",
 });
 
 const std::map<std::string, std::string> custom_gradient({

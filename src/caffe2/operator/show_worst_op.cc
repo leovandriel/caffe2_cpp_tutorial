@@ -14,7 +14,8 @@
 namespace caffe2 {
 
 void show_worst(const TensorCPU &X, const TensorCPU &label,
-                const TensorCPU &image) {
+                const TensorCPU &image, const std::string under_name,
+                const std::string over_name) {
   // auto iter = -1;
   // if (InputSize() > 3) {
   //   iter = Input(ITER).data<int64_t>()[0];
@@ -65,16 +66,17 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
 
   TensorCPU t(image);
   if (pos_i >= 0) {
-    TensorUtil(t).ShowImage("worst_pos", pos_i, 256, 0);
+    TensorUtil(t).ShowImage(under_name, pos_i, 256, 0);
   }
   if (neg_i >= 0) {
-    TensorUtil(t).ShowImage("worst_neg", neg_i, 256, 0);
+    TensorUtil(t).ShowImage(over_name, neg_i, 256, 0);
   }
 }
 
 template <>
 bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
-  show_worst(Input(PREDICTION), Input(LABEL), Input(DATA));
+  show_worst(Input(PREDICTION), Input(LABEL), Input(DATA), under_name_,
+             over_name_);
   return true;
 }
 
@@ -82,7 +84,7 @@ bool ShowWorstOp<float, CPUContext>::RunOnDevice() {
 template <>
 bool ShowWorstOp<float, CUDAContext>::RunOnDevice() {
   show_worst(TensorCPU(Input(PREDICTION)), TensorCPU(Input(LABEL)),
-             TensorCPU(Input(DATA)));
+             TensorCPU(Input(DATA)), under_name_, over_name_);
   return true;
 }
 #endif
