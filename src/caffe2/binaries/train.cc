@@ -3,6 +3,7 @@
 #include "caffe2/core/db.h"
 #include "caffe2/core/init.h"
 #include "caffe2/core/operator_gradient.h"
+#include "caffe2/util/window.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
@@ -19,7 +20,7 @@ CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
 
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
-CAFFE2_DEFINE_bool(show_worst, false,
+CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
 
 #include "util/cmd.h"
@@ -53,13 +54,24 @@ void run() {
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "zero_one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
-  std::cout << "show_worst: " << (FLAGS_show_worst ? "true" : "false")
-            << std::endl;
+  std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
   auto path_prefix = FLAGS_folder + '/' + '_';
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
+  }
+
+  if (FLAGS_display) {
+    superWindow("Full Train Example");
+    moveWindow("undercertain", 0, 0);
+    resizeWindow("undercertain", 260, 260);
+    setWindowTitle("undercertain", "uncertain but correct");
+    moveWindow("overcertain", 0, 260);
+    resizeWindow("overcertain", 260, 260);
+    setWindowTitle("overcertain", "certain but incorrect");
+    moveWindow("accuracy", 260, 0);
+    moveWindow("loss", 260, 260);
   }
 
   std::cout << std::endl;
@@ -108,10 +120,15 @@ void run() {
     NetUtil(predict_model[kRunValidate])
         .AddZeroOneOp(full_predict_model.external_output(0), "label");
   }
-  if (FLAGS_show_worst) {
+  if (FLAGS_display) {
     NetUtil(predict_model[kRunValidate])
         .AddShowWorstOp(full_predict_model.external_output(0), "label",
                         full_predict_model.external_input(0));
+  }
+
+  if (FLAGS_display) {
+    NetUtil(predict_model[kRunTrain]).AddTimePlotOp("accuracy", {"accuracy"});
+    NetUtil(predict_model[kRunTrain]).AddTimePlotOp("loss", {"loss"});
   }
 
   if (FLAGS_device != "cpu") {

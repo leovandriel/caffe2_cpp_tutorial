@@ -121,7 +121,7 @@ void AddTrainingOperators(NetUtil &init, NetUtil &predict,
   predict.AddAveragedLossOp("xent", "loss");
 
   if (FLAGS_display) {
-    NetUtil(predict).AddShowWorstOp("softmax", "label", "data");
+    NetUtil(predict).AddShowWorstOp("softmax", "label", "data", 256, 0);
     NetUtil(predict).AddTimePlotOp("loss", {"loss"});
   }
 

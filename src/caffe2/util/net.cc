@@ -152,8 +152,12 @@ OperatorDef* NetUtil::AddZeroOneOp(const std::string& pred,
 
 OperatorDef* NetUtil::AddShowWorstOp(const std::string& pred,
                                      const std::string& label,
-                                     const std::string& data) {
-  return AddOp("ShowWorst", {pred, label, data}, {});
+                                     const std::string& data, float scale,
+                                     float mean) {
+  auto op = AddOp("ShowWorst", {pred, label, data}, {});
+  net_add_arg(*op, "scale", scale);
+  net_add_arg(*op, "mean", mean);
+  return op;
 }
 
 OperatorDef* NetUtil::AddTimePlotOp(const std::string& name,
