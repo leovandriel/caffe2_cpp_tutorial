@@ -11,6 +11,7 @@ class WindowUtil {
   struct View {
     cv::Rect rect;
     std::string title;
+    bool frameless;
   };
 
  public:
@@ -28,7 +29,10 @@ class WindowUtil {
   void ShowImage(const std::string &name, const cv::Mat &image);
   void ShowText(const std::string &name, const std::string &text,
                 cv::Point position);
-
+  void ShowFrame(const std::string &name, const std::string &title,
+                 cv::Scalar foreground = {32, 224, 32},
+                 cv::Scalar background = {32, 32, 32},
+                 cv::Scalar text = {0, 0, 0});
   void SetTitle(const std::string &title);
   void Show();
 

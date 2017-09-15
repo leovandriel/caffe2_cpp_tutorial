@@ -84,9 +84,29 @@ void WindowUtil::ShowText(const std::string &name, const std::string &text,
               thickness);
 }
 
+void WindowUtil::ShowFrame(const std::string &name, const std::string &title,
+                           cv::Scalar foreground, cv::Scalar background,
+                           cv::Scalar text) {
+  auto rect = views_[name].rect;
+  cv::rectangle(buffer_, {rect.x, rect.y},
+                {rect.x + rect.width - 1, rect.y + rect.height - 1}, background,
+                1);
+  cv::rectangle(buffer_, {rect.x + 1, rect.y + 1},
+                {rect.x + rect.width - 2, rect.y + rect.height - 2}, foreground,
+                1);
+  cv::rectangle(buffer_, {rect.x + 2, rect.y + 2},
+                {rect.x + rect.width - 3, rect.y + 16}, foreground, -1);
+  int baseline;
+  cv::Size size =
+      getTextSize(title.c_str(), cv::FONT_HERSHEY_PLAIN, 1.0, 1.0, &baseline);
+  cv::putText(buffer_, title.c_str(),
+              {rect.x + 2 + (rect.width - size.width) / 2, rect.y + 14},
+              cv::FONT_HERSHEY_PLAIN, 1.0, text, 1.0);
+}
+
 void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
   auto &view = views_[name];
-  auto rect = view.rect;
+  auto &rect = view.rect;
   if (rect.width == 0 && rect.height == 0) {
     rect.width = image.cols;
     rect.height = image.rows;
@@ -99,8 +119,8 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
   } else {
     image.copyTo(buffer_(rect));
   }
-  if (view.title.size() > 0) {
-    ShowText(name, view.title, {5, 5});
+  if (!view.frameless) {
+    ShowFrame(name, view.title.size() ? view.title : name);
   }
   Show();
 }
