@@ -28,7 +28,8 @@ void WindowUtil::PositionWindow(cv::Point position) {
 void WindowUtil::EnsureWindow(cv::Rect rect) {
   if (rect.x + rect.width > buffer_.cols ||
       rect.y + rect.height > buffer_.rows) {
-    SizeWindow({rect.x + rect.width, rect.y + rect.height});
+    SizeWindow({std::max(buffer_.cols, rect.x + rect.width),
+                std::max(buffer_.rows, rect.y + rect.height)});
   }
 }
 
