@@ -15,7 +15,7 @@ void WindowUtil::ResizeWindow(cv::Rect rect) {
 }
 
 void WindowUtil::SizeWindow(cv::Size size) {
-  buffer_ = cv::Mat(size, CV_8UC3);
+  buffer_ = cv::Mat(size, CV_8UC3, 0.0);
   // TODO: copy old content?
   Show();
 }
