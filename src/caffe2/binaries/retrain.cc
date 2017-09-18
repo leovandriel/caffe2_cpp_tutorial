@@ -106,12 +106,14 @@ void run() {
         .AddDatabaseOps(name_for_run[i], FLAGS_layer, db_paths[i],
                         FLAGS_db_type, FLAGS_batch_size);
   }
-  add_train_model(second_init_model, second_predict_model, FLAGS_layer,
+  copy_train_model(second_init_model, second_predict_model, FLAGS_layer,
                   class_labels.size(), init_model[kRunTrain],
-                  predict_model[kRunTrain], FLAGS_learning_rate,
-                  FLAGS_optimizer);
-  add_test_model(second_predict_model, predict_model[kRunValidate]);
-  add_test_model(second_predict_model, predict_model[kRunTest]);
+                  predict_model[kRunTrain]);
+  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
+      .AddTrainOps(predict_model[kRunTrain].external_output(0),
+                   FLAGS_learning_rate, FLAGS_optimizer);
+  copy_test_model(second_predict_model, predict_model[kRunValidate]);
+  copy_test_model(second_predict_model, predict_model[kRunTest]);
 
   if (FLAGS_device != "cpu") {
     for (int i = 0; i < kRunNum; i++) {

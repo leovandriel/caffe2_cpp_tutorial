@@ -110,12 +110,14 @@ void run() {
         .AddDatabaseOps(name_for_run[i], full_predict_model.external_input(0),
                         db_paths[i], FLAGS_db_type, FLAGS_batch_size);
   }
-  add_train_model(full_init_model, full_predict_model,
+  copy_train_model(full_init_model, full_predict_model,
                   full_predict_model.external_input(0), class_labels.size(),
-                  init_model[kRunTrain], predict_model[kRunTrain],
-                  FLAGS_learning_rate, FLAGS_optimizer);
-  add_test_model(full_predict_model, predict_model[kRunValidate]);
-  add_test_model(full_predict_model, predict_model[kRunTest]);
+                  init_model[kRunTrain], predict_model[kRunTrain]);
+  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
+      .AddTrainOps(predict_model[kRunTrain].external_output(0),
+                   FLAGS_learning_rate, FLAGS_optimizer);
+  copy_test_model(full_predict_model, predict_model[kRunValidate]);
+  copy_test_model(full_predict_model, predict_model[kRunTest]);
   if (FLAGS_zero_one) {
     NetUtil(predict_model[kRunValidate])
         .AddZeroOneOp(full_predict_model.external_output(0), "label");
