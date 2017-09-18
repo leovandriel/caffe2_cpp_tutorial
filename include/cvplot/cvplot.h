@@ -34,6 +34,8 @@
 
 // using namespace std;
 
+enum FigureType { Line, Histogram };
+
 namespace CvPlot {
 // A curve.
 class Series {
@@ -67,6 +69,7 @@ class Figure {
   // window name
   std::string figure_name;
   CvSize figure_size;
+  FigureType figure_type;
 
   // margin size
   int border_size;
@@ -101,6 +104,8 @@ class Figure {
   std::string GetFigureName();
   Series *Add(const Series &s);
   void Clear();
+  void Size(CvSize size);
+  void Type(FigureType type);
   void DrawLabels(IplImage *output, int posx, int posy);
 
   // show plot window
@@ -127,6 +132,7 @@ class PlotManager {
   // now useless
   bool HasFigure(std::string wnd);
   Figure *FindFigure(std::string wnd);
+  Figure *GetFigure(std::string wnd);
 
   void Plot(const std::string figure_name, const float *p, int count, int step,
             int R, int G, int B);
@@ -140,6 +146,8 @@ template <typename T>
 void plot(const std::string figure_name, const T *p, int count, int step = 1,
           int R = -1, int G = -1, int B = -1);
 void clear(const std::string figure_name);
+void size(const std::string figure_name, CvSize size);
+void type(const std::string figure_name, FigureType type);
 
 void label(std::string lbl);
 

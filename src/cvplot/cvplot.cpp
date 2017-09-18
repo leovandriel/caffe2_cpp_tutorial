@@ -82,7 +82,8 @@ Figure::Figure(const std::string name)
 	text_color = CV_BLACK;
 
 	figure_size = cvSize(600, 200);
-	border_size = 30;
+	border_size = 50;
+	figure_type = Line;
 
 	plots.reserve(10);
 }
@@ -107,6 +108,16 @@ void Figure::Clear()
       plots.clear();
 }
 
+void Figure::Size(CvSize size)
+{
+      figure_size = size;
+}
+
+void Figure::Type(FigureType type)
+{
+      figure_type = type;
+}
+
 void Figure::Initialize()
 {
 	color_index = 0;
@@ -117,8 +128,8 @@ void Figure::Initialize()
 	if (figure_size.height <= border_size * 2 + 200)
 		figure_size.height = border_size * 2 + 200;
 
-	y_max = FLT_MIN;
-	y_min = FLT_MAX;
+	y_max = (figure_type == Histogram ? 0 : FLT_MIN);
+	y_min = (figure_type == Histogram ? 0 : FLT_MAX);
 
 	x_max = 0;
 	x_min = 0;
@@ -138,8 +149,9 @@ void Figure::Initialize()
 				y_max = v;
 		}
 
-		if (x_max < iter->count)
-			x_max = iter->count;
+		int count = (figure_type == Histogram ? iter->count - 1 : iter->count);
+		if (x_max < count)
+			x_max = count;
 	}
 
 	// calculate zoom scale
@@ -154,7 +166,7 @@ void Figure::Initialize()
 	}
 
 	x_scale = 1.0f;
-	if (x_max - x_min > 1)
+	if (x_max - x_min > 0)
 		x_scale = (float)(figure_size.width - border_size * 2) / (x_max - x_min);
 
 	y_scale = (float)(figure_size.height - border_size * 2) / y_range;
@@ -280,19 +292,39 @@ void Figure::DrawPlots(IplImage *output)
 		if (iter->auto_color == true)
 			iter->SetColor(GetAutoColor());
 
-		CvPoint prev_point;
-		for (int i=0; i<iter->count; i++)
-		{
-			int y = cvRound(( p[i] - y_min) * y_scale);
-			int x = cvRound((   i  - x_min) * x_scale);
-			CvPoint next_point = cvPoint(bs + x, h - (bs + y));
-			cvCircle(output, next_point, 1, iter->color, 1);
+		switch(figure_type){
+		case Line: {
+				CvPoint prev_point;
+				for (int i=0; i<iter->count; i++)
+				{
+					int y = cvRound(( p[i] - y_min) * y_scale);
+					int x = cvRound((   i  - x_min) * x_scale);
+					CvPoint next_point = cvPoint(bs + x, h - (bs + y));
+					cvCircle(output, next_point, 1, iter->color, 1);
 
-			// draw a line between two points
-			if (i >= 1)
-				cvLine(output, prev_point, next_point, iter->color, 1, CV_AA);
-			prev_point = next_point;
+					// draw a line between two points
+					if (i >= 1)
+						cvLine(output, prev_point, next_point, iter->color, 1, CV_AA);
+					prev_point = next_point;
+				}
+			}
+			break;
+		case Histogram: {
+				for (int i=0; i<iter->count; i++)
+				{
+					int y = cvRound(( p[i] - y_min) * y_scale);
+					int x = cvRound((   i  - x_min) * x_scale);
+					CvPoint base_point = cvPoint(bs + x + 5, h - (bs));
+					CvPoint next_point = cvPoint(bs + x - 5, h - (bs + y));
+					cvCircle(output, next_point, 1, iter->color, 1);
+
+					// draw a line between two points
+					cvRectangle(output, base_point, next_point, iter->color, -1, CV_AA);
+				}
+			}
+			break;
 		}
+
 	}
 
 }
@@ -364,6 +396,21 @@ Figure* PlotManager::FindFigure(std::string wnd)
 			return &(*iter);
 	}
 	return NULL;
+}
+
+// search a named window, create figure if not found.
+Figure* PlotManager::GetFigure(std::string wnd)
+{
+	auto active_figure = FindFigure(wnd);
+	if ( active_figure == NULL)
+	{
+		Figure new_figure(wnd);
+		figure_list.push_back(new_figure);
+		active_figure = FindFigure(wnd);
+		if (active_figure == NULL)
+			exit(-1);
+	}
+	return active_figure;
 }
 
 // plot a new curve, if a figure of the specified figure name already exists,
@@ -452,6 +499,21 @@ void clear(const std::string figure_name)
 	}
 
 }
+
+// adjust the size of the plot
+void size(const std::string figure_name, CvSize size)
+{
+	Figure *fig = pm.GetFigure(figure_name);
+	fig->Size(size);
+}
+
+// adjust the size of the plot
+void type(const std::string figure_name, FigureType type)
+{
+	Figure *fig = pm.GetFigure(figure_name);
+	fig->Type(type);
+}
+
 // add a label to the most recently added curve
 // static method
 void label(std::string lbl)

@@ -351,8 +351,8 @@ void set_trainable(OperatorDef &op, bool train) {
 }
 
 void copy_train_model(NetDef &base_init_model, NetDef &base_predict_model,
-                     const std::string &layer, int out_size,
-                     NetDef &train_init_model, NetDef &train_predict_model) {
+                      const std::string &layer, int out_size,
+                      NetDef &train_init_model, NetDef &train_predict_model) {
   std::string last_w, last_b;
   for (const auto &op : base_predict_model.op()) {
     auto new_op = train_predict_model.add_op();
