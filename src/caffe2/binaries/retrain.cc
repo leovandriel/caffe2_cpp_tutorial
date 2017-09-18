@@ -107,8 +107,8 @@ void run() {
                         FLAGS_db_type, FLAGS_batch_size);
   }
   copy_train_model(second_init_model, second_predict_model, FLAGS_layer,
-                  class_labels.size(), init_model[kRunTrain],
-                  predict_model[kRunTrain]);
+                   class_labels.size(), init_model[kRunTrain],
+                   predict_model[kRunTrain]);
   ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
       .AddTrainOps(predict_model[kRunTrain].external_output(0),
                    FLAGS_learning_rate, FLAGS_optimizer);
