@@ -350,10 +350,9 @@ void set_trainable(OperatorDef &op, bool train) {
   }
 }
 
-void add_train_model(NetDef &base_init_model, NetDef &base_predict_model,
+void copy_train_model(NetDef &base_init_model, NetDef &base_predict_model,
                      const std::string &layer, int out_size,
-                     NetDef &train_init_model, NetDef &train_predict_model,
-                     float base_rate, std::string &optimizer) {
+                     NetDef &train_init_model, NetDef &train_predict_model) {
   std::string last_w, last_b;
   for (const auto &op : base_predict_model.op()) {
     auto new_op = train_predict_model.add_op();
@@ -408,12 +407,9 @@ void add_train_model(NetDef &base_init_model, NetDef &base_predict_model,
   // arg->set_name("shape");
   // arg->add_ints(1);
   // op->add_output(layer);
-  ModelUtil(train_init_model, train_predict_model)
-      .AddTrainOps(train_predict_model.external_output(0), base_rate,
-                   optimizer);
 }
 
-void add_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
+void copy_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
   for (const auto &op : base_predict_model.op()) {
     auto new_op = test_predict_model.add_op();
     new_op->CopyFrom(op);
