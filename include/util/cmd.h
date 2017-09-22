@@ -12,7 +12,8 @@ CAFFE2_DEFINE_bool(dump_model, false, "output dream model.");
 
 static const std::set<std::string> device_types({"cpu", "cuda", "cudnn"});
 static const std::set<std::string> optimizer_types({"sgd", "momentum",
-                                                    "adagrad", "adam"});
+                                                    "adagrad", "adam",
+                                                    "rmsprop"});
 
 namespace caffe2 {
 

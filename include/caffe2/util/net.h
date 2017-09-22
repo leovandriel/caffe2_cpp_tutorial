@@ -125,6 +125,10 @@ class NetUtil {
                          const std::vector<std::string>& moments,
                          const std::string& grad, const std::string& lr,
                          const std::string& iter);
+  OperatorDef* AddRmsPropOp(const std::string& grad, const std::string& meansq,
+                            const std::string& mom, const std::string& lr,
+                            float decay = 0.9f, float momentum = 0.8f,
+                            float epsilon = 1e-5f);
   OperatorDef* AddScaleOp(const std::string& input, const std::string& output,
                           float scale);
   OperatorDef* AddClipOp(const std::string& input, const std::string& output,
