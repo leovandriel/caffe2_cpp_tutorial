@@ -4,6 +4,7 @@ namespace caffe2 {
 
 const std::string gradient_suffix("_grad");
 const std::string moment_suffix("_moment");
+const std::string meansq_suffix("_meansq");
 const std::string reader_suffix("_reader");
 const std::string iter_name("iter");
 const std::string lr_name("lr");
@@ -24,15 +25,21 @@ void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data,
   // predict_.AddCoutOp(label_name);
 }
 
-void ModelUtil::AddTestOps(const std::string &output) {
-  predict_.AddAccuracyOp(output, label_name, accuracy_name);
+void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
+                            std::string &optimizer) {
+  AddXentOps(output);
+  predict_.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
+  predict_.AddGradientOps();
+  AddIterLrOps(base_rate);
+  AddOptimizerOps(optimizer);
 }
+
+void ModelUtil::AddTestOps(const std::string &output) { AddXentOps(output); }
 
 void ModelUtil::AddXentOps(const std::string &output) {
   predict_.AddLabelCrossEntropyOp(output, label_name, xent_name);
   predict_.AddAveragedLossOp(xent_name, loss_name);
   predict_.AddAccuracyOp(output, label_name, accuracy_name);
-  predict_.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
 }
 
 void ModelUtil::AddIterLrOps(float base_rate) {
@@ -91,6 +98,22 @@ void ModelUtil::AddAdamOps() {
   }
 }
 
+void ModelUtil::AddRmsPropOps() {
+  auto sizes = init_.CollectParamSizes();
+  for (auto &param : predict_.CollectParams()) {
+    auto size = sizes[param];
+    auto moment_name = param + moment_suffix;
+    auto meansq_name = param + meansq_suffix;
+    init_.AddConstantFillOp({size}, 0.f, moment_name);
+    init_.AddConstantFillOp({size}, 0.f, meansq_name);
+    predict_.AddInput(moment_name);
+    predict_.AddInput(meansq_name);
+    predict_.AddRmsPropOp(param + gradient_suffix, meansq_name, moment_name,
+                          lr_name);
+    predict_.AddSumOp({param, param + gradient_suffix}, param);
+  }
+}
+
 void ModelUtil::AddOptimizerOps(std::string &optimizer) {
   if (optimizer == "sgd") {
     AddSgdOps();
@@ -100,17 +123,11 @@ void ModelUtil::AddOptimizerOps(std::string &optimizer) {
     AddAdagradOps();
   } else if (optimizer == "adam") {
     AddAdamOps();
+  } else if (optimizer == "rmsprop") {
+    AddRmsPropOps();
   } else {
     LOG(FATAL) << "~ optimizer type not supported: " << optimizer;
   }
-}
-
-void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
-                            std::string &optimizer) {
-  AddXentOps(output);
-  predict_.AddGradientOps();
-  AddIterLrOps(base_rate);
-  AddOptimizerOps(optimizer);
 }
 
 }  // namespace caffe2

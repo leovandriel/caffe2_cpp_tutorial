@@ -21,6 +21,7 @@ class ModelUtil {
   void AddMomentumOps();
   void AddAdagradOps();
   void AddAdamOps();
+  void AddRmsPropOps();
   void AddOptimizerOps(std::string &optimizer);
 
   void AddTestOps(const std::string &output);

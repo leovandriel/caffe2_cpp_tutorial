@@ -501,6 +501,18 @@ OperatorDef* NetUtil::AddAdamOp(const std::string& param,
   return op;
 }
 
+OperatorDef* NetUtil::AddRmsPropOp(const std::string& grad,
+                                   const std::string& meansq,
+                                   const std::string& mom,
+                                   const std::string& lr, float decay,
+                                   float momentum, float epsilon) {
+  auto op = AddOp("RmsProp", {grad, meansq, mom, lr}, {grad, meansq, mom});
+  net_add_arg(*op, "decay", decay);
+  net_add_arg(*op, "momentum", momentum);
+  net_add_arg(*op, "epsilon", epsilon);
+  return op;
+}
+
 OperatorDef* NetUtil::AddScaleOp(const std::string& input,
                                  const std::string& output, float scale) {
   auto op = AddOp("Scale", {input}, {output});
