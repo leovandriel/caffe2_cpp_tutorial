@@ -25,8 +25,10 @@ class NetUtil {
   OperatorDef* AddShowWorstOp(const std::string& pred, const std::string& label,
                               const std::string& data, float scale = 1.0,
                               float mean = 128.0);
-  OperatorDef* AddTimePlotOp(const std::string& name,
-                             const std::vector<std::string>& data);
+  OperatorDef* AddTimePlotOp(const std::string& data,
+                             const std::string& iter = "",
+                             const std::string& window = "",
+                             const std::string& label = "", int step = 0);
   OperatorDef* AddEnsureCpuOutputOp(const std::string& input,
                                     const std::string& output);
   OperatorDef* AddCopyFromCpuInputOp(const std::string& input,

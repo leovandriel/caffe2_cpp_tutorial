@@ -33,6 +33,9 @@ class WindowUtil {
                  cv::Scalar foreground = {32, 224, 32},
                  cv::Scalar background = {32, 32, 32},
                  cv::Scalar text = {0, 0, 0});
+  cv::Mat GetBuffer(const std::string &name, cv::Rect &rect);
+  void ShowBuffer(const std::string &name);
+
   void SetTitle(const std::string &title);
   void Show();
 
@@ -49,6 +52,8 @@ void resizeWindow(const char *name, int width, int height);
 void autosizeWindow(const char *name);
 void setWindowTitle(const char *name, const char *title);
 void imshow(const char *name, const cv::Mat &mat);
+cv::Mat getBuffer(const char *name, cv::Rect &rect);
+void showBuffer(const char *name);
 
 }  // namespace caffe2
 

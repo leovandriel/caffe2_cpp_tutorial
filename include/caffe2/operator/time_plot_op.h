@@ -11,20 +11,27 @@ class TimePlotOp final : public Operator<Context> {
   USE_OPERATOR_CONTEXT_FUNCTIONS;
   TimePlotOp(const OperatorDef& def, Workspace* ws)
       : Operator<Context>(def, ws),
-        name_(OperatorBase::GetSingleArgument<std::string>("name", "default")),
-        labels_(def.input_size()),
-        pasts_(def.input_size()) {
-    for (auto i = 0; i < labels_.size(); i++) {
-      labels_[i] = def.input(i);
-    }
-  }
+        window_(OperatorBase::GetSingleArgument<std::string>("window",
+                                                             def.input(0))),
+        label_(OperatorBase::GetSingleArgument<std::string>("label",
+                                                            def.input(0))),
+        step_(OperatorBase::GetSingleArgument<int>("step", 1)),
+        index_(0),
+        step_count_(0),
+        value_sum_(0.f),
+        index_sum_(0.f) {}
   bool RunOnDevice() override;
 
  protected:
-  INPUT_TAGS(VALUES);
-  std::string name_;
-  std::vector<std::string> labels_;
-  std::vector<std::vector<float>> pasts_;
+  INPUT_TAGS(DATA, ITER);
+  std::string label_;
+  std::string window_;
+  int step_;
+  int index_;
+
+  int step_count_;
+  float value_sum_;
+  float index_sum_;
 };
 
 }  // namespace caffe2

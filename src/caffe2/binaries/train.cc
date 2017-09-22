@@ -3,6 +3,7 @@
 #include "caffe2/core/db.h"
 #include "caffe2/core/init.h"
 #include "caffe2/core/operator_gradient.h"
+#include "caffe2/util/plot.h"
 #include "caffe2/util/window.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
@@ -65,13 +66,15 @@ void run() {
   if (FLAGS_display) {
     superWindow("Full Train Example");
     moveWindow("undercertain", 0, 0);
-    resizeWindow("undercertain", 260, 260);
+    resizeWindow("undercertain", 300, 300);
     setWindowTitle("undercertain", "uncertain but correct");
-    moveWindow("overcertain", 0, 260);
-    resizeWindow("overcertain", 260, 260);
+    moveWindow("overcertain", 0, 300);
+    resizeWindow("overcertain", 300, 300);
     setWindowTitle("overcertain", "certain but incorrect");
-    moveWindow("accuracy", 260, 0);
-    moveWindow("loss", 260, 260);
+    moveWindow("accuracy", 300, 0);
+    resizeWindow("accuracy", 500, 300);
+    moveWindow("loss", 300, 300);
+    resizeWindow("loss", 500, 300);
   }
 
   std::cout << std::endl;
@@ -129,8 +132,14 @@ void run() {
   }
 
   if (FLAGS_display) {
-    NetUtil(predict_model[kRunTrain]).AddTimePlotOp("accuracy", {"accuracy"});
-    NetUtil(predict_model[kRunTrain]).AddTimePlotOp("loss", {"loss"});
+    NetUtil(predict_model[kRunTrain])
+        .AddTimePlotOp("accuracy", "iter", "accuracy", "train", 10);
+    NetUtil(predict_model[kRunValidate])
+        .AddTimePlotOp("accuracy", "iter", "accuracy", "test");
+    NetUtil(predict_model[kRunTrain])
+        .AddTimePlotOp("loss", "iter", "loss", "train", 10);
+    NetUtil(predict_model[kRunValidate])
+        .AddTimePlotOp("loss", "iter", "loss", "test");
   }
 
   if (FLAGS_device != "cpu") {

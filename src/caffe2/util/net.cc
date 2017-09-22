@@ -160,10 +160,24 @@ OperatorDef* NetUtil::AddShowWorstOp(const std::string& pred,
   return op;
 }
 
-OperatorDef* NetUtil::AddTimePlotOp(const std::string& name,
-                                    const std::vector<std::string>& data) {
-  auto op = AddOp("TimePlot", data, {});
-  net_add_arg(*op, "name", name);
+OperatorDef* NetUtil::AddTimePlotOp(const std::string& data,
+                                    const std::string& iter,
+                                    const std::string& window,
+                                    const std::string& label, int step) {
+  std::vector<std::string> inputs = {data};
+  if (iter.size()) {
+    inputs.push_back(iter);
+  }
+  auto op = AddOp("TimePlot", inputs, {});
+  if (window.size()) {
+    net_add_arg(*op, "window", window);
+  }
+  if (label.size()) {
+    net_add_arg(*op, "label", label);
+  }
+  if (step) {
+    net_add_arg(*op, "step", step);
+  }
   return op;
 }
 
