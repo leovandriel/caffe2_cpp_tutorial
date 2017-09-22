@@ -15,8 +15,14 @@ void WindowUtil::ResizeWindow(cv::Rect rect) {
 }
 
 void WindowUtil::SizeWindow(cv::Size size) {
-  buffer_ = cv::Mat(size, CV_8UC3, 0.0);
-  // TODO: copy old content?
+  auto buffer = cv::Mat(size, CV_8UC3, 0.0);
+  if (buffer_.cols > 0 && buffer_.rows > 0 && size.width > 0 &&
+      size.height > 0) {
+    cv::Rect inter(0, 0, std::min(buffer_.cols, size.width),
+                   std::min(buffer_.rows, size.height));
+    buffer_(inter).copyTo(buffer(inter));
+  }
+  buffer_ = buffer;
   Show();
 }
 
@@ -126,6 +132,21 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
   Show();
 }
 
+cv::Mat WindowUtil::GetBuffer(const std::string &name, cv::Rect &rect) {
+  auto &view = views_[name];
+  EnsureWindow(view.rect);
+  rect = view.rect;
+  return buffer_;
+}
+
+void WindowUtil::ShowBuffer(const std::string &name) {
+  auto &view = views_[name];
+  if (!view.frameless) {
+    ShowFrame(name, view.title.size() ? view.title : name);
+  }
+  Show();
+}
+
 void WindowUtil::SetTitle(const std::string &title) {
   title_ = title;
   cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
@@ -153,5 +174,11 @@ void setWindowTitle(const char *name, const char *title) {
 void imshow(const char *name, const cv::Mat &mat) {
   shared_window.ShowImage(name, mat);
 }
+
+cv::Mat getBuffer(const char *name, cv::Rect &rect) {
+  return shared_window.GetBuffer(name, rect);
+}
+
+void showBuffer(const char *name) { shared_window.ShowBuffer(name); }
 
 }  // namespace caffe2

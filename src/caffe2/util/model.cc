@@ -34,7 +34,10 @@ void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
   AddOptimizerOps(optimizer);
 }
 
-void ModelUtil::AddTestOps(const std::string &output) { AddXentOps(output); }
+void ModelUtil::AddTestOps(const std::string &output) {
+  AddXentOps(output);
+  predict_.AddInput(iter_name);
+}
 
 void ModelUtil::AddXentOps(const std::string &output) {
   predict_.AddLabelCrossEntropyOp(output, label_name, xent_name);
