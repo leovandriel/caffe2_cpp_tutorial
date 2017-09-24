@@ -22,7 +22,7 @@ void time_plot(const TensorCPU &X, const std::string &label_,
   index_sum_ += index_;
   if (step_count_ >= step_) {
     auto &figure = PlotUtil::Shared(window_);
-    figure.Get(label_).Set(PlotUtil::Line, PlotUtil::Color(label_));
+    // figure.Get(label_).Set(PlotUtil::Line, PlotUtil::Color(label_));
     figure.Get(label_).Append(index_sum_ / step_count_,
                               value_sum_ / step_count_);
     figure.Show();
