@@ -43,13 +43,13 @@ class PlotUtil {
   static Color White() { return Color(256 - paleness); }
 
   struct Series {
-    Series(const std::string &label) : label_(label) {}
+    Series() {}
+    Series(const std::string &label, enum Type type, Color color)
+        : label_(label), type_(type), color_(color) {}
 
     void Clear() { data_.clear(); }
-    void Set(enum Type type, Color color) {
-      type_ = type;
-      color_ = color;
-    }
+    void Type(enum Type type) { type_ = type; }
+    void Color(Color color) { color_ = color; }
 
     void Append(const std::vector<std::pair<float, float>> &data) {
       data_.insert(data_.end(), data.begin(), data.end());
@@ -69,13 +69,15 @@ class PlotUtil {
     }
     void Append(float value) { Append(std::vector<float>({value})); }
     void Set(const std::vector<std::pair<float, float>> &data, enum Type type,
-             Color color) {
+             struct Color color) {
       Clear();
-      Set(type, color);
+      Type(type);
+      Color(color);
       Append(data);
     }
 
-    void Set(const std::vector<float> &values, enum Type type, Color color) {
+    void Set(const std::vector<float> &values, enum Type type,
+             struct Color color) {
       std::vector<std::pair<float, float>> data(values.size());
       auto i = 0;
       for (auto &d : data) {
@@ -95,8 +97,8 @@ class PlotUtil {
 
    protected:
     std::vector<std::pair<float, float>> data_;
-    Type type_;
-    Color color_;
+    enum Type type_;
+    struct Color color_;
     std::string label_;
   };
 
@@ -127,7 +129,7 @@ class PlotUtil {
           return s;
         }
       }
-      series_.push_back(Series(label));
+      series_.push_back(Series(label, Line, Color(label)));
 
       return series_.back();
     }

@@ -90,12 +90,12 @@ void run() {
     for (auto i = 0; i <= 100; i++) {
       data.push_back({cos(i * .0628f + 4) * 2, sin(i * .0628f + 4) * 2});
     }
-    figure.Get("circle").Set(data, PlotUtil::Line, PlotUtil::Purple());
+    figure.Get("circle").Append(data);
     data.clear();
     for (auto i = 0; i <= 100; i++) {
       data.push_back({cos(i * .2513f + 1), sin(i * .0628f + 4)});
     }
-    figure.Get("lissajous").Set(data, PlotUtil::Line, PlotUtil::Aqua());
+    figure.Get("lissajous").Append(data);
     figure.Show();
   }
 
@@ -121,7 +121,6 @@ void run() {
     figure.Origin(false, false);
     srand(clock());
     auto x = 0.f, y = 0.f, dx = 1.f, dy = 0.f, f = 0.f, df = 0.f;
-    figure.Get("random").Set(PlotUtil::Line, PlotUtil::Gray());
     for (int i = 0; i < 2000; i++) {
       auto l = sqrt((dx * dx + dy * dy) * (f * f + 1)) * 10;
       dx = (dx + f * dy) / l;
