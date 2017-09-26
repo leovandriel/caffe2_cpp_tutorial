@@ -2,7 +2,7 @@
 #define CMD_H
 
 #ifdef WITH_CUDA
-#include "caffe2/core/context_gpu.h"
+#include <caffe2/core/context_gpu.h>
 #endif
 
 CAFFE2_DEFINE_string(optimizer, "adam",

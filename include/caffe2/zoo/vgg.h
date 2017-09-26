@@ -48,7 +48,7 @@ class VGGModel : public ModelUtil {
     predict.SetName("VGG" + std::to_string(type));
     auto input = "data";
   std:
-    string layer = input;
+    std::string layer = input;
     predict.AddInput(layer);
 
     layer = AddConvOps(layer, "conv1_1", 3, 64, 1, 1, 3)->output(0);

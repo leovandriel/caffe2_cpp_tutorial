@@ -1,9 +1,9 @@
-#include "caffe2/core/init.h"
-#include "caffe2/core/net.h"
+#include <caffe2/core/init.h>
+#include <caffe2/core/net.h>
 #include "caffe2/zoo/keeper.h"
 
-#include "google/protobuf/io/zero_copy_stream_impl.h"
-#include "google/protobuf/text_format.h"
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
 
 CAFFE2_DEFINE_string(model, "googlenet", "Name of model.");
 CAFFE2_DEFINE_bool(short, false, "use short format.");

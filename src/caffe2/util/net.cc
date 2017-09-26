@@ -1,11 +1,11 @@
 #include "caffe2/util/net.h"
 
 #ifdef WITH_CUDA
-#include "caffe2/core/context_gpu.h"
+#include <caffe2/core/context_gpu.h>
 #endif
 
-#include "google/protobuf/io/zero_copy_stream_impl.h"
-#include "google/protobuf/text_format.h"
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
 
 namespace caffe2 {
 
@@ -759,10 +759,10 @@ void NetUtil::CheckLayerAvailable(const std::string& layer) {
 }
 
 std::string NetUtil::Proto() {
-  std::string string;
-  google::protobuf::io::StringOutputStream stream(&string);
+  std::string s;
+  google::protobuf::io::StringOutputStream stream(&s);
   google::protobuf::TextFormat::Print(net, &stream);
-  return string;
+  return s;
 }
 
 template <typename T>

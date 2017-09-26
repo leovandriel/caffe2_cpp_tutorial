@@ -1,7 +1,7 @@
 #ifndef OPERATOR_COUT_OP_H
 #define OPERATOR_COUT_OP_H
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 
@@ -19,7 +19,7 @@ class CoutOp final : public Operator<Context> {
   bool RunOnDevice() override;
 
  protected:
-  std::vector<string> titles;
+  std::vector<std::string> titles;
 };
 
 }  // namespace caffe2

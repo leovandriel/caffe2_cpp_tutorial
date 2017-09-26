@@ -1,8 +1,8 @@
 #ifndef UTIL_BLOB_H
 #define UTIL_BLOB_H
 
-#include "caffe2/core/blob.h"
-#include "caffe2/core/tensor.h"
+#include <caffe2/core/blob.h>
+#include <caffe2/core/tensor.h>
 
 namespace caffe2 {
 

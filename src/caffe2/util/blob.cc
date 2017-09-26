@@ -2,7 +2,7 @@
 #include "caffe2/util/tensor.h"
 
 #ifdef WITH_CUDA
-#include "caffe2/core/context_gpu.h"
+#include <caffe2/core/context_gpu.h>
 #endif
 
 namespace caffe2 {

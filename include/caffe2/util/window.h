@@ -1,7 +1,7 @@
 #ifndef UTIL_WINDOW_H
 #define UTIL_WINDOW_H
 
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 
 #include <map>
 

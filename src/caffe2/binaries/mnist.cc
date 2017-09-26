@@ -1,11 +1,11 @@
-#include "caffe2/core/init.h"
+#include <caffe2/core/init.h>
 #include "caffe2/util/model.h"
 #include "caffe2/util/net.h"
 
 #include "caffe2/util/window.h"
 
 #ifdef WITH_CUDA
-#include "caffe2/core/context_gpu.h"
+#include <caffe2/core/context_gpu.h>
 #endif
 
 CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb",

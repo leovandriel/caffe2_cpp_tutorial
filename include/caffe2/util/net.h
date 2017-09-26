@@ -1,7 +1,7 @@
 #ifndef UTIL_NET_H
 #define UTIL_NET_H
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 

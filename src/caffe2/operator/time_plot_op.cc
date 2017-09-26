@@ -1,16 +1,13 @@
-#include "caffe2/operator/time_plot_op.h"
+#include <caffe2/operator/time_plot_op.h>
 
 #include "caffe2/util/plot.h"
 #include "caffe2/util/tensor.h"
 
 #ifdef WITH_CUDA
-#include "caffe2/core/common_cudnn.h"
-#include "caffe2/core/context_gpu.h"
-#include "caffe2/core/types.h"
+#include <caffe2/core/common_cudnn.h>
+#include <caffe2/core/context_gpu.h>
+#include <caffe2/core/types.h>
 #endif
-
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
 
 namespace caffe2 {
 
