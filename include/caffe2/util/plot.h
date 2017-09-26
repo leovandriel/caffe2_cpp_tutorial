@@ -112,7 +112,9 @@ class PlotUtil {
           text_color_(Black()),
           include_zero_x_(true),
           include_zero_y_(true),
-          aspect_square_(false) {}
+          aspect_square_(false),
+          grid_size_(60),
+          grid_padding_(20) {}
 
     void Clear() { series_.clear(); }
     void Origin(bool x, bool y) { include_zero_x_ = x, include_zero_y_ = y; }
@@ -145,6 +147,8 @@ class PlotUtil {
     bool include_zero_x_;
     bool include_zero_y_;
     bool aspect_square_;
+    int grid_size_;
+    int grid_padding_;
   };
 
   Figure &Get(const std::string &window) {

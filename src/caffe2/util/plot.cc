@@ -153,6 +153,16 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
   auto w_plot = buffer.cols - 2 * border_size_;
   auto h_plot = buffer.rows - 2 * border_size_;
 
+  // add padding inside graph (histograms get extra)
+  if (p_max) {
+    auto dx = p_max * (x_max - x_min) / w_plot;
+    auto dy = p_max * (y_max - y_min) / h_plot;
+    x_min -= dx;
+    x_max += dx;
+    y_min -= dy;
+    y_max += dy;
+  }
+
   // adjust value range if aspect ratio square
   if (aspect_square_) {
     if (h_plot * (x_max - x_min) < w_plot * (y_max - y_min)) {
@@ -166,25 +176,17 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
     }
   }
 
-  // add padding for histograms
-  if (p_max) {
-    auto dx = p_max * (x_max - x_min) / w_plot;
-    auto dy = p_max * (y_max - y_min) / h_plot;
-    x_min -= dx;
-    x_max += dx;
-    y_min -= dy;
-    y_max += dy;
-  }
-
   // calc where to draw axis
   auto x_axis = std::max(x_min, std::min(x_max, 0.f));
   auto y_axis = std::max(y_min, std::min(y_max, 0.f));
 
   // calc sub axis grid size
   auto x_grid =
-      (x_max != x_min ? value2snap((x_max - x_min) / floor(w_plot / 80)) : 1);
+      (x_max != x_min ? value2snap((x_max - x_min) / floor(w_plot / grid_size_))
+                      : 1);
   auto y_grid =
-      (y_max != x_min ? value2snap((y_max - y_min) / floor(h_plot / 80)) : 1);
+      (y_max != x_min ? value2snap((y_max - y_min) / floor(h_plot / grid_size_))
+                      : 1);
 
   // calc affine transform value space to plot space
   auto xs = (x_max != x_min ? (buffer.cols - 2 * border_size_) / (x_max - x_min)
@@ -205,7 +207,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
              {(int)(x * xs + xd), buffer.rows - border_size_},
              color2scalar(sub_axis_color_), 1, CV_AA);
     std::ostringstream out;
-    out << std::setprecision(3) << x;
+    out << std::setprecision(3) << (x == 0 ? 0 : x);
     int baseline;
     cv::Size size =
         getTextSize(out.str(), cv::FONT_HERSHEY_SIMPLEX, 0.3, 1.0, &baseline);
@@ -219,7 +221,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
              {buffer.cols - border_size_, (int)(y * ys + yd)},
              color2scalar(sub_axis_color_), 1, CV_AA);
     std::ostringstream out;
-    out << std::setprecision(3) << y;
+    out << std::setprecision(3) << (y == 0 ? 0 : y);
     int baseline;
     cv::Size size =
         getTextSize(out.str(), cv::FONT_HERSHEY_SIMPLEX, 0.3, 1.0, &baseline);
@@ -271,7 +273,7 @@ void Figure::Show() {
   auto y_min = (include_zero_y_ ? 0.f : FLT_MAX);
   auto y_max = (include_zero_y_ ? 0.f : FLT_MIN);
   auto n_max = 0;
-  auto p_max = 0;
+  auto p_max = grid_padding_;
 
   // find value bounds
   for (auto &s : series_) {
