@@ -1,4 +1,4 @@
-#include "util/misc.h"
+#include "caffe2/util/misc.h"
 
 #include "caffe2/core/db.h"
 #include "caffe2/core/init.h"
@@ -20,7 +20,7 @@ CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
 
-#include "util/cmd.h"
+#include "caffe2/util/cmd.h"
 
 namespace caffe2 {
 

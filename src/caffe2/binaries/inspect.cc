@@ -1,4 +1,4 @@
-#include "util/misc.h"
+#include "caffe2/util/misc.h"
 
 CAFFE2_DEFINE_string(path, "res/mnist-test-nchw-leveldb",
                      "path of the database");

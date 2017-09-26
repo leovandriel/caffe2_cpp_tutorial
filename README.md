@@ -117,7 +117,7 @@ To see the training in action, run with `--display`:
 
     ./bin/mnist --display
 
-<img src="mnist.png" alt="MNIST" width="300"/>
+<img src="script/mnist.png" alt="MNIST" width="300"/>
 
 ## RNNs and LSTM Networks
 
@@ -218,7 +218,7 @@ Some of the examples have a `--display` option, which will show an OpenCV window
 
     ./bin/plot
 
-<img src="plot.png" alt="Plot Examples" width="450"/>
+<img src="script/plot.png" alt="Plot Examples" width="450"/>
 
 The style of windows and colors are intentionally pale and pixelated to give a dated feel to the whole thing.
 

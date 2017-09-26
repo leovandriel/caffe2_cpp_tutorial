@@ -2,7 +2,7 @@
 #include "caffe2/util/blob.h"
 #include "caffe2/util/net.h"
 
-#include "util/cmd.h"
+#include "caffe2/util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "char_rnn", "The RNN model.");
 CAFFE2_DEFINE_string(train_data, "res/shakespeare.txt",
