@@ -9,7 +9,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "res/imagenet_classes.h"
-#include "util/misc.h"
+#include "caffe2/util/misc.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
@@ -25,7 +25,7 @@ CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
 CAFFE2_DEFINE_bool(show_image, false, "show image while dreaming.");
 
-#include "util/cmd.h"
+#include "caffe2/util/cmd.h"
 
 namespace caffe2 {
 

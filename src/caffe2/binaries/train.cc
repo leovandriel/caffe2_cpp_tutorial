@@ -1,4 +1,4 @@
-#include "util/misc.h"
+#include "caffe2/util/misc.h"
 
 #include "caffe2/core/db.h"
 #include "caffe2/core/init.h"
@@ -24,7 +24,7 @@ CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
 
-#include "util/cmd.h"
+#include "caffe2/util/cmd.h"
 
 namespace caffe2 {
 

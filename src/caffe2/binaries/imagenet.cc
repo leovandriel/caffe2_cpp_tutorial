@@ -9,7 +9,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "res/imagenet_classes.h"
-#include "util/cmd.h"
+#include "caffe2/util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
