@@ -8,8 +8,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "res/imagenet_classes.h"
 #include "caffe2/util/misc.h"
+#include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
@@ -47,7 +47,7 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
   dream.AddConstantFillWithOp(1.f, "score", "score_grad");
 
   // add back prop
-  dream.AddGradientOps();
+  dream.AddAllGradientOp();
 
   // scale gradient
   dream.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");

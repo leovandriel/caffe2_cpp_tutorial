@@ -8,14 +8,21 @@ namespace caffe2 {
 
 class ModelUtil {
  public:
-  ModelUtil(NetDef &init_net, NetDef &predict_net)
-      : init_(init_net), predict_(predict_net) {}
+  ModelUtil(NetDef &init_net, NetDef &predict_net, const std::string &name = "")
+      : init(init_net), predict(predict_net) {
+    if (name.size()) {
+      SetName(name);
+    }
+  }
+  ModelUtil(NetUtil &init, NetUtil &predict) : init(init), predict(predict) {}
 
+  void SetName(const std::string &name);
   void AddDatabaseOps(const std::string &name, const std::string &data,
                       const std::string &db, const std::string &db_type,
                       int batch_size);
+  void AddGradientOps();
   void AddXentOps(const std::string &output);
-  void AddIterLrOps(float base_rate);
+  void AddIterOps();
 
   void AddSgdOps();
   void AddMomentumOps();
@@ -28,9 +35,17 @@ class ModelUtil {
   void AddTrainOps(const std::string &output, float base_rate,
                    std::string &optimizer);
 
- protected:
-  NetUtil init_;
-  NetUtil predict_;
+  void AddFcOps(const std::string &input, const std::string &output,
+                int in_size, int out_size);
+  void AddConvOps(const std::string &input, const std::string &output,
+                  int in_size, int out_size, int stride, int padding,
+                  int kernel);
+
+  std::vector<std::string> Params() { return predict.CollectParams(); }
+
+ public:
+  NetUtil init;
+  NetUtil predict;
 };
 
 }  // namespace caffe2

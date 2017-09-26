@@ -49,7 +49,7 @@ const std::string gradient_suffix("_grad");
 OperatorDef* NetUtil::AddOp(const std::string& name,
                             const std::vector<std::string>& inputs,
                             const std::vector<std::string>& outputs) {
-  auto op = net_.add_op();
+  auto op = net.add_op();
   op->set_type(name);
   for (auto input : inputs) {
     op->add_input(input);
@@ -576,19 +576,19 @@ OperatorDef* NetUtil::AddLearningRateOp(const std::string& iter,
 }
 
 void NetUtil::AddInput(const std::string input) {
-  net_.add_external_input(input);
+  net.add_external_input(input);
 }
 
 void NetUtil::AddOutput(const std::string output) {
-  net_.add_external_output(output);
+  net.add_external_output(output);
 }
 
-void NetUtil::SetName(const std::string name) { net_.set_name(name); }
+void NetUtil::SetName(const std::string name) { net.set_name(name); }
 
-void NetUtil::SetType(const std::string type) { net_.set_type(type); }
+void NetUtil::SetType(const std::string type) { net.set_type(type); }
 
 void NetUtil::SetFillToTrain() {
-  for (auto& op : *net_.mutable_op()) {
+  for (auto& op : *net.mutable_op()) {
     if (op.type() == "GivenTensorFill") {
       op.mutable_arg()->RemoveLast();
       if (op.output(0).find("_w") != std::string::npos) {
@@ -604,7 +604,7 @@ void NetUtil::SetFillToTrain() {
 
 void NetUtil::SetRenameInplace() {
   std::set<std::string> renames;
-  for (auto& op : *net_.mutable_op()) {
+  for (auto& op : *net.mutable_op()) {
     if (renames.find(op.input(0)) != renames.end()) {
       op.set_input(0, op.input(0) + "_unique");
     }
@@ -621,7 +621,7 @@ void NetUtil::SetRenameInplace() {
 }
 
 void NetUtil::SetEngineOps(const std::string engine) {
-  for (auto& op : *net_.mutable_op()) {
+  for (auto& op : *net.mutable_op()) {
     op.set_engine(engine);
   }
 }
@@ -629,7 +629,7 @@ void NetUtil::SetEngineOps(const std::string engine) {
 // Gradient
 
 OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
-  auto grad = net_.add_op();
+  auto grad = net.add_op();
   if (custom_gradient.find(op.type()) == custom_gradient.end()) {
     vector<GradientWrapper> output(op.output_size());
     for (auto i = 0; i < output.size(); i++) {
@@ -654,7 +654,7 @@ OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
   return grad;
 }
 
-void NetUtil::AddGradientOps() {
+void NetUtil::AddAllGradientOp() {
   for (auto op : CollectGradientOps()) {
     AddGradientOp(op);
   }
@@ -664,7 +664,7 @@ void NetUtil::AddGradientOps() {
 
 std::map<std::string, int> NetUtil::CollectParamSizes() {
   std::map<std::string, int> sizes;
-  for (const auto& op : net_.op()) {
+  for (const auto& op : net.op()) {
     if (filler_ops.find(op.type()) != filler_ops.end()) {
       for (const auto& arg : op.arg()) {
         if (arg.name() == "shape") {
@@ -682,9 +682,9 @@ std::map<std::string, int> NetUtil::CollectParamSizes() {
 
 std::vector<std::string> NetUtil::CollectParams() {
   std::vector<std::string> params;
-  std::set<std::string> external_inputs(net_.external_input().begin(),
-                                        net_.external_input().end());
-  for (const auto& op : net_.op()) {
+  std::set<std::string> external_inputs(net.external_input().begin(),
+                                        net.external_input().end());
+  for (const auto& op : net.op()) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       for (const auto& input : op.input()) {
         if (external_inputs.find(input) != external_inputs.end()) {
@@ -697,10 +697,10 @@ std::vector<std::string> NetUtil::CollectParams() {
 }
 
 std::vector<OperatorDef> NetUtil::CollectGradientOps() {
-  std::set<std::string> external_inputs(net_.external_input().begin(),
-                                        net_.external_input().end());
+  std::set<std::string> external_inputs(net.external_input().begin(),
+                                        net.external_input().end());
   std::vector<OperatorDef> gradient_ops;
-  for (auto& op : net_.op()) {
+  for (auto& op : net.op()) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       gradient_ops.push_back(op);
       // std::cout << "type: " << op.type() << std::endl;
@@ -715,7 +715,7 @@ std::vector<OperatorDef> NetUtil::CollectGradientOps() {
 std::set<std::string> NetUtil::CollectLayers(const std::string& layer,
                                              bool forward) {
   std::map<std::string, std::set<std::string>> lookup;
-  for (auto& op : net_.op()) {
+  for (auto& op : net.op()) {
     for (auto& input : op.input()) {
       for (auto& output : op.output()) {
         lookup[forward ? input : output].insert(forward ? output : input);
@@ -740,9 +740,9 @@ std::set<std::string> NetUtil::CollectLayers(const std::string& layer,
 
 void NetUtil::CheckLayerAvailable(const std::string& layer) {
   std::vector<std::pair<std::string, std::string>> available_layers(
-      {{net_.external_input(0), "Input"}});
-  auto layer_found = (net_.external_input(0) == layer);
-  for (const auto& op : net_.op()) {
+      {{net.external_input(0), "Input"}});
+  auto layer_found = (net.external_input(0) == layer);
+  for (const auto& op : net.op()) {
     if (op.input(0) != op.output(0)) {
       available_layers.push_back({op.output(0), op.type()});
       layer_found |= (op.output(0) == layer);
@@ -761,7 +761,7 @@ void NetUtil::CheckLayerAvailable(const std::string& layer) {
 std::string NetUtil::Proto() {
   std::string string;
   google::protobuf::io::StringOutputStream stream(&string);
-  google::protobuf::TextFormat::Print(net_, &stream);
+  google::protobuf::TextFormat::Print(net, &stream);
   return string;
 }
 
@@ -861,16 +861,16 @@ std::string net_short_net(const NetDef& def) {
   return stream.str();
 }
 
-std::string NetUtil::Short() { return net_short_net(net_); }
+std::string NetUtil::Short() { return net_short_net(net); }
 
 void NetUtil::Print() {
   google::protobuf::io::OstreamOutputStream stream(&std::cout);
-  google::protobuf::TextFormat::Print(net_, &stream);
+  google::protobuf::TextFormat::Print(net, &stream);
 }
 
 void NetUtil::SetDeviceCUDA() {
 #ifdef WITH_CUDA
-  net_.mutable_device_option()->set_device_type(CUDA);
+  net.mutable_device_option()->set_device_type(CUDA);
 #endif
 }
 

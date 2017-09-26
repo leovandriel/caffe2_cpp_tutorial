@@ -7,7 +7,7 @@ namespace caffe2 {
 
 class NetUtil {
  public:
-  NetUtil(NetDef& net) : net_(net) {}
+  NetUtil(NetDef& net) : net(net) {}
 
   OperatorDef* AddOp(const std::string& name,
                      const std::vector<std::string>& inputs,
@@ -158,7 +158,7 @@ class NetUtil {
   void SetEngineOps(const std::string engine);
 
   OperatorDef* AddGradientOp(OperatorDef& op);
-  void AddGradientOps();
+  void AddAllGradientOp();
 
   std::map<std::string, int> CollectParamSizes();
   std::vector<std::string> CollectParams();
@@ -172,8 +172,8 @@ class NetUtil {
   void Print();
   void SetDeviceCUDA();
 
- protected:
-  NetDef& net_;
+ public:
+  NetDef& net;
 };
 
 }  // namespace caffe2
