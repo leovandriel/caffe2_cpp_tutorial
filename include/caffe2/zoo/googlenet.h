@@ -7,32 +7,32 @@ namespace caffe2 {
 
 class GoogleNetModel : public ModelUtil {
  public:
-  GoogleNetModel(NetDef &init_net, NetDef &predict_net)
-      : ModelUtil(init_net, predict_net) {}
+  GoogleNetModel(NetDef &initnet, NetDef &predictnet)
+      : ModelUtil(initnet, predictnet) {}
 
   OperatorDef *AddConvOps(const std::string &input, const std::string &output,
                           int in_size, int out_size, int stride, int padding,
                           int kernel) {
-    init_.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
-    predict_.AddInput(output + "_w");
-    init_.AddConstantFillOp({out_size}, output + "_b");
-    predict_.AddInput(output + "_b");
-    predict_.AddConvOp(input, output + "_w", output + "_b", output, stride,
-                       padding, kernel);
-    return predict_.AddReluOp(output, output);
+    init.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
+    predict.AddInput(output + "_w");
+    init.AddConstantFillOp({out_size}, output + "_b");
+    predict.AddInput(output + "_b");
+    predict.AddConvOp(input, output + "_w", output + "_b", output, stride,
+                      padding, kernel);
+    return predict.AddReluOp(output, output);
   }
 
   OperatorDef *AddFcOps(const std::string &input, const std::string &output,
                         int in_size, int out_size, bool relu,
                         float dropout = 0.5) {
-    init_.AddXavierFillOp({out_size, in_size}, output + "_w");
-    predict_.AddInput(output + "_w");
-    init_.AddConstantFillOp({out_size}, output + "_b");
-    predict_.AddInput(output + "_b");
-    auto op = predict_.AddFcOp(input, output + "_w", output + "_b", output);
+    init.AddXavierFillOp({out_size, in_size}, output + "_w");
+    predict.AddInput(output + "_w");
+    init.AddConstantFillOp({out_size}, output + "_b");
+    predict.AddInput(output + "_b");
+    auto op = predict.AddFcOp(input, output + "_w", output + "_b", output);
     if (!relu) return op;
-    predict_.AddReluOp(output, output);
-    return predict_.AddDropoutOp(output, output, dropout);
+    predict.AddReluOp(output, output);
+    return predict.AddDropoutOp(output, output, dropout);
   }
 
   OperatorDef *AddFirst(const std::string &prefix, const std::string &input,
@@ -41,9 +41,9 @@ class GoogleNetModel : public ModelUtil {
     std::string layer = input;
     layer = AddConvOps(layer, output + "7x7_s2", in_size, out_size, 2, 3, 7)
                 ->output(0);
-    layer = predict_.AddMaxPoolOp(layer, "pool" + prefix + "/3x3_s2", 2, 0, 3)
+    layer = predict.AddMaxPoolOp(layer, "pool" + prefix + "/3x3_s2", 2, 0, 3)
                 ->output(0);
-    return predict_.AddLrnOp(layer, "pool1/norm1", 5, 0.0001, 0.75, 1);
+    return predict.AddLrnOp(layer, "pool1/norm1", 5, 0.0001, 0.75, 1);
   }
 
   OperatorDef *AddSecond(const std::string &prefix, const std::string &input,
@@ -54,11 +54,11 @@ class GoogleNetModel : public ModelUtil {
         AddConvOps(layer, output + "_reduce", in_size, out_size / 3, 1, 0, 1)
             ->output(0);
     layer = AddConvOps(layer, output, in_size, out_size, 1, 1, 3)->output(0);
-    return predict_.AddLrnOp(layer, "conv2/norm2", 5, 0.0001, 0.75, 1);
+    return predict.AddLrnOp(layer, "conv2/norm2", 5, 0.0001, 0.75, 1);
   }
 
   OperatorDef *AddPool(const std::string &prefix, const std::string &input) {
-    return predict_.AddMaxPoolOp(input, "pool" + prefix + "/3x3_s2", 2, 0, 3);
+    return predict.AddMaxPoolOp(input, "pool" + prefix + "/3x3_s2", 2, 0, 3);
   }
 
   OperatorDef *AddInception(const std::string &prefix, const std::string &input,
@@ -77,18 +77,18 @@ class GoogleNetModel : public ModelUtil {
           AddConvOps(layer, b, sizes[kernel - 1], sizes[kernel], 1, i, kernel)
               ->output(0));
     }
-    layer = predict_.AddMaxPoolOp(input, output + "pool", 1, 1, 3)->output(0);
+    layer = predict.AddMaxPoolOp(input, output + "pool", 1, 1, 3)->output(0);
     layers.push_back(
         AddConvOps(layer, layer + "_proj", sizes[0], sizes[6], 1, 0, 1)
             ->output(0));
-    return predict_.AddConcatOp(layers, output + "output");
+    return predict.AddConcatOp(layers, output + "output");
   }
 
   OperatorDef *AddSide(const std::string &prefix, const std::string &input,
                        std::vector<int> sizes, int out_size) {
     auto output = "loss" + prefix + "/";
     std::string layer = input;
-    layer = predict_.AddAveragePoolOp(layer, output + "ave_pool", 3, 0, 5)
+    layer = predict.AddAveragePoolOp(layer, output + "ave_pool", 3, 0, 5)
                 ->output(0);
     layer = AddConvOps(layer, output + "conv", sizes[0], sizes[1], 1, 0, 1)
                 ->output(0);
@@ -100,32 +100,31 @@ class GoogleNetModel : public ModelUtil {
   OperatorDef *AddTrain(const std::string &prefix, const std::string &input) {
     auto output = "loss" + prefix + "/";
     std::string layer = input;
-    layer = predict_.AddSoftmaxOp(layer, output + "softmax")->output(0);
-    layer = predict_.AddLabelCrossEntropyOp(layer, "label", output + "xent")
+    layer = predict.AddSoftmaxOp(layer, output + "softmax")->output(0);
+    layer = predict.AddLabelCrossEntropyOp(layer, "label", output + "xent")
                 ->output(0);
     layer =
-        predict_.AddAveragedLossOp(layer, output + "loss" + prefix)->output(0);
-    predict_.AddAccuracyOp(output + "classifier", "label", output + "top-1");
-    return predict_.AddAccuracyOp(output + "classifier", "label",
-                                  output + "top-5", 5);
+        predict.AddAveragedLossOp(layer, output + "loss" + prefix)->output(0);
+    predict.AddAccuracyOp(output + "classifier", "label", output + "top-1");
+    return predict.AddAccuracyOp(output + "classifier", "label",
+                                 output + "top-5", 5);
   }
 
   OperatorDef *AddEnd(const std::string &prefix, const std::string &input,
                       int in_size, int out_size) {
     auto output = "loss" + prefix + "/";
     std::string layer = input;
-    layer =
-        predict_.AddAveragePoolOp(layer, "pool5/7x7_s1", 1, 0, 7)->output(0);
-    layer = predict_.AddDropoutOp(layer, layer, 0.4)->output(0);
+    layer = predict.AddAveragePoolOp(layer, "pool5/7x7_s1", 1, 0, 7)->output(0);
+    layer = predict.AddDropoutOp(layer, layer, 0.4)->output(0);
     return AddFcOps(layer, output + "classifier", in_size, out_size, false);
   }
 
   void Add(int out_size = 1000, bool train = false) {
-    predict_.SetName("GoogleNet");
+    predict.SetName("GoogleNet");
     auto input = "data";
   std:
     string layer = input;
-    predict_.AddInput(layer);
+    predict.AddInput(layer);
     layer = AddFirst("1", layer, 3, 64)->output(0);
     layer = AddSecond("2", layer, 64, 192)->output(0);
     layer = AddPool("2", layer)->output(0);
@@ -165,10 +164,10 @@ class GoogleNetModel : public ModelUtil {
     if (train) {
       layer = AddTrain("3", layer)->output(0);
     } else {
-      layer = predict_.AddSoftmaxOp(layer, "prob")->output(0);
+      layer = predict.AddSoftmaxOp(layer, "prob")->output(0);
     }
-    predict_.AddOutput(layer);
-    init_.AddConstantFillOp({1}, input);
+    predict.AddOutput(layer);
+    init.AddConstantFillOp({1}, input);
   }
 };
 
