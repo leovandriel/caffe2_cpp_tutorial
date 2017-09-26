@@ -5,12 +5,12 @@ set -e
 mkdir -p res
 
 test -f res/alexnet_init_net.pb || echo "downloading AlexNet model (2)"
-test -f res/alexnet_predict_net.pb || curl --progress-bar --location --output res/alexnet_predict_net.pb https://github.com/caffe2/models/raw/master/bvlc_alexnet/predict_net.pb
-test -f res/alexnet_init_net.pb || curl --progress-bar --location --output res/alexnet_init_net.pb https://github.com/caffe2/models/raw/master/bvlc_alexnet/exec_net.pb
+test -f res/alexnet_predict_net.pb || curl --progress-bar --location --output res/alexnet_predict_net.pb https://github.com/leonardvandriel/caffe2_models/raw/master/model/alexnet_predict_net.pb
+test -f res/alexnet_init_net.pb || curl --progress-bar --location --output res/alexnet_init_net.pb https://github.com/leonardvandriel/caffe2_models/raw/master/model/alexnet_init_net.pb
 
 test -f res/googlenet_init_net.pb || echo "downloading GoogleNet model (2)"
-test -f res/googlenet_predict_net.pb || curl --progress-bar --location --output res/googlenet_predict_net.pb https://github.com/caffe2/models/raw/master/bvlc_googlenet/predict_net.pb
-test -f res/googlenet_init_net.pb || curl --progress-bar --location --output res/googlenet_init_net.pb https://github.com/caffe2/models/raw/master/bvlc_googlenet/exec_net.pb
+test -f res/googlenet_predict_net.pb || curl --progress-bar --location --output res/googlenet_predict_net.pb https://github.com/leonardvandriel/caffe2_models/raw/master/model/googlenet_predict_net.pb
+test -f res/googlenet_init_net.pb || curl --progress-bar --location --output res/googlenet_init_net.pb https://github.com/leonardvandriel/caffe2_models/raw/master/model/googlenet_init_net.pb
 
 test -f res/squeezenet_init_net.pb || echo "downloading SqueezeNet model (2)"
 test -f res/squeezenet_predict_net.pb || curl --progress-bar --location --output res/squeezenet_predict_net.pb https://github.com/caffe2/models/raw/master/squeezenet/predict_net.pb

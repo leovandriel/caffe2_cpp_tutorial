@@ -18,26 +18,28 @@ const std::map<std::string, std::map<std::string, std::string>>
     keeper_model_lookup{
         {"alexnet",
          {{"res/alexnet_predict_net.pb",
-           "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/"
-           "predict_net.pb"},
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "alexnet_predict_net.pb"},
           {"res/alexnet_init_net.pb",
-           "https://s3.amazonaws.com/caffe2/models/bvlc_alexnet/init_net.pb"}}},
+           "https://github.com/leonardvandriel/caffe2_models/raw/master/model/"
+           "alexnet_init_net.pb"}}},
         {"googlenet",
          {
              {"res/googlenet_predict_net.pb",
-              "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/"
-              "predict_net.pb"},
+              "https://github.com/leonardvandriel/caffe2_models/raw/master/"
+              "model/googlenet_predict_net.pb"},
              {"res/googlenet_init_net.pb",
-              "https://s3.amazonaws.com/caffe2/models/bvlc_googlenet/"
-              "init_net.pb"},
+              "https://github.com/leonardvandriel/caffe2_models/raw/master/"
+              "model/googlenet_init_net.pb"},
          }},
         {"squeezenet",
          {
              {"res/squeezenet_predict_net.pb",
-              "https://s3.amazonaws.com/caffe2/models/squeezenet/"
+              "https://github.com/caffe2/models/raw/master/squeezenet/"
               "predict_net.pb"},
              {"res/squeezenet_init_net.pb",
-              "https://s3.amazonaws.com/caffe2/models/squeezenet/init_net.pb"},
+              "https://github.com/caffe2/models/raw/master/squeezenet/"
+              "init_net.pb"},
          }},
         {"vgg16",
          {{"res/vgg16_predict_net.pb",
