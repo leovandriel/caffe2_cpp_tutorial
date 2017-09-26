@@ -1,6 +1,6 @@
-#include "caffe2/core/init.h"
-#include "caffe2/core/operator.h"
-#include "caffe2/core/operator_gradient.h"
+#include <caffe2/core/init.h>
+#include <caffe2/core/operator.h>
+#include <caffe2/core/operator_gradient.h>
 
 namespace caffe2 {
 

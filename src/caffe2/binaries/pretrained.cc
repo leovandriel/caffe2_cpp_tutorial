@@ -1,9 +1,9 @@
-#include "caffe2/core/init.h"
-#include "caffe2/core/predictor.h"
+#include <caffe2/core/init.h>
+#include <caffe2/core/predictor.h>
 #include "caffe2/utils/proto_utils.h"
 
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "res/imagenet_classes.h"
 

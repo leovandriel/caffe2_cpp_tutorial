@@ -1,7 +1,7 @@
 #ifndef OPERATOR_ZERO_ONE_OP_H
 #define OPERATOR_ZERO_ONE_OP_H
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 

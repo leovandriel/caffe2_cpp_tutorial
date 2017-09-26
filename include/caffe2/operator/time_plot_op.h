@@ -1,7 +1,7 @@
 #ifndef OPERATOR_TIME_PLOT_OP
 #define OPERATOR_TIME_PLOT_OP
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 

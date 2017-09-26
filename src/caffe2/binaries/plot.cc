@@ -1,5 +1,5 @@
 #include "caffe2/util/plot.h"
-#include "caffe2/core/init.h"
+#include <caffe2/core/init.h>
 #include "caffe2/util/window.h"
 
 namespace caffe2 {

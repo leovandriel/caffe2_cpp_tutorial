@@ -1,7 +1,7 @@
 #ifndef OPERATOR_MEAN_STDEV_OP_H
 #define OPERATOR_MEAN_STDEV_OP_H
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 

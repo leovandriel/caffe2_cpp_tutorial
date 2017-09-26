@@ -1,12 +1,12 @@
-#include "caffe2/core/init.h"
-#include "caffe2/core/net.h"
+#include <caffe2/core/init.h>
+#include <caffe2/core/net.h>
 #include "caffe2/util/blob.h"
 #include "caffe2/util/tensor.h"
 #include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "caffe2/util/misc.h"
 #include "res/imagenet_classes.h"

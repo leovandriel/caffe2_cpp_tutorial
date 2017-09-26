@@ -1,5 +1,5 @@
-#include "caffe2/operator/diagonal_op.h"
-#include "caffe2/core/context_gpu.h"
+#include <caffe2/operator/diagonal_op.h>
+#include <caffe2/core/context_gpu.h>
 
 namespace caffe2 {
 

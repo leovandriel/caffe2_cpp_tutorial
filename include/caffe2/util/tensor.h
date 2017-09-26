@@ -1,7 +1,7 @@
 #ifndef UTIL_TENSOR_H
 #define UTIL_TENSOR_H
 
-#include "caffe2/core/tensor.h"
+#include <caffe2/core/tensor.h>
 
 namespace caffe2 {
 

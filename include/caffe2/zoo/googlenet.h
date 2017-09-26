@@ -123,7 +123,7 @@ class GoogleNetModel : public ModelUtil {
     predict.SetName("GoogleNet");
     auto input = "data";
   std:
-    string layer = input;
+    std::string layer = input;
     predict.AddInput(layer);
     layer = AddFirst("1", layer, 3, 64)->output(0);
     layer = AddSecond("2", layer, 64, 192)->output(0);

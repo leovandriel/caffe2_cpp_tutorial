@@ -1,7 +1,7 @@
 #ifndef OPERATOR_SHOW_WORST_OP
 #define OPERATOR_SHOW_WORST_OP
 
-#include "caffe2/core/operator.h"
+#include <caffe2/core/operator.h>
 
 namespace caffe2 {
 
