@@ -25,8 +25,8 @@ void printBest(const Tensor<C> &tensor, const char **classes,
       pairs.push_back(std::make_pair(probs[i] * 100, i));
     }
   }
-std:
-  sort(pairs.begin(), pairs.end());
+
+  std::sort(pairs.begin(), pairs.end());
 
   // show results
   if (name.length() > 0) std::cout << name << ": " << std::endl;

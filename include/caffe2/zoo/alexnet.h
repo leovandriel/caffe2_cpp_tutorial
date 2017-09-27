@@ -67,7 +67,7 @@ class AlexNetModel : public ModelUtil {
   void Add(int out_size = 1000, bool train = false) {
     predict.SetName("AlexNet");
     auto input = "data";
-  std:
+
     std::string layer = input;
     predict.AddInput(layer);
     layer = AddConvPool("1", layer, 3, 96, 4, 0, 11, false)->output(0);

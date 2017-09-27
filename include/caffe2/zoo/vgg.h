@@ -47,7 +47,7 @@ class VGGModel : public ModelUtil {
   void Add(int type, int out_size = 1000, bool train = false) {
     predict.SetName("VGG" + std::to_string(type));
     auto input = "data";
-  std:
+
     std::string layer = input;
     predict.AddInput(layer);
 

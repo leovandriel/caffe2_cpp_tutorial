@@ -278,7 +278,7 @@ OperatorDef* NetUtil::AddVectorFillOp(const std::vector<int>& values,
 
 OperatorDef* NetUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
                                            const std::string& name) {
-  auto op = AddOp("XavierFill", {}, {name});
+  auto op = AddOp("GivenTensorFill", {}, {name});
   net_add_arg(*op, "shape", tensor.dims());
   auto arg = net_add_arg(*op, "values");
   const auto& data = tensor.data<float>();
@@ -293,7 +293,10 @@ OperatorDef* NetUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
 OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
                                 const std::string& b, const std::string& output,
                                 int stride, int padding, int kernel) {
-  auto op = AddOp("Conv", {input, w, b}, {output});
+  auto op = AddOp("Conv",
+                  b.size() ? std::vector<std::string>({input, w, b})
+                           : std::vector<std::string>({input, w}),
+                  {output});
   net_add_arg(*op, "stride", stride);
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
@@ -376,6 +379,39 @@ OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs,
                                   const std::string& order) {
   auto op = AddOp("Concat", inputs, {output, "_" + output + "_dims"});
   net_add_arg(*op, "order", order);
+  return op;
+}
+
+OperatorDef* NetUtil::AddSpatialBNOp(const std::vector<std::string>& inputs,
+                                     const std::string& output, float epsilon,
+                                     const std::string& order) {
+  auto op = AddOp("SpatialBN", inputs, {output});
+  net_add_arg(*op, "is_test", 1);  // TODO
+  net_add_arg(*op, "epsilon", epsilon);
+  net_add_arg(*op, "order", order);
+  return op;
+}
+
+OperatorDef* NetUtil::AddSumOp(const std::vector<std::string>& inputs,
+                               const std::string& sum) {
+  return AddOp("Sum", inputs, {sum});
+}
+
+OperatorDef* NetUtil::AddMulOp(const std::vector<std::string>& inputs,
+                               const std::string& output, int axis,
+                               int broadcast) {
+  auto op = AddOp("Mul", inputs, {output});
+  net_add_arg(*op, "axis", axis);
+  net_add_arg(*op, "broadcast", broadcast);
+  return op;
+}
+
+OperatorDef* NetUtil::AddAddOp(const std::vector<std::string>& inputs,
+                               const std::string& output, int axis,
+                               int broadcast) {
+  auto op = AddOp("Add", inputs, {output});
+  net_add_arg(*op, "axis", axis);
+  net_add_arg(*op, "broadcast", broadcast);
   return op;
 }
 
@@ -476,11 +512,6 @@ OperatorDef* NetUtil::AddCheckpointOp(const std::vector<std::string>& inputs,
   net_add_arg(*op, "db_type", db_type);
   net_add_arg(*op, "db", db);
   return op;
-}
-
-OperatorDef* NetUtil::AddSumOp(const std::vector<std::string>& inputs,
-                               const std::string& sum) {
-  return AddOp("Sum", inputs, {sum});
 }
 
 OperatorDef* NetUtil::AddMomentumSgdOp(const std::string& param,

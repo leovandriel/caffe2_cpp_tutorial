@@ -113,8 +113,8 @@ void run() {
       pairs.push_back(std::make_pair(probs[i] * 100, i));
     }
   }
-std:
-  sort(pairs.begin(), pairs.end());
+
+  std::sort(pairs.begin(), pairs.end());
 
   std::cout << std::endl;
 

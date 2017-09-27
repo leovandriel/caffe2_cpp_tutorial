@@ -79,6 +79,16 @@ class NetUtil {
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs,
                            const std::string& output,
                            const std::string& order = "NCHW");
+  OperatorDef* AddSpatialBNOp(const std::vector<std::string>& inputs,
+                              const std::string& output, float epsilon = 1e-5f,
+                              const std::string& order = "NCHW");
+  OperatorDef* AddMulOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis = 1,
+                        int broadcast = 1);
+  OperatorDef* AddAddOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis = 1,
+                        int broadcast = 1);
+
   OperatorDef* AddLSTMUnitOp(const std::vector<std::string>& inputs,
                              const std::vector<std::string>& outputs,
                              int drop_states = 0, float forget_bias = 0.f);
