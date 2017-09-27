@@ -4,6 +4,7 @@
 #include "caffe2/util/net.h"
 #include "caffe2/zoo/alexnet.h"
 #include "caffe2/zoo/googlenet.h"
+#include "caffe2/zoo/resnet.h"
 #include "caffe2/zoo/vgg.h"
 
 #ifdef WITH_CURL
@@ -160,6 +161,12 @@ class Keeper {
       VGGModel(init_model, predict_model).Add(16);
     } else if (name_ == "vgg19") {
       VGGModel(init_model, predict_model).Add(19);
+    } else if (name_ == "resnet50") {
+      ResNetModel(init_model, predict_model).Add(50);
+    } else if (name_ == "resnet101") {
+      ResNetModel(init_model, predict_model).Add(101);
+    } else if (name_ == "resnet152") {
+      ResNetModel(init_model, predict_model).Add(152);
     } else {
       std::cerr << "model " << name_ << " not implemented" << std::endl;
     }

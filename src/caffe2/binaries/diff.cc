@@ -26,18 +26,18 @@ void run() {
   }
 
   if (FLAGS_short) {
-    std::cout << NetUtil(init_model).Short();
     std::cout << NetUtil(predict_model).Short();
+    std::cout << NetUtil(init_model).Short();
   } else {
     google::protobuf::io::OstreamOutputStream stream(&std::cout);
-    google::protobuf::TextFormat::Print(init_model, &stream);
     google::protobuf::TextFormat::Print(predict_model, &stream);
+    google::protobuf::TextFormat::Print(init_model, &stream);
   }
 }
 
 }  // namespace caffe2
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
   google::protobuf::ShutdownProtobufLibrary();
