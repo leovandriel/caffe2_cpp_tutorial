@@ -667,7 +667,18 @@ OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
       output[i].dense_ = op.output(i) + gradient_suffix;
     }
     GradientOpsMeta meta = GetGradientForOp(op, output);
-    grad->CopyFrom(meta.ops_[0]);
+    if (meta.ops_.size()) {
+      if (meta.ops_.size() > 1) {
+        std::cout << "multiple gradients for operator (" << op.type();
+        for (auto& o : meta.ops_) {
+          std::cout << " " << o.type();
+        }
+        std::cout << ")" << std::endl;
+      }
+      grad->CopyFrom(meta.ops_[0]);
+    } else {
+      std::cerr << "no gradient for operator " << op.type() << std::endl;
+    }
   } else {
     grad->set_type(custom_gradient.at(op.type()));
     for (auto arg : op.arg()) {

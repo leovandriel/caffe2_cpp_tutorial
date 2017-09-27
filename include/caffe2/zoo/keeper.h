@@ -5,6 +5,7 @@
 #include "caffe2/zoo/alexnet.h"
 #include "caffe2/zoo/googlenet.h"
 #include "caffe2/zoo/resnet.h"
+#include "caffe2/zoo/squeezenet.h"
 #include "caffe2/zoo/vgg.h"
 
 #ifdef WITH_CURL
@@ -157,6 +158,8 @@ class Keeper {
       AlexNetModel(init_model, predict_model).Add();
     } else if (name_ == "googlenet") {
       GoogleNetModel(init_model, predict_model).Add();
+    } else if (name_ == "squeezenet") {
+      SqueezeNetModel(init_model, predict_model).Add();
     } else if (name_ == "vgg16") {
       VGGModel(init_model, predict_model).Add(16);
     } else if (name_ == "vgg19") {
