@@ -104,7 +104,7 @@ class ResNetModel : public ModelUtil {
   }
 
   void Add(int type, int out_size = 1000, bool train = false) {
-    predict.SetName("ResNet-" + std::to_string(type));
+    predict.SetName("ResNet" + std::to_string(type));
     auto input = "data";
 
     std::string layer = input;
