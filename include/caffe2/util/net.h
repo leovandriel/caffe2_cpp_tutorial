@@ -80,7 +80,9 @@ class NetUtil {
                            const std::string& output,
                            const std::string& order = "NCHW");
   OperatorDef* AddSpatialBNOp(const std::vector<std::string>& inputs,
-                              const std::string& output, float epsilon = 1e-5f,
+                              const std::vector<std::string>& outputs,
+                              float epsilon = 1e-5f, float momentum = 0.9,
+                              bool test = false,
                               const std::string& order = "NCHW");
   OperatorDef* AddMulOp(const std::vector<std::string>& inputs,
                         const std::string& output, int axis = 1,

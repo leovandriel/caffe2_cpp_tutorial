@@ -383,11 +383,13 @@ OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs,
 }
 
 OperatorDef* NetUtil::AddSpatialBNOp(const std::vector<std::string>& inputs,
-                                     const std::string& output, float epsilon,
+                                     const std::vector<std::string>& outputs,
+                                     float epsilon, float momentum, bool test,
                                      const std::string& order) {
-  auto op = AddOp("SpatialBN", inputs, {output});
-  net_add_arg(*op, "is_test", 1);  // TODO
+  auto op = AddOp("SpatialBN", inputs, outputs);
+  net_add_arg(*op, "is_test", test);  // TODO
   net_add_arg(*op, "epsilon", epsilon);
+  net_add_arg(*op, "momentum", momentum);
   net_add_arg(*op, "order", order);
   return op;
 }
