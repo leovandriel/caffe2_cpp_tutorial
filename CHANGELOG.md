@@ -3,6 +3,14 @@ Change Log
 
 ### master (untagged)
 
+### 0.0.4 (2017-10-03)
+
+* Add training from scratch
+* Add ResNet and SqueezeNet
+* Add window manager
+* Add plot demo
+* Add plots to examples
+
 ### 0.0.3 (2017-07-21)
 
 * Add RNN and LSTM tutorial
