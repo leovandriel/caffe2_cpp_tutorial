@@ -43,7 +43,7 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     Follow the Caffe2 installation instructions: [https://caffe2.ai/docs/getting-started.html](https://caffe2.ai/docs/getting-started.html)
 
-3. Build using Make
+3. Build using CMake
 
     This project uses CMake. However easiest way to just build the whole thing is:
 
@@ -51,14 +51,7 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     Internally it creates a `build` folder and runs CMake from there. This also downloads the resources that are required for running some of the tutorials.
 
-    If you wish to run CMake manually:
-
-        mkdir -p build
-        cd build
-        cmake ..
-        make
-        cd ..
-        ./script/download_resource.sh
+    Check out the [Build alternatives](#build-alternatives) section below if you wish to be more involved in the build process.
 
 Note: sources are developed and tested on macOS and Ubuntu.
 
@@ -225,3 +218,36 @@ The style of windows and colors are intentionally pale and pixelated to give a d
 ## Troubleshooting
 
 See [http://rpg.ifi.uzh.ch/docs/glog.html](http://rpg.ifi.uzh.ch/docs/glog.html) for more info on logging. Try running the tools and examples with `--logtostderr=1`, `--caffe2_log_level=1`, and `--v=1`.
+
+## Build alternatives
+
+The easiest way to build all sources is to run:
+
+    make
+
+To run these steps manually:
+
+    mkdir -p build
+    cd build
+    cmake ..
+    make
+    cd ..
+    ./script/download_resource.sh
+
+Compiling the tutorials and examples individually can be a little more involved. One way to get more understanding of what CMake does internally is by running:
+
+    cd build
+    make VERBOSE=1
+    cd ..
+
+The first three tutorials `intro`, `toy`, and `pretrained` can be compiled without CMake quite easily. For example `pretrained` on macOS:
+
+    c++ src/caffe2/binaries/pretrained.cc -o bin/pretrained -std=gnu++11 -Iinclude -I/usr/local/include/eigen3 -I/usr/local/include/opencv -lgflags -lglog -lprotobuf -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lCaffe2_CPU
+
+And `pretrained` on Ubuntu:
+
+    c++ src/caffe2/binaries/pretrained.cc -o bin/pretrained -std=gnu++11 -Iinclude -I/usr/include/eigen3 -I/usr/include/opencv -lgflags -lglog -lprotobuf -lopencv_core -lopencv_imgproc -lopencv_highgui -lCaffe2_CPU
+
+Other examples require the compilation of additional `.cc` files. Take a look at the verbose output of `cd build && make VERBOSE=1`.
+
+
