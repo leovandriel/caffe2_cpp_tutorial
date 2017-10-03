@@ -3,6 +3,7 @@
 #include "caffe2/util/blob.h"
 #include "caffe2/util/tensor.h"
 #include "caffe2/utils/proto_utils.h"
+#include "caffe2/util/window.h"
 #include "caffe2/zoo/keeper.h"
 
 #include <opencv2/highgui/highgui.hpp>
@@ -23,7 +24,8 @@ CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
-CAFFE2_DEFINE_bool(show_image, false, "show image while dreaming.");
+CAFFE2_DEFINE_bool(display, false,
+                   "Show image while dreaming.");
 
 #include "caffe2/util/cmd.h"
 
@@ -45,6 +47,10 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
   dream.AddDiagonalOp("mean", "diagonal", {0, FLAGS_channel});
   dream.AddAveragedLossOp("diagonal", "score");
   dream.AddConstantFillWithOp(1.f, "score", "score_grad");
+
+  if (FLAGS_display) {
+    NetUtil(dream).AddTimePlotOp("score");
+  }
 
   // add back prop
   dream.AddAllGradientOp();
@@ -99,10 +105,20 @@ void run() {
   std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "show_image: " << (FLAGS_show_image ? "true" : "false")
+  std::cout << "display: " << (FLAGS_display ? "true" : "false")
             << std::endl;
 
   std::cout << std::endl;
+
+  if (FLAGS_display) {
+    superWindow("Deep Dream Example");
+    moveWindow("dream-0", 0, 0);
+    resizeWindow("dream-0", FLAGS_size, FLAGS_size);
+    setWindowTitle("dream-0", (FLAGS_model + " " + FLAGS_layer + " " + std::to_string(FLAGS_channel)).c_str());
+    moveWindow("score", FLAGS_size, 0);
+    resizeWindow("score", FLAGS_size, FLAGS_size);
+    setWindowTitle("score", "score");
+  }
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
@@ -164,7 +180,7 @@ void run() {
 
   std::cout << "start size: " << image_size << std::endl;
 
-  if (FLAGS_show_image) {
+  if (FLAGS_display) {
     // show current images
     display_net->Run();
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
@@ -210,7 +226,7 @@ void run() {
               << "  size: " << image_size << std::endl;
 
     // show current images
-    if (FLAGS_show_image) {
+    if (FLAGS_display) {
       display_net->Run();
       auto image = BlobUtil(*workspace.GetBlob("image")).Get();
       TensorUtil(image).ShowImages("dream");
@@ -222,7 +238,7 @@ void run() {
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    TensorUtil(image).WriteImages("output/" + safe_layer + "_" +
+    TensorUtil(image).WriteImages("tmp/" + safe_layer + "_" +
                                   std::to_string(FLAGS_channel));
   }
 

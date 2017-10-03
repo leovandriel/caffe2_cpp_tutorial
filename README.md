@@ -201,9 +201,15 @@ The 139th channel in the `inception_4d/3x3` layer in GoogleNet:
 
     ./bin/dream --model googlenet --layer inception_4d/3x3_reduce --channel 139
 
+The resulting image will be written to `tmp/`. To visualize the process, add `--display`:
+
+    ./bin/dream --model googlenet --layer inception_4d/3x3_reduce --channel 139 --display
+
 Or if you have more (GPU) power at your disposal, the first channel in `conv3_1` layer in VGG16:
 
     ./bin/dream --model vgg16 --layer conv3_1
+
+<img src="script/dream.png" alt="Deep Dream" width="400"/>
 
 ## Plots
 
