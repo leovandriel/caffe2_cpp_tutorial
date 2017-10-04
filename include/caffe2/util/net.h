@@ -169,12 +169,19 @@ class NetUtil {
   void SetRenameInplace();
   void SetEngineOps(const std::string engine);
 
-  OperatorDef* AddGradientOp(OperatorDef& op);
+  OperatorDef* AddGradientOp(
+      OperatorDef& op,
+      std::map<std::string, std::pair<int, int>>& split_inputs);
+  OperatorDef* AddGradientOp(OperatorDef& op) {
+    std::map<std::string, std::pair<int, int>> split_inputs;
+    return AddGradientOp(op, split_inputs);
+  }
   void AddAllGradientOp();
 
   std::map<std::string, int> CollectParamSizes();
   std::vector<std::string> CollectParams();
-  std::vector<OperatorDef> CollectGradientOps();
+  std::vector<OperatorDef> CollectGradientOps(
+      std::map<std::string, std::pair<int, int>>& split_inputs);
   std::set<std::string> CollectLayers(const std::string& layer,
                                       bool forward = false);
 

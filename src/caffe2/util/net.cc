@@ -661,7 +661,8 @@ void NetUtil::SetEngineOps(const std::string engine) {
 
 // Gradient
 
-OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
+OperatorDef* NetUtil::AddGradientOp(
+    OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs) {
   auto grad = net.add_op();
   if (custom_gradient.find(op.type()) == custom_gradient.end()) {
     vector<GradientWrapper> output(op.output_size());
@@ -695,12 +696,28 @@ OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
     }
   }
   grad->set_is_gradient_op(true);
+  for (auto i = 0; i < grad->output_size(); i++) {
+    auto output = grad->output(i);
+    if (split_inputs.count(output)) {
+      split_inputs[output].first--;
+      grad->set_output(
+          i, output + "_sum_" + std::to_string(split_inputs[output].first));
+      if (split_inputs[output].first == 0) {
+        std::vector<std::string> inputs;
+        for (int i = 0; i < split_inputs[output].second; i++) {
+          inputs.push_back(output + "_sum_" + std::to_string(i));
+        }
+        AddSumOp(inputs, output);
+      }
+    }
+  }
   return grad;
 }
 
 void NetUtil::AddAllGradientOp() {
-  for (auto op : CollectGradientOps()) {
-    AddGradientOp(op);
+  std::map<std::string, std::pair<int, int>> split_inputs;
+  for (auto op : CollectGradientOps(split_inputs)) {
+    AddGradientOp(op, split_inputs);
   }
 }
 
@@ -740,14 +757,26 @@ std::vector<std::string> NetUtil::CollectParams() {
   return params;
 }
 
-std::vector<OperatorDef> NetUtil::CollectGradientOps() {
+std::vector<OperatorDef> NetUtil::CollectGradientOps(
+    std::map<std::string, std::pair<int, int>>& split_inputs) {
   std::set<std::string> external_inputs(net.external_input().begin(),
                                         net.external_input().end());
   std::vector<OperatorDef> gradient_ops;
+  std::map<std::string, int> input_count;
   for (auto& op : net.op()) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       gradient_ops.push_back(op);
       // std::cout << "type: " << op.type() << std::endl;
+      for (auto& input : op.input()) {
+        auto& output = op.output();
+        if (std::find(output.begin(), output.end(), input) == output.end()) {
+          input_count[input]++;
+          if (input_count[input] > 1) {
+            split_inputs[input + "_grad"] = {input_count[input],
+                                             input_count[input]};
+          }
+        }
+      }
     } else if (non_trainable_ops.find(op.type()) == non_trainable_ops.end()) {
       std::cout << "unknown backprop operator type: " << op.type() << std::endl;
     }
