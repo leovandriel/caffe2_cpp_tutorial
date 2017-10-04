@@ -209,12 +209,14 @@ void pre_process(const std::vector<std::pair<std::string, int>> &image_files,
     if (!in_db) {
       batch_files.push_back({filename, class_index});
     }
-    if (batch_files.size() == batch_size) {
+    if (image_count % 1000 == 0) {
       std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. "
                 << image_count << '/' << image_files.size() << " "
                 << std::setprecision(3)
                 << ((float)100 * image_count / image_files.size()) << "%"
                 << std::flush;
+    }
+    if (batch_files.size() == batch_size) {
       write_batch(workspace, predict_net ? predict_net.get() : NULL, input_name,
                   output_name, batch_files, database, size_to_fit);
       batch_files.clear();
