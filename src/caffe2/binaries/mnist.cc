@@ -309,8 +309,8 @@ void run() {
 
   // with open(os.path.join(root_folder, "deploy_net.pbtxt"), 'w') as fid:
   // fid.write(str(deploy_model.net.Proto()))
-  std::vector<string> external(initDeployModel.external_input().begin(),
-                               initDeployModel.external_input().end());
+  std::vector<string> external(predictDeployModel.external_input().begin(),
+                               predictDeployModel.external_input().end());
   for (auto &param : external) {
     auto tensor = GetTensor(*workspace.GetBlob(param));
     auto op = initDeployModel.add_op();
