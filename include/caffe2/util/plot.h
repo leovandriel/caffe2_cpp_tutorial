@@ -11,7 +11,7 @@ const int paleness = 32;
 
 class PlotUtil {
  public:
-  enum Type { Line, DotLine, Dots, Histogram };
+  enum Type { Line, DotLine, Dots, Histogram, Vistogram, Horizontal, Vertical };
 
   struct Color {
     int r, g, b;
@@ -57,7 +57,7 @@ class PlotUtil {
 
     void Append(const std::vector<float> &values) {
       std::vector<std::pair<float, float>> data(values.size());
-      auto i = data_.size();
+      auto i = 0;
       for (auto &d : data) {
         d.first = i;
         d.second = values[i++];
@@ -86,13 +86,21 @@ class PlotUtil {
       }
       Set(data, type, color);
     }
+    void Set(float key, float value, enum Type type, struct Color color) {
+      Set(std::vector<std::pair<float, float>>({{key, value}}), type, color);
+    }
+    void Set(float value, enum Type type, struct Color color) {
+      Set(std::vector<float>({value}), type, color);
+    }
 
     std::string &Label() { return label_; }
+    bool Collides() { return type_ == Histogram || type_ == Vistogram; }
 
     void Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
                 int &n_max, int &p_max);
     void Dot(void *b, int x, int y, int r);
-    void Draw(void *buffer, float xs, float xd, float ys, float yd,
+    void Draw(void *buffer, float x_min, float x_max, float y_min, float y_max,
+              float x_axis, float xs, float xd, float ys, float yd,
               float y_axis, int unit, float offset);
 
    protected:
