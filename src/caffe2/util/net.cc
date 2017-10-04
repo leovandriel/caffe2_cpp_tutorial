@@ -292,7 +292,8 @@ OperatorDef* NetUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
 
 OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
                                 const std::string& b, const std::string& output,
-                                int stride, int padding, int kernel) {
+                                int stride, int padding, int kernel,
+                                const std::string& order) {
   auto op = AddOp("Conv",
                   b.size() ? std::vector<std::string>({input, w, b})
                            : std::vector<std::string>({input, w}),
@@ -300,6 +301,7 @@ OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
   net_add_arg(*op, "stride", stride);
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
+  net_add_arg(*op, "order", order);
   return op;
 }
 

@@ -57,7 +57,8 @@ class NetUtil {
 
   OperatorDef* AddConvOp(const std::string& input, const std::string& w,
                          const std::string& b, const std::string& output,
-                         int stride, int padding, int kernel);
+                         int stride, int padding, int kernel,
+                         const std::string& order = "NCHW");
   OperatorDef* AddReluOp(const std::string& input, const std::string& output);
   OperatorDef* AddLrnOp(const std::string& input, const std::string& output,
                         int size, float alpha, float beta, float bias,

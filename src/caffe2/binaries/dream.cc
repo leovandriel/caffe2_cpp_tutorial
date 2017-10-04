@@ -1,9 +1,10 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/net.h>
 #include "caffe2/util/blob.h"
+#include "caffe2/util/plot.h"
 #include "caffe2/util/tensor.h"
-#include "caffe2/utils/proto_utils.h"
 #include "caffe2/util/window.h"
+#include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
 #include <opencv2/highgui/highgui.hpp>
@@ -15,7 +16,7 @@
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
                      "Name of the layer on which to split the model.");
-CAFFE2_DEFINE_int(channel, 0, "The first channel to run.");
+CAFFE2_DEFINE_int(channel, -1, "The first channel to run.");
 CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
 CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
@@ -24,8 +25,7 @@ CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
 CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
-CAFFE2_DEFINE_bool(display, false,
-                   "Show image while dreaming.");
+CAFFE2_DEFINE_bool(display, false, "Show image while dreaming.");
 
 #include "caffe2/util/cmd.h"
 
@@ -44,9 +44,13 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
 
   // add reduce mean as score
   dream.AddBackMeanOp(output, "mean", 2);
-  dream.AddDiagonalOp("mean", "diagonal", {0, FLAGS_channel});
-  dream.AddAveragedLossOp("diagonal", "score");
-  dream.AddConstantFillWithOp(1.f, "score", "score_grad");
+  if (FLAGS_channel >= 0) {
+    dream.AddDiagonalOp("mean", "diagonal", {0, FLAGS_channel});
+    dream.AddAveragedLossOp("diagonal", "score");
+  } else {
+    dream.AddAveragedLossOp("mean", "score");
+  }
+  dream.AddConstantFillWithOp(-1.f, "score", "score_grad");
 
   if (FLAGS_display) {
     NetUtil(dream).AddTimePlotOp("score");
@@ -105,18 +109,22 @@ void run() {
   std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
-  std::cout << "display: " << (FLAGS_display ? "true" : "false")
-            << std::endl;
+  std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
   std::cout << std::endl;
 
   if (FLAGS_display) {
+    auto size = std::max(400, FLAGS_size);
     superWindow("Deep Dream Example");
     moveWindow("dream-0", 0, 0);
-    resizeWindow("dream-0", FLAGS_size, FLAGS_size);
-    setWindowTitle("dream-0", (FLAGS_model + " " + FLAGS_layer + " " + std::to_string(FLAGS_channel)).c_str());
-    moveWindow("score", FLAGS_size, 0);
-    resizeWindow("score", FLAGS_size, FLAGS_size);
+    resizeWindow("dream-0", size, size);
+    setWindowTitle(
+        "dream-0",
+        (FLAGS_model + " " + FLAGS_layer + " " +
+         (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel) : "all"))
+            .c_str());
+    moveWindow("score", size, 0);
+    resizeWindow("score", size, size);
     setWindowTitle("score", "score");
   }
 
@@ -144,7 +152,9 @@ void run() {
   for (int i = 1; i < FLAGS_train_runs / FLAGS_scale_runs; i++) {
     image_size = image_size * 100 / (100 + FLAGS_percent_incr);
   }
-  CHECK(image_size > 10) << "train_runs too high or percent_incr too high";
+  if (image_size < 20) {
+    image_size = 20;
+  }
   AddNaive(init_model, dream_model, display_model, image_size);
 
   // set model to use CUDA
@@ -185,6 +195,11 @@ void run() {
     display_net->Run();
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     TensorUtil(image).ShowImages("dream");
+
+    auto &figure = PlotUtil::Shared("score");
+    figure.Get("rescale").Set(std::vector<float>(), PlotUtil::Vertical,
+                              PlotUtil::Gray());
+    figure.Show();
   }
 
   // run predictor
@@ -205,31 +220,37 @@ void run() {
         auto depth = BlobUtil(*workspace.GetBlob(FLAGS_layer)).Get().dim(1);
         std::cout << "channel depth: " << depth << std::endl;
 
-        // print(BlobUtil(*workspace.GetBlob(FLAGS_layer)).Get(), FLAGS_layer);
-        // print(BlobUtil(*workspace.GetBlob("mean")).Get(), "mean");
-        // print(BlobUtil(*workspace.GetBlob("diagonal")).Get(), "diagonal");
-        // print(BlobUtil(*workspace.GetBlob("score")).Get(), "score");
-        // print(BlobUtil(*workspace.GetBlob("score_grad")).Get(),
-        // "score_grad");
-        // print(BlobUtil(*workspace.GetBlob("diagonal_grad")).Get(),
-        // "diagonal_grad");
-        // print(BlobUtil(*workspace.GetBlob("mean_grad")).Get(), "mean_grad");
-        // print(BlobUtil(*workspace.GetBlob(FLAGS_layer +.Get() "_grad")),
-        // FLAGS_layer + "_grad");
-        // print(BlobUtil(*workspace.GetBlob("data_grad")).Get(), "data_grad");
-        // print(BlobUtil(*workspace.GetBlob("data")).Get(), "data");
+        // BlobUtil(*workspace.GetBlob(FLAGS_layer)).Print(FLAGS_layer, 6000);
+        // BlobUtil(*workspace.GetBlob("mean")).Print("mean", 6000);
+        // BlobUtil(*workspace.GetBlob("diagonal")).Print("diagonal", 6000);
+        // BlobUtil(*workspace.GetBlob("score")).Print("score", 6000);
+        // BlobUtil(*workspace.GetBlob("score_grad")).Print("score_grad", 6000);
+        // BlobUtil(*workspace.GetBlob("diagonal_grad"))
+        //     .Print("diagonal_grad", 6000);
+        // BlobUtil(*workspace.GetBlob("mean_grad")).Print("mean_grad", 6000);
+        // BlobUtil(*workspace.GetBlob(FLAGS_layer + "_grad"))
+        //     .Print(FLAGS_layer + "_grad", 6000);
+        // BlobUtil(*workspace.GetBlob("data_grad")).Print("data_grad", 6000);
+        // BlobUtil(*workspace.GetBlob("data")).Print("data", 6000);
+      }
+
+      if (step % 10 == 0) {
+        auto score = BlobUtil(*workspace.GetBlob("score")).Get().data<float>()[0];
+        std::cout << "step: " << step << "  score: " << score
+                  << "  size: " << image_size << std::endl;
+
+        // show current images
+        if (FLAGS_display) {
+          display_net->Run();
+          auto image = BlobUtil(*workspace.GetBlob("image")).Get();
+          TensorUtil(image).ShowImages("dream");
+        }
       }
     }
-
-    auto score = BlobUtil(*workspace.GetBlob("score")).Get().data<float>()[0];
-    std::cout << "step: " << step << "  score: " << score
-              << "  size: " << image_size << std::endl;
-
-    // show current images
     if (FLAGS_display) {
-      display_net->Run();
-      auto image = BlobUtil(*workspace.GetBlob("image")).Get();
-      TensorUtil(image).ShowImages("dream");
+      auto &figure = PlotUtil::Shared("score");
+      figure.Get("rescale").Append(step);
+      figure.Show();
     }
   }
 
@@ -238,8 +259,9 @@ void run() {
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    TensorUtil(image).WriteImages("tmp/" + safe_layer + "_" +
-                                  std::to_string(FLAGS_channel));
+    TensorUtil(image).WriteImages(
+        "tmp/" + safe_layer + "_" +
+        (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel) : "all"));
   }
 
   std::cout << std::endl;

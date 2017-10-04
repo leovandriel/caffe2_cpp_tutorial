@@ -3,8 +3,7 @@
 namespace caffe2 {
 
 template <typename C>
-void get_back_mean_tensor(const Tensor<C>& tensor, Tensor<C>& mean,
-                          int count = 1) {
+void get_back_mean_tensor(const Tensor<C>& tensor, Tensor<C>& mean, int count) {
   auto dims = tensor.dims();
   auto size = 1;
   while (count--) {
@@ -26,8 +25,7 @@ void get_back_mean_tensor(const Tensor<C>& tensor, Tensor<C>& mean,
 }
 
 template <typename C>
-void set_back_mean_tensor(Tensor<C>& tensor, const Tensor<C>& mean,
-                          int count = 1) {
+void set_back_mean_tensor(Tensor<C>& tensor, const Tensor<C>& mean, int count) {
   auto dims = tensor.dims();
   auto size = 1;
   while (count--) {
@@ -39,8 +37,9 @@ void set_back_mean_tensor(Tensor<C>& tensor, const Tensor<C>& mean,
   auto mean_end = mean_data + mean.size();
   for (auto e = data + tensor.size(); data != e && mean_data != mean_end;
        mean_data++) {
+    auto d = *mean_data / size;
     for (auto g = data + size; data != g; data++) {
-      *data = *mean_data / size;
+      *data = d;
     }
   }
 }
