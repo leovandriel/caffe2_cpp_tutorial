@@ -73,23 +73,32 @@ PlotUtil::Color::Color(float hue) {
 void Series::Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
                     int &n_max, int &p_max) {
   for (auto &d : data_) {
-    if (x_min > d.first) {
-      x_min = d.first;
+    auto x = d.first, y = d.second;
+    if (type_ == Vertical || type_ == Vistogram) {
+      x = d.second;
+      y = d.first;
     }
-    if (x_max < d.first) {
-      x_max = d.first;
+    if (type_ != Horizontal) {
+      if (x_min > x) {
+        x_min = x;
+      }
+      if (x_max < x) {
+        x_max = x;
+      }
     }
-    if (y_min > d.second) {
-      y_min = d.second;
-    }
-    if (y_max < d.second) {
-      y_max = d.second;
+    if (type_ != Vertical) {
+      if (y_min > y) {
+        y_min = y;
+      }
+      if (y_max < y) {
+        y_max = y;
+      }
     }
   }
   if (n_max < data_.size()) {
     n_max = data_.size();
   }
-  if (type_ == Histogram) {
+  if (type_ == Histogram || type_ == Vistogram) {
     p_max = std::max(30, p_max);
   }
 }
@@ -99,8 +108,9 @@ void Series::Dot(void *b, int x, int y, int r) {
   cv::circle(buffer, {x, y}, r, color2scalar(color_), -1, CV_AA);
 }
 
-void Series::Draw(void *b, float xs, float xd, float ys, float yd, float y_axis,
-                  int unit, float offset) {
+void Series::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
+                  float xs, float xd, float ys, float yd, float x_axis,
+                  float y_axis, int unit, float offset) {
   auto &buffer = *(cv::Mat *)b;
   auto color = color2scalar(color_);
   switch (type_) {
@@ -124,16 +134,40 @@ void Series::Draw(void *b, float xs, float xd, float ys, float yd, float y_axis,
         last = &d;
       }
     } break;
+    case Vistogram:
     case Histogram: {
       auto u = 2 * unit;
       auto o = (int)(2 * u * offset);
       for (auto &d : data_) {
-        cv::rectangle(
-            buffer, {(int)(d.first * xs + xd) - u + o, (int)(y_axis * ys + yd)},
-            {(int)(d.first * xs + xd) + u + o, (int)(d.second * ys + yd)},
-            color, -1, CV_AA);
+        if (type_ == Histogram) {
+          cv::rectangle(
+              buffer,
+              {(int)(d.first * xs + xd) - u + o, (int)(y_axis * ys + yd)},
+              {(int)(d.first * xs + xd) + u + o, (int)(d.second * ys + yd)},
+              color, -1, CV_AA);
+        } else if (type_ == Vistogram) {
+          cv::rectangle(
+              buffer,
+              {(int)(x_axis * xs + xd), (int)(d.first * ys + yd) - u + o},
+              {(int)(d.second * xs + xd), (int)(d.first * ys + yd) + u + o},
+              color, -1, CV_AA);
+        }
       }
 
+    } break;
+    case Horizontal:
+    case Vertical: {
+      for (auto &d : data_) {
+        if (type_ == Horizontal) {
+          cv::line(buffer, {(int)(x_min * xs + xd), (int)(d.second * ys + yd)},
+                   {(int)(x_max * xs + xd), (int)(d.second * ys + yd)}, color,
+                   1, CV_AA);
+        } else if (type_ == Vertical) {
+          cv::line(buffer, {(int)(d.second * xs + xd), (int)(y_min * ys + yd)},
+                   {(int)(d.second * xs + xd), (int)(y_max * ys + yd)}, color,
+                   1, CV_AA);
+        }
+      }
     } break;
   }
 }
@@ -239,11 +273,19 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
            color2scalar(text_color_), 1, CV_AA);
 
   // draw plot
-  auto index = std::max((int)series_.size() - 1, 1);
+  auto index = 0;
+  for (auto &s : series_) {
+    if (s.Collides()) {
+      index++;
+    }
+  }
+  std::max((int)series_.size() - 1, 1);
   for (auto s = series_.rbegin(); s != series_.rend(); ++s) {
-    index--;
-    s->Draw(&buffer, xs, xd, ys, yd, y_axis, unit,
-            (float)index / series_.size());
+    if (s->Collides()) {
+      index--;
+    }
+    s->Draw(&buffer, x_min, x_max, y_min, y_max, xs, xd, ys, yd, x_axis, y_axis,
+            unit, (float)index / series_.size());
   }
 
   // draw label names
@@ -255,9 +297,11 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
         getTextSize(name, cv::FONT_HERSHEY_SIMPLEX, 0.4, 1.0, &baseline);
     cv::Point org(buffer.cols - border_size_ - size.width - 17,
                   border_size_ + 15 * index + 15);
-    cv::putText(buffer, name.c_str(), {org.x + 1, org.y + 1},
+    auto shadow = true;
+    cv::putText(buffer, name.c_str(),
+                {org.x + (shadow ? 1 : 0), org.y + (shadow ? 1 : 0)},
                 cv::FONT_HERSHEY_SIMPLEX, 0.4, color2scalar(background_color_),
-                1.0);
+                (shadow ? 1.0 : 2.0));
     cv::putText(buffer, name.c_str(), org, cv::FONT_HERSHEY_SIMPLEX, 0.4,
                 color2scalar(text_color_), 1.0);
     cv::circle(buffer, {buffer.cols - border_size_ - 10 + 1, org.y - 3 + 1}, 3,

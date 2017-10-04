@@ -41,6 +41,9 @@ void run() {
       values.push_back(sin(i / 1.5f) * 5);
     }
     figure.Get("sine").Set(values, PlotUtil::DotLine, PlotUtil::Blue());
+    values.clear();
+    values.push_back(15);
+    figure.Get("threshold").Set(values, PlotUtil::Horizontal, PlotUtil::Red());
     figure.Show();
   }
 
@@ -100,14 +103,16 @@ void run() {
   }
 
   {
-    auto name = "non zero";
-    setWindowTitle(name, "non-zero axis");
+    auto name = "no-axis";
+    setWindowTitle(name, "hidden axis");
     moveWindow(name, 600, 600);
     resizeWindow(name, 300, 300);
     auto &figure = PlotUtil::Shared(name);
     figure.Origin(false, false);
     figure.Get("histogram")
-        .Set({4.f, 5.f, 7.f}, PlotUtil::Histogram, PlotUtil::Blue());
+        .Set({4.f, 5.f, 7.f, 6.f}, PlotUtil::Vistogram, PlotUtil::Blue());
+    figure.Get("min").Set(4.f, PlotUtil::Vertical, PlotUtil::Pink());
+    figure.Get("max").Set(7.f, PlotUtil::Vertical, PlotUtil::Purple());
     figure.Show();
   }
 
