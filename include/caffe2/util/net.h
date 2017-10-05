@@ -113,6 +113,9 @@ class NetUtil {
   OperatorDef* AddDiagonalOp(const std::string& input,
                              const std::string& diagonal,
                              const std::vector<int>& offset);
+  OperatorDef* AddSquaredL2Op(const std::string& input, const std::string& l2);
+  OperatorDef* AddSquaredL2ChannelOp(const std::string& input,
+                                     const std::string& l2, int channel);
   OperatorDef* AddBackMeanOp(const std::string& input, const std::string& mean,
                              int count = 1);
   OperatorDef* AddMeanStdevOp(const std::string& input, const std::string& mean,

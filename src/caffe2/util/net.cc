@@ -10,17 +10,30 @@
 namespace caffe2 {
 
 const std::set<std::string> trainable_ops({
-    "Add",          "AffineScale",
-    "AveragedLoss", "AveragePool",
-    "BackMean",     "Concat",
-    "Conv",         "Diagonal",
-    "Dropout",      "EnsureCPUOutput",
-    "FC",           "LabelCrossEntropy",
-    "LRN",          "MaxPool",
-    "Mul",          "RecurrentNetwork",
-    "Relu",         "Reshape",
-    "Slice",        "Softmax",
-    "SpatialBN",    "Sum",
+    "Add",
+    "AffineScale",
+    "AveragedLoss",
+    "AveragePool",
+    "BackMean",
+    "Concat",
+    "Conv",
+    "Diagonal",
+    "Dropout",
+    "EnsureCPUOutput",
+    "FC",
+    "LabelCrossEntropy",
+    "LRN",
+    "MaxPool",
+    "Mul",
+    "RecurrentNetwork",
+    "Relu",
+    "Reshape",
+    "Slice",
+    "Softmax",
+    "SpatialBN",
+    "SquaredL2",
+    "SquaredL2Channel",
+    "Sum",
 });
 
 const std::set<std::string> non_trainable_ops({
@@ -463,6 +476,19 @@ OperatorDef* NetUtil::AddBackMeanOp(const std::string& input,
                                     const std::string& mean, int count) {
   auto op = AddOp("BackMean", {input}, {mean});
   net_add_arg(*op, "count", count);
+  return op;
+}
+
+OperatorDef* NetUtil::AddSquaredL2Op(const std::string& input,
+                                     const std::string& l2) {
+  return AddOp("SquaredL2", {input}, {l2});
+}
+
+OperatorDef* NetUtil::AddSquaredL2ChannelOp(const std::string& input,
+                                            const std::string& l2,
+                                            int channel) {
+  auto op = AddOp("SquaredL2Channel", {input}, {l2});
+  net_add_arg(*op, "channel", channel);
   return op;
 }
 
