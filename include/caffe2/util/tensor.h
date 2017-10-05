@@ -13,7 +13,7 @@ class TensorUtil {
   void ShowImage(const std::string& title, int index, float scale = 1.0,
                  float mean = 128);
   void WriteImages(const std::string& name, float mean = 128,
-                   bool lossy = false);
+                   bool lossy = false, int index = 0);
   void WriteImage(const std::string& name, int index, float mean = 128,
                   bool lossy = false);
   TensorCPU ScaleImageTensor(int width, int height);

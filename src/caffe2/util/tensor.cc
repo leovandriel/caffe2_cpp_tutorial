@@ -14,10 +14,10 @@ const auto window_padding = 4;
 template <typename T>
 cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
                  float mean, int type) {
-  CHECK(tensor.ndim() == 4);
+  CAFFE_ENFORCE_EQ(tensor.ndim(), 4);
   auto count = tensor.dim(0), depth = tensor.dim(1), height = tensor.dim(2),
        width = tensor.dim(3);
-  CHECK(index < count);
+  CAFFE_ENFORCE_LT(index, count);
   auto data = tensor.data<T>() + (index * width * height * depth);
   vector<cv::Mat> channels(depth);
   for (auto &j : channels) {
@@ -61,10 +61,12 @@ void TensorUtil::ShowImages(const std::string &name, float scale, float mean) {
   }
 }
 
-void TensorUtil::WriteImages(const std::string &name, float mean, bool lossy) {
+void TensorUtil::WriteImages(const std::string &name, float mean, bool lossy,
+                             int index) {
   auto count = tensor_.dim(0);
   for (int i = 0; i < count; i++) {
-    WriteImage(name + "_" + std::to_string(i), i, mean, lossy);
+    auto suffix = index >= 0 ? "_" + std::to_string(i + index) : "";
+    WriteImage(name + suffix, i, mean, lossy);
   }
 }
 
@@ -73,7 +75,8 @@ void TensorUtil::WriteImage(const std::string &name, int index, float mean,
   auto image = to_image(tensor_, index, 1.0, mean);
   auto filename = name + (lossy ? ".jpg" : ".png");
   vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
-  CHECK(cv::imwrite(filename, image, params));
+  CAFFE_ENFORCE(cv::imwrite(filename, image, params),
+                "unable to write to " + filename);
 }
 
 TensorCPU TensorUtil::ScaleImageTensor(int width, int height) {
@@ -166,9 +169,9 @@ void read_image_tensor(TensorCPU &tensor,
     // (T *)image.dataend) << ", " << *std::max_element((T *)image.datastart, (T
     // *)image.dataend) << ")" << std::endl;
 
-    CHECK(image.channels() == 3);
-    CHECK(image.rows == size);
-    CHECK(image.cols == size);
+    CAFFE_ENFORCE_EQ(image.channels(), 3);
+    CAFFE_ENFORCE_EQ(image.rows, size);
+    CAFFE_ENFORCE_EQ(image.cols, size);
 
     // convert NHWC to NCHW
     vector<cv::Mat> channels(3);

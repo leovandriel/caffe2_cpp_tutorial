@@ -257,8 +257,9 @@ void run() {
   // >>> text_block_sizes[self.batch_size - 1] += N % self.batch_size
   text_block_sizes[FLAGS_batch_size - 1] += N % FLAGS_batch_size;
   // >>> assert sum(text_block_sizes) == N
-  CHECK(std::accumulate(text_block_sizes.begin(), text_block_sizes.end(), 0,
-                        std::plus<int>()) == N);
+  CAFFE_ENFORCE_EQ(std::accumulate(text_block_sizes.begin(),
+                                   text_block_sizes.end(), 0, std::plus<int>()),
+                   N);
 
   // >>> workspace.FeedBlob(self.hidden_output, np.zeros([1, self.batch_size,
   // self.hidden_size], dtype=np.float32))
