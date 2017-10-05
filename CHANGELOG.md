@@ -3,6 +3,12 @@ Change Log
 
 ### master (untagged)
 
+### 0.0.5 (2017-10-05)
+
+* Add image dream
+* Fix dream loss
+* Fix add gradient for GoogleNet
+
 ### 0.0.4 (2017-10-03)
 
 * Add training from scratch
