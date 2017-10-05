@@ -66,6 +66,8 @@ Make sure to first run `make`. Then run the intro tutorial:
 
 This should output some numbers, including a `loss` of about `2.2`.
 
+<img src="script/intro.jpg" alt="Intro Tutorial" width="284"/>
+
 ## Toy Regression
 
 One of the most basic machine learning tasks is linear regression (LR). The [Toy Regression](https://caffe2.ai/docs/tutorial-toy-regression.html) tutorial shows how to get accurate results with a two-parameter model. This tutorial is transcribed in [toy.cc](src/caffe2/binaries/toy.cc)
@@ -75,6 +77,8 @@ Run the toy regression model:
 	./bin/toy
 
 This performs 100 steps of training, which should result in `W after` approximating `W ground truth`.
+
+<img src="script/toy.jpg" alt="Toy Regression" width="184"/>
 
 ## Loading Pre-Trained Models
 
@@ -86,7 +90,11 @@ To run:
 
     ./bin/pretrained
 
-This should output something along the lines of `96% 'daisy'`. To classify `giraffe.jpg`:
+This should output something along the lines of `96% 'daisy'`.
+
+<img src="script/pretrained.jpg" alt="Pre-Trained Models" width="227"/>
+
+To classify `giraffe.jpg`:
 
     ./bin/pretrained --image_file giraffe.jpg
 
@@ -110,7 +118,7 @@ To see the training in action, run with `--display`:
 
     ./bin/mnist --display
 
-<img src="script/mnist.png" alt="MNIST" width="300"/>
+<img src="script/mnist.jpg" alt="MNIST" width="300"/>
 
 ## RNNs and LSTM Networks
 
@@ -149,6 +157,8 @@ Where the model name is one of the following:
 * `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
 * `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 * `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
+
+<img src="script/imagenet.jpg" alt="ImageNet Classifiers" width="313"/>
 
 The pre-trained weights for these models are automatically downloaded and stored in the `res/` folder. If you wish to download all models in one go, run:
 
@@ -205,11 +215,18 @@ The resulting image will be written to `tmp/`. To visualize the process, add `--
 
     ./bin/dream --model googlenet --layer inception_4d/3x3_reduce --channel 139 --display
 
-Or if you have more (GPU) power at your disposal, the first channel in `conv3_1` layer in VGG16:
+<img src="script/dream.jpg" alt="Deep Dream" width="400"/>
 
-    ./bin/dream --model vgg16 --layer conv3_1
+Multiple channels can be rendered in parallel by increasing the batch size:
 
-<img src="script/dream.png" alt="Deep Dream" width="400"/>
+    ./bin/dream --model googlenet --layer inception_4d/3x3_reduce --channel 133 --display --batch 11
+
+<img src="script/dream2.jpg" alt="Deep Dream" width="538"/>
+
+If you have more (GPU) power at your disposal, the first channel in `conv3_1` layer in VGG16:
+
+    ./bin/dream --model vgg16 --layer conv3_1 --channel 0
+
 
 ## Plots
 
@@ -217,7 +234,7 @@ Some of the examples have a `--display` option, which will show an OpenCV window
 
     ./bin/plot
 
-<img src="script/plot.png" alt="Plot Examples" width="450"/>
+<img src="script/plot.jpg" alt="Plot Examples" width="450"/>
 
 The style of windows and colors are intentionally pale and pixelated to give a dated feel to the whole thing.
 
