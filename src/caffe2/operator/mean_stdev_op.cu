@@ -1,11 +1,12 @@
-#include <caffe2/operator/mean_stdev_op.h>
 #include <caffe2/core/context_gpu.h>
+#include <caffe2/operator/mean_stdev_op.h>
 
 namespace caffe2 {
 
 namespace {
 
-__global__ void MeanStdevKernel(const int N, const int C, const float D, const float* X, float* M, float* S) {
+__global__ void MeanStdevKernel(const int N, const int C, const float D,
+                                const float* X, float* M, float* S) {
   CUDA_1D_KERNEL_LOOP(i, N) {
     float sum = 0;
     for (int j = i * C, e = j + C; j != e; j++) {
@@ -32,8 +33,10 @@ bool MeanStdevOp<float, CUDAContext>::RunOnDevice() {
   S->Resize(X.dim(0));
   if (X.size() > 0) {
     auto size = X.size() / X.dim(0);
-    MeanStdevKernel<<<CAFFE_GET_BLOCKS(M->size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-      M->size(), size, (float)size, X.data<float>(), M->mutable_data<float>(), S->mutable_data<float>());
+    MeanStdevKernel<<<CAFFE_GET_BLOCKS(M->size()), CAFFE_CUDA_NUM_THREADS, 0,
+                      context_.cuda_stream()>>>(
+        M->size(), size, (float)size, X.data<float>(), M->mutable_data<float>(),
+        S->mutable_data<float>());
   }
 
   return true;

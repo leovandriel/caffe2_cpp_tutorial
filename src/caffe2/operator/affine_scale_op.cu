@@ -1,20 +1,19 @@
-#include <caffe2/operator/affine_scale_op.h>
 #include <caffe2/core/context_gpu.h>
+#include <caffe2/operator/affine_scale_op.h>
 
 namespace caffe2 {
 
 namespace {
 
-__global__ void AffineScaleKernel(const int N, const int C, const float* X, const float* M, const float* S, float* Y) {
-  CUDA_1D_KERNEL_LOOP(i, N) {
-    Y[i] = X[i] * S[i / C] + M[i / C];
-  }
+__global__ void AffineScaleKernel(const int N, const int C, const float* X,
+                                  const float* M, const float* S, float* Y) {
+  CUDA_1D_KERNEL_LOOP(i, N) { Y[i] = X[i] * S[i / C] + M[i / C]; }
 }
 
-__global__ void AffineScaleInverseKernel(const int N, const int C, const float* X, const float* M, const float* S, float* Y) {
-  CUDA_1D_KERNEL_LOOP(i, N) {
-    Y[i] = (X[i] - M[i / C]) / (S[i / C] + 1e-8);
-  }
+__global__ void AffineScaleInverseKernel(const int N, const int C,
+                                         const float* X, const float* M,
+                                         const float* S, float* Y) {
+  CUDA_1D_KERNEL_LOOP(i, N) { Y[i] = (X[i] - M[i / C]) / (S[i / C] + 1e-8); }
 }
 
 }  // namespace
@@ -31,11 +30,16 @@ bool AffineScaleOp<float, CUDAContext>::RunOnDevice() {
   if (X.size() > 0) {
     auto size = X.size() / X.dim(0);
     if (inverse_) {
-      AffineScaleInverseKernel<<<CAFFE_GET_BLOCKS(X.size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-        X.size(), size, X.data<float>(), M.data<float>(), S.data<float>(), Y->mutable_data<float>());
+      AffineScaleInverseKernel<<<CAFFE_GET_BLOCKS(X.size()),
+                                 CAFFE_CUDA_NUM_THREADS, 0,
+                                 context_.cuda_stream()>>>(
+          X.size(), size, X.data<float>(), M.data<float>(), S.data<float>(),
+          Y->mutable_data<float>());
     } else {
-      AffineScaleKernel<<<CAFFE_GET_BLOCKS(X.size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-        X.size(), size, X.data<float>(), M.data<float>(), S.data<float>(), Y->mutable_data<float>());
+      AffineScaleKernel<<<CAFFE_GET_BLOCKS(X.size()), CAFFE_CUDA_NUM_THREADS, 0,
+                          context_.cuda_stream()>>>(
+          X.size(), size, X.data<float>(), M.data<float>(), S.data<float>(),
+          Y->mutable_data<float>());
     }
   }
   return true;
@@ -43,16 +47,16 @@ bool AffineScaleOp<float, CUDAContext>::RunOnDevice() {
 
 namespace {
 
-__global__ void AffineScaleGradientKernel(const int N, const int C, const float* dY, const float* S, float* dX) {
-  CUDA_1D_KERNEL_LOOP(i, N) {
-    dX[i] = dY[i] * S[i / C];
-  }
+__global__ void AffineScaleGradientKernel(const int N, const int C,
+                                          const float* dY, const float* S,
+                                          float* dX) {
+  CUDA_1D_KERNEL_LOOP(i, N) { dX[i] = dY[i] * S[i / C]; }
 }
 
-__global__ void AffineScaleInverseGradientKernel(const int N, const int C, const float* dY, const float* S, float* dX) {
-  CUDA_1D_KERNEL_LOOP(i, N) {
-    dX[i] = dY[i] / (S[i / C] + 1e-8);
-  }
+__global__ void AffineScaleInverseGradientKernel(const int N, const int C,
+                                                 const float* dY,
+                                                 const float* S, float* dX) {
+  CUDA_1D_KERNEL_LOOP(i, N) { dX[i] = dY[i] / (S[i / C] + 1e-8); }
 }
 
 }  // namespace
@@ -69,17 +73,24 @@ bool AffineScaleGradientOp<float, CUDAContext>::RunOnDevice() {
   if (X.size() > 0) {
     auto size = X.size() / X.dim(0);
     if (inverse_) {
-      AffineScaleInverseGradientKernel<<<CAFFE_GET_BLOCKS(dY.size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-        dY.size(), size, dY.data<float>(), S.data<float>(), dX->mutable_data<float>());
+      AffineScaleInverseGradientKernel<<<CAFFE_GET_BLOCKS(dY.size()),
+                                         CAFFE_CUDA_NUM_THREADS, 0,
+                                         context_.cuda_stream()>>>(
+          dY.size(), size, dY.data<float>(), S.data<float>(),
+          dX->mutable_data<float>());
     } else {
-      AffineScaleGradientKernel<<<CAFFE_GET_BLOCKS(dY.size()), CAFFE_CUDA_NUM_THREADS, 0, context_.cuda_stream()>>>(
-        dY.size(), size, dY.data<float>(), S.data<float>(), dX->mutable_data<float>());
+      AffineScaleGradientKernel<<<CAFFE_GET_BLOCKS(dY.size()),
+                                  CAFFE_CUDA_NUM_THREADS, 0,
+                                  context_.cuda_stream()>>>(
+          dY.size(), size, dY.data<float>(), S.data<float>(),
+          dX->mutable_data<float>());
     }
   }
   return true;
 }
 
 REGISTER_CUDA_OPERATOR(AffineScale, AffineScaleOp<float, CUDAContext>);
-REGISTER_CUDA_OPERATOR(AffineScaleGradient, AffineScaleGradientOp<float, CUDAContext>);
+REGISTER_CUDA_OPERATOR(AffineScaleGradient,
+                       AffineScaleGradientOp<float, CUDAContext>);
 
 }  // namespace caffe2
