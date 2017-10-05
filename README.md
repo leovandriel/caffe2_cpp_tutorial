@@ -217,6 +217,8 @@ The resulting image will be written to `tmp/`. To visualize the process, add `--
 
 <img src="script/dream.jpg" alt="Deep Dream" width="400"/>
 
+NB: these images differ from the ones presented in Google's article.
+
 Multiple channels can be rendered in parallel by increasing the batch size:
 
     ./bin/dream --model googlenet --layer inception_4d/3x3_reduce --channel 133 --display --batch 11
@@ -227,6 +229,11 @@ If you have more (GPU) power at your disposal, the first channel in `conv3_1` la
 
     ./bin/dream --model vgg16 --layer conv3_1 --channel 0
 
+See also:
+
+- [Pre-rendered Inception](http://storage.googleapis.com/deepdream/visualz/tensorflow_inception/index.html)
+- [Pre-rendered VGG16](http://storage.googleapis.com/deepdream/visualz/vgg16/index.html)
+- [Deep Dreams (with Caffe)](https://github.com/google/deepdream/blob/master/dream.ipynb)
 
 ## Plots
 
