@@ -42,18 +42,16 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
   init.AddUniformFillOp({FLAGS_batch, 3, size, size}, FLAGS_initial,
                         FLAGS_initial + 1, input);
 
-  // add reduce mean as score
-  dream.AddBackMeanOp(output, "mean", 2);
+  // add squared l2 distance to zero as loss
   if (FLAGS_channel >= 0) {
-    dream.AddDiagonalOp("mean", "diagonal", {0, FLAGS_channel});
-    dream.AddAveragedLossOp("diagonal", "score");
+    dream.AddSquaredL2ChannelOp(output, "loss", FLAGS_channel);
   } else {
-    dream.AddAveragedLossOp("mean", "score");
+    dream.AddSquaredL2Op(output, "loss");
   }
-  dream.AddConstantFillWithOp(-1.f, "score", "score_grad");
+  dream.AddConstantFillWithOp(1.f, "loss", "loss_grad");
 
   if (FLAGS_display) {
-    NetUtil(dream).AddTimePlotOp("score");
+    NetUtil(dream).AddTimePlotOp("loss");
   }
 
   // add back prop
@@ -114,18 +112,27 @@ void run() {
   std::cout << std::endl;
 
   if (FLAGS_display) {
-    auto size = std::max(400, FLAGS_size);
+    auto size =
+        std::min(std::max(400, FLAGS_size), (int)sqrt(800000 / FLAGS_batch));
     superWindow("Deep Dream Example");
-    moveWindow("dream-0", 0, 0);
-    resizeWindow("dream-0", size, size);
-    setWindowTitle(
-        "dream-0",
-        (FLAGS_model + " " + FLAGS_layer + " " +
-         (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel) : "all"))
-            .c_str());
-    moveWindow("score", size, 0);
-    resizeWindow("score", size, size);
-    setWindowTitle("score", "score");
+    moveWindow("loss", 0, 0);
+    resizeWindow("loss", size, size);
+    setWindowTitle("loss", "loss");
+    int x_offset = 1, y_offset = 0;
+    for (int i = 0; i < FLAGS_batch; i++) {
+      auto name = ("dream-" + std::to_string(i)).c_str();
+      moveWindow(name, x_offset * size, y_offset * size);
+      resizeWindow(name, size, size);
+      setWindowTitle(
+          name,
+          (FLAGS_layer + " " +
+           (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel + i) : "all"))
+              .c_str());
+      if (++x_offset > 1000 / size) {
+        x_offset = 0;
+        y_offset++;
+      }
+    }
   }
 
   std::cout << "loading model.." << std::endl;
@@ -196,7 +203,7 @@ void run() {
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     TensorUtil(image).ShowImages("dream");
 
-    auto &figure = PlotUtil::Shared("score");
+    auto &figure = PlotUtil::Shared("loss");
     figure.Get("rescale").Set(std::vector<float>(), PlotUtil::Vertical,
                               PlotUtil::Gray());
     figure.Show();
@@ -223,8 +230,8 @@ void run() {
         // BlobUtil(*workspace.GetBlob(FLAGS_layer)).Print(FLAGS_layer, 6000);
         // BlobUtil(*workspace.GetBlob("mean")).Print("mean", 6000);
         // BlobUtil(*workspace.GetBlob("diagonal")).Print("diagonal", 6000);
-        // BlobUtil(*workspace.GetBlob("score")).Print("score", 6000);
-        // BlobUtil(*workspace.GetBlob("score_grad")).Print("score_grad", 6000);
+        // BlobUtil(*workspace.GetBlob("loss")).Print("loss", 6000);
+        // BlobUtil(*workspace.GetBlob("loss_grad")).Print("loss_grad", 6000);
         // BlobUtil(*workspace.GetBlob("diagonal_grad"))
         //     .Print("diagonal_grad", 6000);
         // BlobUtil(*workspace.GetBlob("mean_grad")).Print("mean_grad", 6000);
@@ -235,8 +242,8 @@ void run() {
       }
 
       if (step % 10 == 0) {
-        auto score = BlobUtil(*workspace.GetBlob("score")).Get().data<float>()[0];
-        std::cout << "step: " << step << "  score: " << score
+        auto loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
+        std::cout << "step: " << step << "  loss: " << loss
                   << "  size: " << image_size << std::endl;
 
         // show current images
@@ -248,7 +255,7 @@ void run() {
       }
     }
     if (FLAGS_display) {
-      auto &figure = PlotUtil::Shared("score");
+      auto &figure = PlotUtil::Shared("loss");
       figure.Get("rescale").Append(step);
       figure.Show();
     }
@@ -259,9 +266,9 @@ void run() {
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');
-    TensorUtil(image).WriteImages(
-        "tmp/" + safe_layer + "_" +
-        (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel) : "all"));
+    auto suffix = (FLAGS_channel < 0 ? "_all" : "");
+    TensorUtil(image).WriteImages("tmp/" + safe_layer + suffix, 128, false,
+                                  FLAGS_channel);
   }
 
   std::cout << std::endl;

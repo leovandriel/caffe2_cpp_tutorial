@@ -46,7 +46,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
 
   std::cout << "load image folder.." << std::endl;
   auto directory = opendir(folder.c_str());
-  CHECK(directory) << "~ no image folder " << folder;
+  CAFFE_ENFORCE(directory, "no image folder " + folder);
   if (directory) {
     struct stat s;
     struct dirent *entry;
@@ -78,7 +78,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
     }
     closedir(directory);
   }
-  CHECK(image_files.size()) << "~ no images found in " << folder;
+  CAFFE_ENFORCE(image_files.size(), "no images found in " + folder);
   std::random_shuffle(image_files.begin(), image_files.end());
   std::cout << class_labels.size() << " labels found" << std::endl;
   std::cout << image_files.size() << " images found" << std::endl;
@@ -227,8 +227,8 @@ void pre_process(const std::vector<std::pair<std::string, int>> &image_files,
                 output_name, batch_files, database, size_to_fit);
   }
   for (int i = 0; i < kRunNum; i++) {
-    CHECK(database[i]->NewCursor()->Valid())
-        << "~ database " << name_for_run[i] << " is empty";
+    CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
+                  "database " + name_for_run[i] + " is empty");
   }
   std::cerr << '\r' << std::string(80, ' ') << '\r' << image_files.size()
             << " images processed" << std::endl;
