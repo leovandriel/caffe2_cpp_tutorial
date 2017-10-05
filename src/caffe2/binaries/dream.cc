@@ -20,6 +20,7 @@ CAFFE2_DEFINE_int(channel, -1, "The first channel to run.");
 CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
 CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
+CAFFE2_DEFINE_string(image_file, "", "The image file.");
 CAFFE2_DEFINE_int(train_runs, 60, "The of training runs.");
 CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
@@ -71,11 +72,15 @@ void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
   dream.AddWeightedSumOp({input, "one", input + "_grad", "one"}, input);
 
   // scale data to image
-  display.AddMeanStdevOp(input, input + "_mean", input + "_stdev");
-  display.AddAffineScaleOp(input, input + "_mean", input + "_stdev", "image",
-                           true);
-  display.AddScaleOp("image", "image", 25.5f);
-  display.AddClipOp("image", "image", -128, 128);
+  if (FLAGS_image_file.size()) {
+    display.AddCopyOp(input, "image");
+  } else {
+    display.AddMeanStdevOp(input, input + "_mean", input + "_stdev");
+    display.AddAffineScaleOp(input, input + "_mean", input + "_stdev", "image",
+                             true);
+    display.AddScaleOp("image", "image", 25.f);
+    display.AddClipOp("image", "image", -128, 128);
+  }
 }
 
 void run() {
@@ -189,11 +194,13 @@ void run() {
   init_net->Run();
 
   // read image as tensor
-  // auto &input_name = dream_model.external_input(0);
-  // TensorCPU input;
-  // TensorUtil(input).ReadImage(FLAGS_image_file, FLAGS_size / 10);
-  // BlobUtil(*workspace.GetBlob(input_name)).Set(input);
-  // TensorUtil(input).ShowImages(0);
+  if (FLAGS_image_file.size()) {
+    auto &input_name = dream_model.external_input(0);
+    TensorCPU input;
+    std::vector<int> x;
+    TensorUtil(input).ReadImages({FLAGS_image_file}, image_size, x, 128);
+    BlobUtil(*workspace.GetBlob(input_name)).Set(input);
+  }
 
   std::cout << "start size: " << image_size << std::endl;
 
