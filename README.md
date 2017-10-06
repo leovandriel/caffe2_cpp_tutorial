@@ -31,11 +31,11 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     Install the dependencies CMake, leveldb and OpenCV. If you're on macOS, use Homebrew:
 
-        brew install cmake leveldb opencv eigen
+        brew install cmake glog protobuf leveldb opencv eigen
 
     On Ubuntu:
 
-        apt-get install cmake libleveldb-dev libopencv-dev libopencv-core-dev libopencv-highgui-dev libeigen3-dev
+        apt-get install cmake libgoogle-glog-dev libprotobuf-dev libleveldb-dev libopencv-dev libeigen3-dev
 
     In case you're using CUDA an run into CMake issues with `NCCL`, try adding this to your `.bashrc` (assuming Caffe2 at `$HOME/caffe2`):
 
