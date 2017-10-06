@@ -1,3 +1,5 @@
+<img src="icon.jpg" alt="Caffe2 C++ Tutorials Icon" width="72"/>
+
 # Caffe2 C++ Tutorials and Examples
 
 *C++ transcripts of the Caffe2 Python tutorials and other C++ example code.*
