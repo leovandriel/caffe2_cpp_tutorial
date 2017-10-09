@@ -1,4 +1,5 @@
 #include <caffe2/core/init.h>
+#include "caffe2/util/blob.h"
 #include "caffe2/util/model.h"
 #include "caffe2/util/net.h"
 
@@ -42,28 +43,28 @@ void AddInput(ModelUtil &model, int batch_size, const std::string &db,
 }
 
 // def AddLeNetModel(model, data):
-void AddLeNetModel(ModelUtil &model, bool training) {
+void AddLeNetModel(ModelUtil &model, bool test) {
   // >>> conv1 = brew.conv(model, data, 'conv1', dim_in=1, dim_out=20, kernel=5)
-  model.AddConvOps("data", "conv1", 1, 20, 1, 0, 5);
+  model.AddConvOps("data", "conv1", 1, 20, 1, 0, 5, test);
 
   // >>> pool1 = brew.max_pool(model, conv1, 'pool1', kernel=2, stride=2)
   model.predict.AddMaxPoolOp("conv1", "pool1", 2, 0, 2);
 
   // >>> conv2 = brew.conv(model, pool1, 'conv2', dim_in=20, dim_out=50,
   // kernel=5)
-  model.AddConvOps("pool1", "conv2", 20, 50, 1, 0, 5);
+  model.AddConvOps("pool1", "conv2", 20, 50, 1, 0, 5, test);
 
   // >>> pool2 = brew.max_pool(model, conv2, 'pool2', kernel=2, stride=2)
   model.predict.AddMaxPoolOp("conv2", "pool2", 2, 0, 2);
 
   // >>> fc3 = brew.fc(model, pool2, 'fc3', dim_in=50 * 4 * 4, dim_out=500)
-  model.AddFcOps("pool2", "fc3", 800, 500);
+  model.AddFcOps("pool2", "fc3", 800, 500, test);
 
   // >>> fc3 = brew.relu(model, fc3, fc3)
   model.predict.AddReluOp("fc3", "fc3");
 
   // >>> pred = brew.fc(model, fc3, 'pred', 500, 10)
-  model.AddFcOps("fc3", "pred", 500, 10);
+  model.AddFcOps("fc3", "pred", 500, 10, test);
 
   // >>> softmax = brew.softmax(model, pred, 'softmax')
   model.predict.AddSoftmaxOp("pred", "softmax");
@@ -144,18 +145,6 @@ void AddBookkeepingOperators(ModelUtil &model) {
   }
 }
 
-TensorCPU GetTensor(const Blob &blob) {
-#ifdef WITH_CUDA
-    if (!FLAGS_force_cpu) {
-        return TensorCPU(blob.Get<TensorCUDA>());
-    } else {
-        return blob.Get<TensorCPU>();
-    }
-#else
-    return blob.Get<TensorCPU>();
-#endif
-}
-    
 void run() {
   std::cout << std::endl;
   std::cout << "## Caffe2 MNIST Tutorial ##" << std::endl;
@@ -220,7 +209,7 @@ void run() {
   AddInput(trainModel, 64, FLAGS_train_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(train_model, data)
-  AddLeNetModel(trainModel, true);
+  AddLeNetModel(trainModel, false);
 
   // >>> AddTrainingOperators(train_model, softmax, label)
   AddTrainingOperators(trainModel);
@@ -238,7 +227,7 @@ void run() {
   AddInput(testModel, 100, FLAGS_test_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(test_model, data)
-  AddLeNetModel(testModel, false);
+  AddLeNetModel(testModel, true);
 
   // >>> AddAccuracy(test_model, softmax, label)
   AddAccuracy(testModel);
@@ -247,9 +236,10 @@ void run() {
   // arg_scope=arg_scope, init_params=False)
   NetDef initDeployModel, predictDeployModel;
   ModelUtil deployModel(initDeployModel, predictDeployModel, "mnist_model");
+  predictDeployModel.add_external_input("data");
 
   // >>> AddLeNetModel(deploy_model, "data")
-  AddLeNetModel(deployModel, false);
+  AddLeNetModel(deployModel, true);
 
 #ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
@@ -280,8 +270,8 @@ void run() {
     // >>> loss[i] = workspace.FetchBlob('loss')
     if (i % 10 == 0) {
       auto accuracy =
-          GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
-      auto loss = GetTensor(*workspace.GetBlob("loss")).data<float>()[0];
+          BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
+      auto loss = BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
       std::cout << "step: " << i << " loss: " << loss
                 << " accuracy: " << accuracy << std::endl;
     }
@@ -306,17 +296,15 @@ void run() {
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
       auto accuracy =
-          GetTensor(*workspace.GetBlob("accuracy")).data<float>()[0];
+          BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
       std::cout << "step: " << i << " accuracy: " << accuracy << std::endl;
     }
   }
 
   // with open(os.path.join(root_folder, "deploy_net.pbtxt"), 'w') as fid:
   // fid.write(str(deploy_model.net.Proto()))
-  std::vector<string> external(predictDeployModel.external_input().begin(),
-                               predictDeployModel.external_input().end());
-  for (auto &param : external) {
-    auto tensor = GetTensor(*workspace.GetBlob(param));
+  for (auto &param : predictDeployModel.external_input()) {
+    auto tensor = BlobUtil(*workspace.GetBlob(param)).Get();
     auto op = initDeployModel.add_op();
     op->set_type("GivenTensorFill");
     auto arg1 = op->add_arg();
@@ -330,6 +318,7 @@ void run() {
     for (auto i = 0; i < tensor.size(); i++) {
       arg2->add_floats(data[i]);
     }
+    op->add_output(param);
   }
   WriteProtoToTextFile(predictDeployModel, "tmp/mnist_predict_net.pbtxt");
   WriteProtoToBinaryFile(initDeployModel, "tmp/mnist_init_net.pb");
