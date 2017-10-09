@@ -144,14 +144,18 @@ void AddBookkeepingOperators(ModelUtil &model) {
   }
 }
 
-TensorCPU GetTensor(const Blob &blob) {
+TensorCPU GetTensor(const caffe2::Blob &blob) {
 #ifdef WITH_CUDA
-  return TensorCPU(blob.Get<TensorCUDA>());
+    if (!FLAGS_force_cpu) {
+        return caffe2::TensorCPU(blob.Get<caffe2::TensorCUDA>());
+    } else {
+        return blob.Get<caffe2::TensorCPU>();
+    }
 #else
-  return blob.Get<TensorCPU>();
+    return blob.Get<caffe2::TensorCPU>();
 #endif
 }
-
+    
 void run() {
   std::cout << std::endl;
   std::cout << "## Caffe2 MNIST Tutorial ##" << std::endl;
