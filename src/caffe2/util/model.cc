@@ -143,20 +143,24 @@ void ModelUtil::AddOptimizerOps(std::string &optimizer) {
 }
 
 void ModelUtil::AddFcOps(const std::string &input, const std::string &output,
-                         int in_size, int out_size) {
-  init.AddXavierFillOp({out_size, in_size}, output + "_w");
+                         int in_size, int out_size, bool test) {
+  if (!test) {
+    init.AddXavierFillOp({out_size, in_size}, output + "_w");
+    init.AddConstantFillOp({out_size}, output + "_b");
+  }
   predict.AddInput(output + "_w");
-  init.AddConstantFillOp({out_size}, output + "_b");
   predict.AddInput(output + "_b");
   predict.AddFcOp(input, output + "_w", output + "_b", output);
 }
 
 void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
                            int in_size, int out_size, int stride, int padding,
-                           int kernel) {
-  init.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
+                           int kernel, bool test) {
+  if (!test) {
+    init.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
+    init.AddConstantFillOp({out_size}, output + "_b");
+  }
   predict.AddInput(output + "_w");
-  init.AddConstantFillOp({out_size}, output + "_b");
   predict.AddInput(output + "_b");
   predict.AddConvOp(input, output + "_w", output + "_b", output, stride,
                     padding, kernel);
