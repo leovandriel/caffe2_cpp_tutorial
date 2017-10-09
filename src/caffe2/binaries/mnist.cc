@@ -147,12 +147,12 @@ void AddBookkeepingOperators(ModelUtil &model) {
 TensorCPU GetTensor(const caffe2::Blob &blob) {
 #ifdef WITH_CUDA
     if (!FLAGS_force_cpu) {
-        return caffe2::TensorCPU(blob.Get<caffe2::TensorCUDA>());
+        return TensorCPU(blob.Get<TensorCUDA>());
     } else {
-        return blob.Get<caffe2::TensorCPU>();
+        return blob.Get<TensorCPU>();
     }
 #else
-    return blob.Get<caffe2::TensorCPU>();
+    return blob.Get<TensorCPU>();
 #endif
 }
     
