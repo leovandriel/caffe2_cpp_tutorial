@@ -325,11 +325,129 @@ void run() {
   WriteProtoToBinaryFile(predictDeployModel, "tmp/mnist_predict_net.pb");
 }
 
+void predict_example() {
+  std::vector<float> data_for_2(
+      {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0.2, 0.6, 0.8, 0.9, 0.7,
+       0.2, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0.8, 0.3, 0.2, 0.2, 0.7,
+       0.9, 0.4, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0.3, 0,   0,   0,   0,
+       0.4, 0.9, 0.3, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0.4, 0.8, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0.8, 0.6, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0.2, 0.8, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0.1, 0.9, 0.3, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0.7, 0.6, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0.8, 0.6, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0.9, 0.6, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0.2, 0.9, 0.3, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0.2, 0.9, 0.1, 0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0.2, 0.3, 0.3, 0,
+       0,   0,   0.6, 0.7, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0.6, 0.9, 0.9, 0.9, 0.9,
+       0.4, 0.2, 0.9, 0.3, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0.7, 0.8, 0.1, 0,   0,   0.4,
+       0.9, 0.9, 0.8, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0.1, 0.9, 0.4, 0,   0,   0,   0,
+       0.3, 0.9, 0.8, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0.2, 0.9, 0.1, 0,   0,   0,   0.3,
+       0.9, 0.8, 0.8, 0.7, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0.1, 0.9, 0.1, 0,   0.2, 0.3, 0.9,
+       0.8, 0.1, 0.1, 0.8, 0.7, 0.2, 0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0.7, 0.9, 0.8, 0.9, 0.9, 0.6,
+       0.1, 0,   0,   0.1, 0.5, 0.9, 0.7, 0.2, 0.1, 0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0.5, 0.6, 0.3, 0,   0,
+       0,   0,   0,   0,   0,   0.3, 0.8, 0.9, 0.2, 0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0});
+
+  std::cout << "classifying image of decimal:";
+  auto i = 0;
+  for (auto d : data_for_2) {
+    if (i % 28 == 0) std::cout << std::endl;
+    std::cout << (d > 0 ? "[]" : "  ");
+    i++;
+  }
+  std::cout << std::endl;
+
+#ifdef WITH_CUDA
+  DeviceOption option;
+  option.set_device_type(CUDA);
+  new CUDAContext(option);
+#endif
+
+  // setup perdictor
+  NetDef init_model, predict_model;
+  CAFFE_ENFORCE(ReadProtoFromFile("tmp/mnist_init_net.pb", &init_model));
+  CAFFE_ENFORCE(ReadProtoFromFile("tmp/mnist_predict_net.pb", &predict_model));
+
+#ifdef WITH_CUDA
+  init_model.mutable_device_option()->set_device_type(CUDA);
+  predict_model.mutable_device_option()->set_device_type(CUDA);
+#endif
+
+  // load parameters
+  Workspace workspace("tmp");
+  auto init_net = CreateNet(init_model, &workspace);
+  init_net->Run();
+
+// input image data for "2"
+#ifdef WITH_CUDA
+  auto data = workspace.CreateBlob("data")->GetMutable<TensorCUDA>();
+#else
+  auto data = workspace.CreateBlob("data")->GetMutable<TensorCPU>();
+#endif
+  TensorCPU input({1, 1, 28, 28}, data_for_2, NULL);
+  data->ResizeLike(input);
+  data->ShareData(input);
+
+  // run predictor
+  auto predict_net = CreateNet(predict_model, &workspace);
+  predict_net->Run();
+
+// read prediction
+#ifdef WITH_CUDA
+  auto softmax = TensorCPU(workspace.GetBlob("softmax")->Get<TensorCUDA>());
+#else
+  auto softmax = workspace.GetBlob("softmax")->Get<TensorCPU>();
+#endif
+  std::vector<float> probs(softmax.data<float>(),
+                           softmax.data<float>() + softmax.size());
+  auto max = std::max_element(probs.begin(), probs.end());
+  auto label = std::distance(probs.begin(), max);
+  std::cout << "predicted label: '" << label << "' with probability: " << *max
+            << std::endl;
+}
+
 }  // namespace caffe2
 
 int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
+  // caffe2::predict_example();
   google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }
