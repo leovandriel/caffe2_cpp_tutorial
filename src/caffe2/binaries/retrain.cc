@@ -19,6 +19,8 @@ CAFFE2_DEFINE_int(train_runs, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
+CAFFE2_DEFINE_bool(reshape_output, false,
+                   "Reshape output (necessary for squeeznet)");
 
 #include "caffe2/util/cmd.h"
 
@@ -56,6 +58,7 @@ void run() {
   std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "reshape_output: " << FLAGS_reshape_output << std::endl;
 
   std::string layer_safe = FLAGS_layer;
   std::replace(layer_safe.begin(), layer_safe.end(), '/', '_');
@@ -109,11 +112,23 @@ void run() {
   copy_train_model(second_init_model, second_predict_model, FLAGS_layer,
                    class_labels.size(), init_model[kRunTrain],
                    predict_model[kRunTrain]);
-  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
-      .AddTrainOps(predict_model[kRunTrain].external_output(0),
-                   FLAGS_learning_rate, FLAGS_optimizer);
   copy_test_model(second_predict_model, predict_model[kRunValidate]);
   copy_test_model(second_predict_model, predict_model[kRunTest]);
+
+  auto output = predict_model[kRunTrain].external_output(0);
+  if (FLAGS_reshape_output) {
+    auto output_reshaped = output + "_reshaped";
+    for (int i = 0; i < kRunNum; i++) {
+      NetUtil(predict_model[i]).AddReshapeOp(output, output_reshaped, {0, -1});
+    }
+    output = output_reshaped;
+  }
+
+  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
+      .AddTrainOps(output, FLAGS_learning_rate, FLAGS_optimizer);
+  ModelUtil(second_predict_model, predict_model[kRunValidate])
+      .AddTestOps(output);
+  ModelUtil(second_predict_model, predict_model[kRunTest]).AddTestOps(output);
 
   if (FLAGS_device != "cpu") {
     for (int i = 0; i < kRunNum; i++) {

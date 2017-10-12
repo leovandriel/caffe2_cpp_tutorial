@@ -188,6 +188,10 @@ If you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
     ./bin/retrain --model vgg16 --folder <image-folder> --layer fc6
 
+Some models, like SqueezeNet require reshaping of their output to N x D tensor:
+
+    ./bin/retrain --model squeezenet --folder <image-folder> --layer fire9/concat --reshape_output
+
 See also:
 
 - [How to Retrain Inception's Final Layer for New Categories](https://www.tensorflow.org/tutorials/image_retraining)
@@ -202,6 +206,10 @@ To fully train an existing image classification model from scratch, run:
 The models currently available for training are the ones listed in the [ImageNet](#imagenet-classifiers) section. This will take a lot of time even when runnning on the GPU.
 
 Add `--display` for training visualization.
+
+Some models, like SqueezeNet require reshaping of their output to N x D tensor:
+
+    ./bin/train --model squeezenet --folder <image-folder> --reshape_output
 
 ## Deep Dream
 
