@@ -171,7 +171,7 @@ class Keeper {
     } else if (name_ == "resnet152") {
       ResNetModel(init_model, predict_model).Add(152);
     } else {
-      std::cerr << "model " << name_ << " not implemented" << std::endl;
+      CAFFE_THROW("model " + name_ + " not implemented");
     }
   }
 

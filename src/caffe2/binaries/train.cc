@@ -23,6 +23,8 @@ CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
+CAFFE2_DEFINE_bool(reshape_output, false,
+                   "Reshape output (necessary for squeeznet)");
 
 #include "caffe2/util/cmd.h"
 
@@ -56,6 +58,7 @@ void run() {
   std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "zero_one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
+  std::cout << "reshape_output: " << FLAGS_reshape_output << std::endl;
 
   auto path_prefix = FLAGS_folder + '/' + '_';
   std::string db_paths[kRunNum];
@@ -116,18 +119,30 @@ void run() {
   copy_train_model(full_init_model, full_predict_model,
                    full_predict_model.external_input(0), class_labels.size(),
                    init_model[kRunTrain], predict_model[kRunTrain]);
-  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
-      .AddTrainOps(predict_model[kRunTrain].external_output(0),
-                   FLAGS_learning_rate, FLAGS_optimizer);
   copy_test_model(full_predict_model, predict_model[kRunValidate]);
   copy_test_model(full_predict_model, predict_model[kRunTest]);
+
+  auto output = predict_model[kRunTrain].external_output(0);
+  if (FLAGS_reshape_output) {
+    auto output_reshaped = output + "_reshaped";
+    for (int i = 0; i < kRunNum; i++) {
+      NetUtil(predict_model[i]).AddReshapeOp(output, output_reshaped, {0, -1});
+    }
+    output = output_reshaped;
+  }
+
+  ModelUtil(init_model[kRunTrain], predict_model[kRunTrain])
+      .AddTrainOps(output, FLAGS_learning_rate, FLAGS_optimizer);
+  ModelUtil(full_predict_model, predict_model[kRunValidate]).AddTestOps(output);
+  ModelUtil(full_predict_model, predict_model[kRunTest]).AddTestOps(output);
+
   if (FLAGS_zero_one) {
     NetUtil(predict_model[kRunValidate])
-        .AddZeroOneOp(full_predict_model.external_output(0), "label");
+        .AddZeroOneOp(output, "label");
   }
   if (FLAGS_display) {
     NetUtil(predict_model[kRunValidate])
-        .AddShowWorstOp(full_predict_model.external_output(0), "label",
+        .AddShowWorstOp(output, "label",
                         full_predict_model.external_input(0));
   }
 

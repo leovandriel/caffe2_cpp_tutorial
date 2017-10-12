@@ -423,8 +423,6 @@ void copy_test_model(NetDef &base_predict_model, NetDef &test_predict_model) {
   for (const auto &output : base_predict_model.external_output()) {
     test_predict_model.add_external_output(output);
   }
-  ModelUtil(base_predict_model, test_predict_model)
-      .AddTestOps(test_predict_model.external_output(0));
 }
 
 }  // namespace caffe2
