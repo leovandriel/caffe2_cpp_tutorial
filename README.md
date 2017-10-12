@@ -192,6 +192,10 @@ Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
     ./bin/retrain --model squeezenet --folder <image-folder> --layer fire9/concat --reshape_output
 
+You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
+
+    ./bin/retrain --model res/googlenet_%_net.pb --folder <image-folder> --layer pool5/7x7_s1
+
 See also:
 
 - [How to Retrain Inception's Final Layer for New Categories](https://www.tensorflow.org/tutorials/image_retraining)
@@ -238,6 +242,10 @@ Multiple channels can be rendered in parallel by increasing the batch size:
 If you have more (GPU) power at your disposal, the first channel in `conv3_1` layer in VGG16:
 
     ./bin/dream --model vgg16 --layer conv3_1 --channel 0
+
+You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
+
+    ./bin/dream --model res/squeezenet_%_net.pb --layer fire9/concat --channel 100 --display
 
 See also:
 

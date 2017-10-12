@@ -64,8 +64,10 @@ void run() {
   std::replace(layer_safe.begin(), layer_safe.end(), '/', '_');
   std::replace(layer_safe.begin(), layer_safe.end(), '.', '_');
 
+  std::string model_safe = FLAGS_model;
+  std::replace(model_safe.begin(), model_safe.end(), '/', '_');
   auto path_prefix =
-      FLAGS_folder + '/' + '_' + FLAGS_model + '_' + layer_safe + '_';
+      FLAGS_folder + '/' + '_' + model_safe + '_' + layer_safe + '_';
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     db_paths[i] = path_prefix + name_for_run[i] + ".db";
