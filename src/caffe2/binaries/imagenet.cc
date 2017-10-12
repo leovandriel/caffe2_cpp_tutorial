@@ -1,8 +1,8 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/net.h>
+#include <caffe2/utils/proto_utils.h>
 #include "caffe2/util/blob.h"
 #include "caffe2/util/tensor.h"
-#include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
 #include "caffe2/util/cmd.h"
@@ -54,12 +54,14 @@ void run() {
     return;
   }
 
-  std::cout << "model: " << FLAGS_model << std::endl;
-  std::cout << "image_file: " << FLAGS_image_file << std::endl;
-  std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "device: " << FLAGS_device << std::endl;
+  auto cuda = (FLAGS_device != "cpu" && cmd_setup_cuda());
 
-  if (FLAGS_device != "cpu") cmd_setup_cuda();
+  std::cout << "model: " << FLAGS_model << std::endl;
+  std::cout << "image-file: " << FLAGS_image_file << std::endl;
+  std::cout << "size-to-fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "device: " << FLAGS_device << std::endl;
+  std::cout << "using cuda: " << (cuda ? "true" : "false") << std::endl;
+  ;
 
   std::cout << std::endl;
 
@@ -70,31 +72,20 @@ void run() {
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
   NetDef init_model, predict_model;
-  NetUtil init(init_model), predict(predict_model);
+  ModelUtil model(init_model, predict_model);
 
   // read model files
   load_time -= clock();
-  Keeper(FLAGS_model).AddModel(init_model, predict_model, true);
+  size_t model_size = Keeper(FLAGS_model).AddModel(model, true);
   load_time += clock();
-
-  // get model size
-  auto init_size = std::ifstream("res/" + FLAGS_model + "_init_net.pb",
-                                 std::ifstream::ate | std::ifstream::binary)
-                       .tellg();
-  auto predict_size = std::ifstream("res/" + FLAGS_model + "_predict_net.pb",
-                                    std::ifstream::ate | std::ifstream::binary)
-                          .tellg();
-  auto model_size = init_size + predict_size;
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
-    init.SetDeviceCUDA();
-    predict.SetDeviceCUDA();
+    model.SetDeviceCUDA();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << init.Short();
-    std::cout << predict.Short();
+    std::cout << model.Short();
   }
 
   std::cout << "running model.." << std::endl;
@@ -102,10 +93,10 @@ void run() {
   Workspace workspace;
 
   // setup workspace
-  auto &input_name = predict_model.external_input(0);
-  auto &output_name = predict_model.external_output(0);
-  auto init_net = CreateNet(init_model, &workspace);
-  auto predict_net = CreateNet(predict_model, &workspace);
+  auto &input_name = model.predict.Input(0);
+  auto &output_name = model.predict.Output(0);
+  auto init_net = CreateNet(model.init.net, &workspace);
+  auto predict_net = CreateNet(model.predict.net, &workspace);
   init_net->Run();
 
   // run predictor

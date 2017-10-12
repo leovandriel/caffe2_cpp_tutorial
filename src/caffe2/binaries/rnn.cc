@@ -1,5 +1,6 @@
 #include <caffe2/core/init.h>
 #include "caffe2/util/blob.h"
+#include "caffe2/util/model.h"
 #include "caffe2/util/net.h"
 
 #include "caffe2/util/cmd.h"
@@ -18,56 +19,58 @@ CAFFE2_DEFINE_int(gen_length, 500, "One forward example sequence length");
 
 namespace caffe2 {
 
-void AddFC(NetUtil &init, NetUtil &predict, const std::string &input,
+void AddFC(ModelUtil &model, const std::string &input,
            const std::string &output, int in_size, int out_size) {
-  init.AddXavierFillOp({out_size, in_size}, output + "_w");
-  predict.AddInput(output + "_w");
-  init.AddConstantFillOp({out_size}, output + "_b");
-  predict.AddInput(output + "_b");
-  predict.AddFcOp(input, output + "_w", output + "_b", output, 2)
+  model.init.AddXavierFillOp({out_size, in_size}, output + "_w");
+  model.predict.AddInput(output + "_w");
+  model.init.AddConstantFillOp({out_size}, output + "_b");
+  model.predict.AddInput(output + "_b");
+  model.predict.AddFcOp(input, output + "_w", output + "_b", output, 2)
       ->set_engine("CUDNN");
 }
 
-void AddLSTM(NetUtil &init, NetUtil &predict, const std::string &input_blob,
+void AddLSTM(ModelUtil &model, const std::string &input_blob,
              const std::string &seq_lengths, const std::string &hidden_init,
              const std::string &cell_init, int vocab_size, int hidden_size,
              const std::string &scope, std::string *hidden_output,
              std::string *cell_state) {
   *hidden_output = scope + "/hidden_t_last";
   *cell_state = scope + "/cell_t_last";
-  AddFC(init, predict, input_blob, scope + "/i2h", vocab_size, 4 * hidden_size);
+  AddFC(model, input_blob, scope + "/i2h", vocab_size, 4 * hidden_size);
   // sight hack
-  init.AddXavierFillOp({4 * hidden_size, hidden_size}, scope + "/gates_t_w");
-  predict.AddInput(scope + "/gates_t_w");
-  init.AddConstantFillOp({4 * hidden_size}, scope + "/gates_t_b");
-  predict.AddInput(scope + "/gates_t_b");
-  predict.AddRecurrentNetworkOp(seq_lengths, hidden_init, cell_init, scope,
-                                *hidden_output, *cell_state,
-                                FLAGS_device == "cpu");
+  model.init.AddXavierFillOp({4 * hidden_size, hidden_size},
+                             scope + "/gates_t_w");
+  model.predict.AddInput(scope + "/gates_t_w");
+  model.init.AddConstantFillOp({4 * hidden_size}, scope + "/gates_t_b");
+  model.predict.AddInput(scope + "/gates_t_b");
+  model.predict.AddRecurrentNetworkOp(seq_lengths, hidden_init, cell_init,
+                                      scope, *hidden_output, *cell_state,
+                                      FLAGS_device == "cpu");
 }
 
-void AddSGD(NetUtil &init, NetUtil &predict, float base_learning_rate,
+void AddSGD(ModelUtil &model, float base_learning_rate,
             const std::string &policy, int stepsize, float gamma) {
-  predict.AddAtomicIterOp("iteration_mutex", "optimizer_iteration")
+  model.predict.AddAtomicIterOp("iteration_mutex", "optimizer_iteration")
       ->mutable_device_option()
       ->set_device_type(CPU);
-  init.AddConstantFillOp({1}, (int64_t)0, "optimizer_iteration")
+  model.init.AddConstantFillOp({1}, (int64_t)0, "optimizer_iteration")
       ->mutable_device_option()
       ->set_device_type(CPU);
-  init.AddCreateMutexOp("iteration_mutex")
+  model.init.AddCreateMutexOp("iteration_mutex")
       ->mutable_device_option()
       ->set_device_type(CPU);
-  predict.AddInput("iteration_mutex");
-  predict.AddInput("optimizer_iteration");
-  init.AddConstantFillOp({1}, 1.f, "ONE");
-  predict.AddInput("ONE");
-  predict.AddLearningRateOp("optimizer_iteration", "lr", base_learning_rate,
-                            gamma);
+  model.predict.AddInput("iteration_mutex");
+  model.predict.AddInput("optimizer_iteration");
+  model.init.AddConstantFillOp({1}, 1.f, "ONE");
+  model.predict.AddInput("ONE");
+  model.predict.AddLearningRateOp("optimizer_iteration", "lr",
+                                  base_learning_rate, gamma);
   std::vector<std::string> params({"LSTM/gates_t_w", "LSTM/i2h_b",
                                    "char_rnn_blob_0_w", "char_rnn_blob_0_b",
                                    "LSTM/gates_t_b", "LSTM/i2h_w"});
   for (auto &param : params) {
-    predict.AddWeightedSumOp({param, "ONE", param + "_grad", "lr"}, param);
+    model.predict.AddWeightedSumOp({param, "ONE", param + "_grad", "lr"},
+                                   param);
   }
 }
 
@@ -85,20 +88,22 @@ void run() {
     return;
   }
 
+  auto cuda = (FLAGS_device != "cpu" && cmd_setup_cuda());
+
   std::cout << "model: " << FLAGS_model << std::endl;
-  std::cout << "train_data: " << FLAGS_train_data << std::endl;
-  std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
-  std::cout << "seq_length: " << FLAGS_seq_length << std::endl;
-  std::cout << "batch_size: " << FLAGS_batch_size << std::endl;
-  std::cout << "iters_to_report: " << FLAGS_iters_to_report << std::endl;
-  std::cout << "hidden_size: " << FLAGS_hidden_size << std::endl;
-  std::cout << "gen_length: " << FLAGS_gen_length << std::endl;
+  std::cout << "train-data: " << FLAGS_train_data << std::endl;
+  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "seq-length: " << FLAGS_seq_length << std::endl;
+  std::cout << "batch-size: " << FLAGS_batch_size << std::endl;
+  std::cout << "iters-to-report: " << FLAGS_iters_to_report << std::endl;
+  std::cout << "hidden-size: " << FLAGS_hidden_size << std::endl;
+  std::cout << "gen-length: " << FLAGS_gen_length << std::endl;
 
   std::cout << "device: " << FLAGS_device << std::endl;
-  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false")
+  std::cout << "using cuda: " << (cuda ? "true" : "false") << std::endl;
+  ;
+  std::cout << "dump-model: " << (FLAGS_dump_model ? "true" : "false")
             << std::endl;
-
-  if (FLAGS_device != "cpu") cmd_setup_cuda();
 
   std::cout << std::endl;
 
@@ -140,44 +145,40 @@ void run() {
   std::cout << "Start training" << std::endl;
 
   // >>> model = model_helper.ModelHelper(name="char_rnn")
-  NetDef initModel, forwardModel;
-  NetUtil init(initModel), forward(forwardModel);
-  init.SetName("char_rnn_init");
-  forward.SetName("char_rnn");
+  NetDef init_model, predict_model;
+  ModelUtil model(init_model, predict_model, "char_rnn");
 
   // >>> input_blob, seq_lengths, hidden_init, cell_init, target =
   // model.net.AddExternalInputs('input_blob', 'seq_lengths', 'hidden_init',
   // 'cell_init', 'target')
-  forward.AddInput("input_blob");
-  forward.AddInput("seq_lengths");
-  forward.AddInput("hidden_init");
-  forward.AddInput("cell_init");
-  forward.AddInput("target");
+  model.predict.AddInput("input_blob");
+  model.predict.AddInput("seq_lengths");
+  model.predict.AddInput("hidden_init");
+  model.predict.AddInput("cell_init");
+  model.predict.AddInput("target");
 
   // >>> hidden_output_all, self.hidden_output, _, self.cell_state = LSTM(model,
   // input_blob, seq_lengths, (hidden_init, cell_init), self.D,
   // self.hidden_size, scope="LSTM")
   std::string hidden_output;
   std::string cell_state;
-  AddLSTM(init, forward, "input_blob", "seq_lengths", "hidden_init",
-          "cell_init", D, FLAGS_hidden_size, "LSTM", &hidden_output,
-          &cell_state);
+  AddLSTM(model, "input_blob", "seq_lengths", "hidden_init", "cell_init", D,
+          FLAGS_hidden_size, "LSTM", &hidden_output, &cell_state);
 
   // >>> output = brew.fc(model, hidden_output_all, None,
   // dim_in=self.hidden_size, dim_out=self.D, axis=2)
-  AddFC(init, forward, "LSTM/hidden_t_all", "char_rnn_blob_0",
-        FLAGS_hidden_size, D);
+  AddFC(model, "LSTM/hidden_t_all", "char_rnn_blob_0", FLAGS_hidden_size, D);
 
   // >>> softmax = model.net.Softmax(output, 'softmax', axis=2)
-  forward.AddSoftmaxOp("char_rnn_blob_0", "softmax", 2);
+  model.predict.AddSoftmaxOp("char_rnn_blob_0", "softmax", 2);
 
   // >>> softmax_reshaped, _ = model.net.Reshape(softmax, ['softmax_reshaped',
   // '_'], shape=[-1, self.D])
-  forward.AddReshapeOp("softmax", "softmax_reshaped", {-1, D});
+  model.predict.AddReshapeOp("softmax", "softmax_reshaped", {-1, D});
 
   // >>> self.forward_net = core.Net(model.net.Proto())
-  NetDef trainModel(forwardModel);
-  NetUtil train(trainModel);
+  NetDef train_model(model.predict.net);
+  NetUtil train(train_model);
 
   // >>> xent = model.net.LabelCrossEntropy([softmax_reshaped, target], 'xent')
   train.AddLabelCrossEntropyOp("softmax_reshaped", "target", "xent");
@@ -191,7 +192,8 @@ void run() {
 
   // >>> build_sgd(model, base_learning_rate=0.1 * self.seq_length,
   // policy="step", stepsize=1, gamma=0.9999)
-  AddSGD(init, train, 0.1 * FLAGS_seq_length, "step", 1, 0.9999);
+  ModelUtil t(model.init, train);
+  AddSGD(t, 0.1 * FLAGS_seq_length, "step", 1, 0.9999);
 
   // >>> self.model = model
   // >>> self.predictions = softmax
@@ -202,22 +204,21 @@ void run() {
   // >>> self.prepare_state = core.Net("prepare_state")
   // >>> self.prepare_state.Copy(self.hidden_output, hidden_init)
   // >>> self.prepare_state.Copy(self.cell_state, cell_init)
-  NetDef prepareModel;
-  NetUtil prepare(prepareModel);
+  NetDef prepare_model;
+  NetUtil prepare(prepare_model);
   prepare.AddCopyOp(hidden_output, "hidden_init");
   prepare.AddCopyOp(cell_state, "cell_init");
   prepare.AddInput(hidden_output);
   prepare.AddInput(cell_state);
 
   if (FLAGS_device != "cpu") {
-    init.SetDeviceCUDA();
-    forward.SetDeviceCUDA();
+    model.SetDeviceCUDA();
     train.SetDeviceCUDA();
     prepare.SetDeviceCUDA();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << init.Short();
+    std::cout << model.init.Short();
     std::cout << train.Short();
     std::cout << prepare.Short();
   }
@@ -229,7 +230,7 @@ void run() {
   std::cout << "Train model" << std::endl;
 
   // >>> workspace.RunNetOnce(self.model.param_init_net)
-  auto initNet = CreateNet(initModel, &workspace);
+  auto initNet = CreateNet(model.init.net, &workspace);
   initNet->Run();
 
   // >>> smooth_loss = -np.log(1.0 / self.D) * self.seq_length
@@ -278,7 +279,7 @@ void run() {
     BlobUtil(*workspace.CreateBlob(cell_state)).Set(value, true);
   }
   // >>> workspace.CreateNet(self.prepare_state)
-  auto prepareNet = CreateNet(prepareModel, &workspace);
+  auto prepareNet = CreateNet(prepare.net, &workspace);
 
   // >>> last_time = datetime.now()
   auto last_time = clock();
@@ -289,10 +290,10 @@ void run() {
   workspace.CreateBlob("input_blob");
   workspace.CreateBlob("seq_lengths");
   workspace.CreateBlob("target");
-  auto trainNet = CreateNet(trainModel, &workspace);
+  auto trainNet = CreateNet(train.net, &workspace);
 
   // >>> CreateNetOnce(self.forward_net)
-  auto forwardNet = CreateNet(forwardModel, &workspace);
+  auto forwardNet = CreateNet(model.predict.net, &workspace);
 
   // >>> while True:
   while (num_iter < FLAGS_train_runs) {

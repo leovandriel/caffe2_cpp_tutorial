@@ -15,19 +15,19 @@ namespace caffe2 {
 
 void run() {
   NetDef init_model, predict_model;
+  ModelUtil model(init_model, predict_model);
 
   if (FLAGS_code && !FLAGS_file) {
-    Keeper(FLAGS_model).AddModel(init_model, predict_model, false);
+    Keeper(FLAGS_model).AddModel(model, false);
   } else if (!FLAGS_code && FLAGS_file) {
-    Keeper(FLAGS_model).AddModel(init_model, predict_model, true);
-    NetUtil(init_model).SetFillToTrain();
+    Keeper(FLAGS_model).AddModel(model, true);
+    model.init.SetFillToTrain();
   } else {
     std::cerr << "set either --code or --file" << std::endl;
   }
 
   if (FLAGS_short) {
-    std::cout << NetUtil(predict_model).Short();
-    std::cout << NetUtil(init_model).Short();
+    std::cout << model.Short();
   } else {
     google::protobuf::io::OstreamOutputStream stream(&std::cout);
     google::protobuf::TextFormat::Print(predict_model, &stream);

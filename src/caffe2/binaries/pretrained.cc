@@ -1,6 +1,6 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/predictor.h>
-#include "caffe2/utils/proto_utils.h"
+#include <caffe2/utils/proto_utils.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -42,10 +42,10 @@ void run() {
     return;
   }
 
-  std::cout << "init_net: " << FLAGS_init_net << std::endl;
-  std::cout << "predict_net: " << FLAGS_predict_net << std::endl;
-  std::cout << "image_file: " << FLAGS_image_file << std::endl;
-  std::cout << "size_to_fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "init-net: " << FLAGS_init_net << std::endl;
+  std::cout << "predict-net: " << FLAGS_predict_net << std::endl;
+  std::cout << "image-file: " << FLAGS_image_file << std::endl;
+  std::cout << "size-to-fit: " << FLAGS_size_to_fit << std::endl;
 
   std::cout << std::endl;
 

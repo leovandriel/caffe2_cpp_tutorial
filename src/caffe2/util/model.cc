@@ -1,4 +1,5 @@
 #include "caffe2/util/model.h"
+#include "caffe2/util/blob.h"
 
 namespace caffe2 {
 
@@ -6,6 +7,11 @@ const std::string gradient_suffix("_grad");
 const std::string moment_suffix("_moment");
 const std::string meansq_suffix("_meansq");
 const std::string reader_suffix("_reader");
+const std::string init_net_suffix("_init_net.pb");
+const std::string predict_net_suffix("_predict_net.pb");
+const std::string init_name_suffix("_init");
+const std::string predict_name_suffix("_predict");
+
 const std::string iter_name("iter");
 const std::string lr_name("lr");
 const std::string one_name("one");
@@ -13,11 +19,6 @@ const std::string loss_name("loss");
 const std::string label_name("label");
 const std::string xent_name("xent");
 const std::string accuracy_name("accuracy");
-
-void ModelUtil::SetName(const std::string &name) {
-  init.SetName(name + "_init");
-  predict.SetName(name + "_predict");
-}
 
 void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data,
                                const std::string &db,
@@ -165,5 +166,209 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
   predict.AddConvOp(input, output + "_w", output + "_b", output, stride,
                     padding, kernel);
 }
+
+void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
+                      ModelUtil &secondModel, bool force_cpu, bool inclusive) {
+  std::set<std::string> static_inputs = predict.CollectLayers(layer);
+
+  // copy operators
+  for (const auto &op : init.net.op()) {
+    auto is_first = (static_inputs.find(op.output(0)) != static_inputs.end());
+    auto new_op =
+        (is_first ? firstModel.init.net : secondModel.init.net).add_op();
+    new_op->CopyFrom(op);
+  }
+  for (const auto &op : predict.net.op()) {
+    auto is_first = (static_inputs.find(op.output(0)) != static_inputs.end() &&
+                     (inclusive || op.input(0) != op.output(0)));
+    auto new_op =
+        (is_first ? firstModel.predict.net : secondModel.predict.net).add_op();
+    new_op->CopyFrom(op);
+    if (!force_cpu) {
+      new_op->set_engine("CUDNN");  // TODO: not here
+    }
+  }
+
+  // copy externals
+  if (firstModel.predict.net.op().size()) {
+    // firstModel.predict.net.add_external_input(predict.Input(0));
+  }
+  if (secondModel.predict.net.op().size()) {
+    // secondModel.predict.net.add_external_input(layer);
+  }
+  for (const auto &output : init.net.external_output()) {
+    auto is_first = (static_inputs.find(output) != static_inputs.end());
+    if (is_first) {
+      firstModel.init.net.add_external_output(output);
+    } else {
+      secondModel.init.net.add_external_output(output);
+    }
+  }
+  for (const auto &input : predict.net.external_input()) {
+    auto is_first = (static_inputs.find(input) != static_inputs.end());
+    if (is_first) {
+      firstModel.predict.net.add_external_input(input);
+    } else {
+      secondModel.predict.net.add_external_input(input);
+    }
+  }
+  if (firstModel.predict.net.op().size()) {
+    firstModel.predict.net.add_external_output(layer);
+  }
+  if (secondModel.predict.net.op().size()) {
+    secondModel.predict.net.add_external_output(predict.Output(0));
+  }
+
+  if (init.net.has_name()) {
+    if (!firstModel.init.net.has_name()) {
+      firstModel.init.SetName(init.net.name() + "_first");
+    }
+    if (!secondModel.init.net.has_name()) {
+      secondModel.init.SetName(init.net.name() + "_second");
+    }
+  }
+  if (predict.net.has_name()) {
+    if (!firstModel.predict.net.has_name()) {
+      firstModel.predict.SetName(predict.net.name() + "_first");
+    }
+    if (!secondModel.predict.net.has_name()) {
+      secondModel.predict.SetName(predict.net.name() + "_second");
+    }
+  }
+}
+
+void set_trainable(OperatorDef &op, bool train) {
+  if (op.type() == "Dropout") {
+    for (auto &arg : *op.mutable_arg()) {
+      if (arg.name() == "is_test") {
+        arg.set_i(!train);
+      }
+    }
+  }
+}
+
+void ModelUtil::CopyTrain(const std::string &layer, int out_size,
+                          ModelUtil &train) const {
+  std::string last_w, last_b;
+  for (const auto &op : predict.net.op()) {
+    auto new_op = train.predict.net.add_op();
+    new_op->CopyFrom(op);
+    set_trainable(*new_op, true);
+    if (op.type() == "FC") {
+      last_w = op.input(1);
+      last_b = op.input(2);
+    }
+  }
+  train.predict.SetRenameInplace();
+  for (const auto &op : init.net.op()) {
+    auto &output = op.output(0);
+    auto init_op = train.init.net.add_op();
+    bool uniform = (output.find("_b") != std::string::npos);
+    init_op->set_type(uniform ? "ConstantFill" : "XavierFill");
+    for (const auto &arg : op.arg()) {
+      if (arg.name() == "shape") {
+        auto init_arg = init_op->add_arg();
+        init_arg->set_name("shape");
+        if (output == last_w) {
+          init_arg->add_ints(out_size);
+          init_arg->add_ints(arg.ints(1));
+        } else if (output == last_b) {
+          init_arg->add_ints(out_size);
+        } else {
+          init_arg->CopyFrom(arg);
+        }
+      }
+    }
+    init_op->add_output(output);
+  }
+  std::set<std::string> existing_inputs;
+  existing_inputs.insert(train.predict.net.external_input().begin(),
+                         train.predict.net.external_input().end());
+  for (const auto &op : train.predict.net.op()) {
+    for (auto &output : op.output()) {
+      existing_inputs.insert(output);
+    }
+  }
+  for (const auto &input : predict.net.external_input()) {
+    if (existing_inputs.find(input) == existing_inputs.end()) {
+      train.predict.net.add_external_input(input);
+    }
+  }
+  for (const auto &output : predict.net.external_output()) {
+    train.predict.net.add_external_output(output);
+  }
+  // auto op = train_init_model.add_op();
+  // op->set_type("ConstantFill");
+  // auto arg = op->add_arg();
+  // arg->set_name("shape");
+  // arg->add_ints(1);
+  // op->add_output(layer);
+}
+
+void ModelUtil::CopyTest(ModelUtil &test) const {
+  for (const auto &op : predict.net.op()) {
+    auto new_op = test.predict.net.add_op();
+    new_op->CopyFrom(op);
+    set_trainable(*new_op, false);
+  }
+  for (const auto &input : predict.net.external_input()) {
+    test.predict.net.add_external_input(input);
+  }
+  for (const auto &output : predict.net.external_output()) {
+    test.predict.net.add_external_output(output);
+  }
+}
+
+void ModelUtil::CopyDeploy(ModelUtil &deploy, Workspace &workspace) const {
+  for (const auto &op : init.net.op()) {
+    auto &output = op.output(0);
+    auto blob = workspace.GetBlob(output);
+    if (blob) {
+      auto tensor = BlobUtil(*blob).Get();
+      auto init_op = deploy.init.net.add_op();
+      init_op->set_type("GivenTensorFill");
+      auto arg1 = init_op->add_arg();
+      arg1->set_name("shape");
+      for (auto dim : tensor.dims()) {
+        arg1->add_ints(dim);
+      }
+      auto arg2 = init_op->add_arg();
+      arg2->set_name("values");
+      const auto &data = tensor.data<float>();
+      for (auto i = 0; i < tensor.size(); ++i) {
+        arg2->add_floats(data[i]);
+      }
+      init_op->add_output(output);
+    } else {
+      deploy.init.net.add_op()->CopyFrom(op);
+    }
+  }
+}
+
+size_t ModelUtil::Write(const std::string &path_prefix) const {
+  size_t size = 0;
+  size += init.Write(path_prefix + init_net_suffix);
+  size += predict.Write(path_prefix + predict_net_suffix);
+  return size;
+}
+
+size_t ModelUtil::Read(const std::string &path_prefix) {
+  size_t size = 0;
+  size += init.Read(path_prefix + init_net_suffix);
+  size += predict.Read(path_prefix + predict_net_suffix);
+  return size;
+}
+
+void ModelUtil::SetName(const std::string &name) {
+  init.SetName(name + init_name_suffix);
+  predict.SetName(name + predict_name_suffix);
+}
+
+void ModelUtil::SetDeviceCUDA() {
+  init.SetDeviceCUDA();
+  predict.SetDeviceCUDA();
+}
+
+std::string ModelUtil::Short() { return predict.Short() + init.Short(); }
 
 }  // namespace caffe2

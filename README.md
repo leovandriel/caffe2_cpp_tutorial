@@ -130,17 +130,17 @@ This tutorial is transcribed in [rnn.cc](src/caffe2/binaries/rnn.cc). It takes t
 
     ./bin/rnn
 
-In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--train_runs`:
+In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--train-runs`:
 
-    ./bin/run --train_runs 100000
+    ./bin/run --train-runs 100000
 
 To get better results (loss < 1), expand the hidden layer:
 
-    ./bin/rnn --train_runs 100000 --batch_size 32 --hidden_size 512 --seq_length 32
+    ./bin/rnn --train-runs 100000 --batch-size 32 --hidden-size 512 --seq-length 32
 
 The file `res/dickens.txt` contains a larger volume of text. Because the writing is a bit more recent, it's more challenging to generate convincing results. Also, single newlines are stripped to allow for more creativity.
 
-    ./bin/rnn --train_runs 100000 --batch_size 32 --hidden_size 768 --seq_length 32 --train_data res/dickens.txt
+    ./bin/rnn --train-runs 100000 --batch-size 32 --hidden-size 768 --seq-length 32 --train-data res/dickens.txt
 
 After 200K runs, the loss has not dropped below 36, in contrast to the shakespeare text. Perhaps this requires an additional hidden layer in the LSTM model.
 
@@ -150,7 +150,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model <name-of-model> --image_file <some-image>
+    ./bin/imagenet --model <name-of-model> --image-file <some-image>
 
 Where the model name is one of the following:
 
@@ -180,21 +180,21 @@ The article [DeCAF: A Deep Convolutional Activation Feature for Generic Visual R
 
 First divide all images in subfolders with the label a folder name. Then to retrain the final layer of GoogleNet:
 
-    ./bin/retrain --model googlenet --folder <image-folder> --layer pool5/7x7_s1
+    ./bin/train --model googlenet --folder <image-folder> --layer pool5/7x7_s1
 
 The script starts out by collecting all images and running them through the pre-trained part of the model. This allows for very fast training on the pre-processed image data.
 
 If you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
-    ./bin/retrain --model vgg16 --folder <image-folder> --layer fc6
+    ./bin/train --model vgg16 --folder <image-folder> --layer fc6
 
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/retrain --model squeezenet --folder <image-folder> --layer fire9/concat --reshape_output
+    ./bin/train --model squeezenet --folder <image-folder> --layer fire9/concat --reshape-output
 
 You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
 
-    ./bin/retrain --model res/googlenet_%_net.pb --folder <image-folder> --layer pool5/7x7_s1
+    ./bin/train --model res/googlenet_%_net.pb --folder <image-folder> --layer pool5/7x7_s1
 
 See also:
 
@@ -203,7 +203,7 @@ See also:
 
 ## Training from scratch
 
-To fully train an existing image classification model from scratch, run:
+To fully train an existing image classification model from scratch, run without the `--layer` option:
 
     ./bin/train --model <model-name> --folder <image-folder>
 
@@ -213,7 +213,7 @@ Add `--display` for training visualization.
 
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/train --model squeezenet --folder <image-folder> --reshape_output
+    ./bin/train --model squeezenet --folder <image-folder> --reshape-output
 
 ## Deep Dream
 

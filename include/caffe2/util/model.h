@@ -16,7 +16,6 @@ class ModelUtil {
   }
   ModelUtil(NetUtil &init, NetUtil &predict) : init(init), predict(predict) {}
 
-  void SetName(const std::string &name);
   void AddDatabaseOps(const std::string &name, const std::string &data,
                       const std::string &db, const std::string &db_type,
                       int batch_size);
@@ -42,6 +41,19 @@ class ModelUtil {
                   int kernel, bool test = false);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }
+
+  void Split(const std::string &layer, ModelUtil &firstModel,
+             ModelUtil &secondModel, bool force_cpu, bool inclusive = true);
+  void CopyTrain(const std::string &layer, int out_size,
+                 ModelUtil &train) const;
+  void CopyTest(ModelUtil &test) const;
+  void CopyDeploy(ModelUtil &deploy, Workspace &workspace) const;
+
+  size_t Write(const std::string &path_prefix) const;
+  size_t Read(const std::string &path_prefix);
+  void SetName(const std::string &name);
+  void SetDeviceCUDA();
+  std::string Short();
 
  public:
   NetUtil init;

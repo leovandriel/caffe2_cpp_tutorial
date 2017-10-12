@@ -700,11 +700,11 @@ OperatorDef* NetUtil::AddGradientOp(
     GradientOpsMeta meta = GetGradientForOp(op, output);
     if (meta.ops_.size()) {
       if (meta.ops_.size() > 1) {
-        std::cout << "multiple gradients for operator (" << op.type();
+        std::cerr << "multiple gradients for operator (" << op.type();
         for (auto& o : meta.ops_) {
-          std::cout << " " << o.type();
+          std::cerr << " " << o.type();
         }
-        std::cout << ")" << std::endl;
+        std::cerr << ")" << std::endl;
       }
       grad->CopyFrom(meta.ops_[0]);
     } else {
@@ -794,7 +794,6 @@ std::vector<OperatorDef> NetUtil::CollectGradientOps(
   for (auto& op : net.op()) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       gradient_ops.push_back(op);
-      // std::cout << "type: " << op.type() << std::endl;
       for (auto& input : op.input()) {
         auto& output = op.output();
         if (std::find(output.begin(), output.end(), input) == output.end()) {
@@ -806,7 +805,7 @@ std::vector<OperatorDef> NetUtil::CollectGradientOps(
         }
       }
     } else if (non_trainable_ops.find(op.type()) == non_trainable_ops.end()) {
-      std::cout << "unknown backprop operator type: " << op.type() << std::endl;
+      CAFFE_THROW("unknown backprop operator type: " + op.type());
     }
   }
   std::reverse(gradient_ops.begin(), gradient_ops.end());
@@ -850,9 +849,9 @@ void NetUtil::CheckLayerAvailable(const std::string& layer) {
     }
   }
   if (!layer_found) {
-    std::cout << "available layers:" << std::endl;
+    std::cerr << "available layers:" << std::endl;
     for (auto& layer : available_layers) {
-      std::cout << "  " << layer.first << " (" << layer.second << ")"
+      std::cerr << "  " << layer.first << " (" << layer.second << ")"
                 << std::endl;
     }
     LOG(FATAL) << "~ no layer with name " << layer << " in model.";
@@ -969,6 +968,24 @@ void NetUtil::Print() {
   google::protobuf::TextFormat::Print(net, &stream);
 }
 
+size_t NetUtil::Write(const std::string& path) const {
+  WriteProtoToBinaryFile(net, path);
+  return std::ifstream(path, std::ifstream::ate | std::ifstream::binary)
+      .tellg();
+}
+
+size_t NetUtil::WriteText(const std::string& path) const {
+  WriteProtoToTextFile(net, path);
+  return std::ifstream(path, std::ifstream::ate | std::ifstream::binary)
+      .tellg();
+}
+
+size_t NetUtil::Read(const std::string& path) {
+  CAFFE_ENFORCE(ReadProtoFromFile(path.c_str(), &net));
+  return std::ifstream(path, std::ifstream::ate | std::ifstream::binary)
+      .tellg();
+}
+
 void NetUtil::SetDeviceCUDA() {
 #ifdef WITH_CUDA
   net.mutable_device_option()->set_device_type(CUDA);
@@ -982,8 +999,8 @@ OperatorDef* NetUtil::AddRecurrentNetworkOp(const std::string& seq_lengths,
                                             const std::string& hidden_output,
                                             const std::string& cell_state,
                                             bool force_cpu) {
-  NetDef forwardModel;
-  NetUtil forward(forwardModel);
+  NetDef forward_model;
+  NetUtil forward(forward_model);
   forward.SetName(scope);
   forward.SetType("rnn");
   forward.AddInput("input_t");
@@ -1009,12 +1026,12 @@ OperatorDef* NetUtil::AddRecurrentNetworkOp(const std::string& seq_lengths,
     fc->mutable_device_option()->set_device_type(CUDA);
     sum->mutable_device_option()->set_device_type(CUDA);
     lstm->mutable_device_option()->set_device_type(CUDA);
-    forwardModel.mutable_device_option()->set_device_type(CUDA);
+    forward.SetDeviceCUDA();
   }
 #endif
 
-  NetDef backwardModel;
-  NetUtil backward(backwardModel);
+  NetDef backward_model;
+  NetUtil backward(backward_model);
   backward.SetName("RecurrentBackwardStep");
   backward.SetType("simple");
   backward.AddGradientOp(*lstm);
@@ -1035,11 +1052,9 @@ OperatorDef* NetUtil::AddRecurrentNetworkOp(const std::string& seq_lengths,
   backward.AddInput(seq_lengths);
   backward.AddInput(scope + "/hidden_t");
   backward.AddInput(scope + "/cell_t");
-#ifdef WITH_CUDA
   if (!force_cpu) {
-    backwardModel.mutable_device_option()->set_device_type(CUDA);
+    backward.SetDeviceCUDA();
   }
-#endif
 
   auto op =
       AddOp("RecurrentNetwork",

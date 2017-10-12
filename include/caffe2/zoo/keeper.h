@@ -119,7 +119,7 @@ class Keeper {
               << '\r';
     return result == CURLE_OK;
 #else
-    std::cout << "model download not supported, install cURL" << std::endl;
+    CAFFE_THROW("model download not supported, install cURL");
     return false;
 #endif
   }
@@ -145,50 +145,50 @@ class Keeper {
     return true;
   }
 
-  void addTrainedModel(NetDef &init_model, NetDef &predict_model) {
-    auto at = name_.find("%");
-    if (at == std::string::npos) {
-      CAFFE_ENFORCE(ensureModel(), "model ", name_, " not found");
-      std::string init_filename = "res/" + name_ + "_init_net.pb";
-      std::string predict_filename = "res/" + name_ + "_predict_net.pb";
-      CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_model));
-      CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_model));
-    } else {
-      std::string init_filename = name_.substr(0, at) + "init" + name_.substr(at + 1);
-      std::string predict_filename = name_.substr(0, at) + "predict" + name_.substr(at + 1);
-      CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_model));
-      CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_model));
-    }
+  size_t addTrainedModel(ModelUtil &model) {
+    CAFFE_ENFORCE(ensureModel(), "model ", name_, " not found");
+    return model.Read("res/" + name_);
   }
 
-  void addUntrainedModel(NetDef &init_model, NetDef &predict_model) {
+  size_t addUntrainedModel(ModelUtil &model) {
     if (name_ == "alexnet") {
-      AlexNetModel(init_model, predict_model).Add();
+      AlexNetModel(model.init.net, model.predict.net).Add();
     } else if (name_ == "googlenet") {
-      GoogleNetModel(init_model, predict_model).Add();
+      GoogleNetModel(model.init.net, model.predict.net).Add();
     } else if (name_ == "squeezenet") {
-      SqueezeNetModel(init_model, predict_model).Add();
+      SqueezeNetModel(model.init.net, model.predict.net).Add();
     } else if (name_ == "vgg16") {
-      VGGModel(init_model, predict_model).Add(16);
+      VGGModel(model.init.net, model.predict.net).Add(16);
     } else if (name_ == "vgg19") {
-      VGGModel(init_model, predict_model).Add(19);
+      VGGModel(model.init.net, model.predict.net).Add(19);
     } else if (name_ == "resnet50") {
-      ResNetModel(init_model, predict_model).Add(50);
+      ResNetModel(model.init.net, model.predict.net).Add(50);
     } else if (name_ == "resnet101") {
-      ResNetModel(init_model, predict_model).Add(101);
+      ResNetModel(model.init.net, model.predict.net).Add(101);
     } else if (name_ == "resnet152") {
-      ResNetModel(init_model, predict_model).Add(152);
+      ResNetModel(model.init.net, model.predict.net).Add(152);
     } else {
       CAFFE_THROW("model " + name_ + " not implemented");
     }
+    return 0;
   }
 
-  void AddModel(NetDef &init_model, NetDef &predict_model, bool trained) {
-    if (trained) {
-      addTrainedModel(init_model, predict_model);
+  size_t AddModel(ModelUtil &model, bool trained) {
+    auto at = name_.find("%");
+    size_t size = 0;
+    if (at == std::string::npos) {
+      if (trained) {
+        size = addTrainedModel(model);
+      } else {
+        size = addUntrainedModel(model);
+      }
     } else {
-      addUntrainedModel(init_model, predict_model);
+      size +=
+          model.init.Read(name_.substr(0, at) + "init" + name_.substr(at + 1));
+      size += model.predict.Read(name_.substr(0, at) + "predict" +
+                                 name_.substr(at + 1));
     }
+    return size;
   }
 
  protected:
