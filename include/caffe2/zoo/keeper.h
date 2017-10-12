@@ -146,11 +146,19 @@ class Keeper {
   }
 
   void addTrainedModel(NetDef &init_model, NetDef &predict_model) {
-    CAFFE_ENFORCE(ensureModel(), "model ", name_, " not found");
-    std::string init_filename = "res/" + name_ + "_init_net.pb";
-    std::string predict_filename = "res/" + name_ + "_predict_net.pb";
-    CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_model));
-    CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_model));
+    auto at = name_.find("%");
+    if (at == std::string::npos) {
+      CAFFE_ENFORCE(ensureModel(), "model ", name_, " not found");
+      std::string init_filename = "res/" + name_ + "_init_net.pb";
+      std::string predict_filename = "res/" + name_ + "_predict_net.pb";
+      CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_model));
+      CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_model));
+    } else {
+      std::string init_filename = name_.substr(0, at) + "init" + name_.substr(at + 1);
+      std::string predict_filename = name_.substr(0, at) + "predict" + name_.substr(at + 1);
+      CAFFE_ENFORCE(ReadProtoFromFile(init_filename.c_str(), &init_model));
+      CAFFE_ENFORCE(ReadProtoFromFile(predict_filename.c_str(), &predict_model));
+    }
   }
 
   void addUntrainedModel(NetDef &init_model, NetDef &predict_model) {
