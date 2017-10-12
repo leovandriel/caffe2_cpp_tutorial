@@ -1,16 +1,15 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/net.h>
+#include <caffe2/utils/proto_utils.h>
 #include "caffe2/util/blob.h"
 #include "caffe2/util/plot.h"
 #include "caffe2/util/tensor.h"
 #include "caffe2/util/window.h"
-#include "caffe2/utils/proto_utils.h"
 #include "caffe2/zoo/keeper.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "caffe2/util/misc.h"
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
@@ -32,44 +31,41 @@ CAFFE2_DEFINE_bool(display, false, "Show image while dreaming.");
 
 namespace caffe2 {
 
-void AddNaive(NetDef &init_model, NetDef &dream_model, NetDef &display_model,
-              int size) {
-  auto &input = dream_model.external_input(0);
-  auto &output = dream_model.external_output(0);
-
-  NetUtil init(init_model), dream(dream_model), display(display_model);
+void AddNaive(ModelUtil &dream, NetUtil &display, int size) {
+  auto &input = dream.predict.Input(0);
+  auto &output = dream.predict.Output(0);
 
   // initialize input data
-  init.AddUniformFillOp({FLAGS_batch, 3, size, size}, FLAGS_initial,
-                        FLAGS_initial + 1, input);
+  dream.init.AddUniformFillOp({FLAGS_batch, 3, size, size}, FLAGS_initial,
+                              FLAGS_initial + 1, input);
 
   // add squared l2 distance to zero as loss
   if (FLAGS_channel >= 0) {
-    dream.AddSquaredL2ChannelOp(output, "loss", FLAGS_channel);
+    dream.predict.AddSquaredL2ChannelOp(output, "loss", FLAGS_channel);
   } else {
-    dream.AddSquaredL2Op(output, "loss");
+    dream.predict.AddSquaredL2Op(output, "loss");
   }
-  dream.AddConstantFillWithOp(1.f, "loss", "loss_grad");
+  dream.predict.AddConstantFillWithOp(1.f, "loss", "loss_grad");
 
   if (FLAGS_display) {
-    NetUtil(dream).AddTimePlotOp("loss");
+    dream.predict.AddTimePlotOp("loss");
   }
 
   // add back prop
-  dream.AddAllGradientOp();
+  dream.predict.AddAllGradientOp();
 
   // scale gradient
-  dream.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
-  dream.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero");
-  dream.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev",
-                   1 / FLAGS_learning_rate);
-  dream.AddAffineScaleOp(input + "_grad", "zero", input + "_grad_stdev",
-                         input + "_grad", true);
+  dream.predict.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
+  dream.predict.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero");
+  dream.predict.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev",
+                           1 / FLAGS_learning_rate);
+  dream.predict.AddAffineScaleOp(input + "_grad", "zero", input + "_grad_stdev",
+                                 input + "_grad", true);
 
   // apply gradient to input data
-  init.AddConstantFillOp({1}, 1.f, "one");
-  dream.AddInput("one");
-  dream.AddWeightedSumOp({input, "one", input + "_grad", "one"}, input);
+  dream.init.AddConstantFillOp({1}, 1.f, "one");
+  dream.predict.AddInput("one");
+  dream.predict.AddWeightedSumOp({input, "one", input + "_grad", "one"}, input);
 
   // scale data to image
   if (FLAGS_image_file.size()) {
@@ -107,11 +103,11 @@ void run() {
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "size: " << FLAGS_size << std::endl;
 
-  std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
-  std::cout << "scale_runs: " << FLAGS_scale_runs << std::endl;
-  std::cout << "percent_incr: " << FLAGS_percent_incr << std::endl;
+  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "scale-runs: " << FLAGS_scale_runs << std::endl;
+  std::cout << "percent-incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
-  std::cout << "learning_rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "learning-rate: " << FLAGS_learning_rate << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
   std::cout << std::endl;
@@ -143,21 +139,23 @@ void run() {
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
   NetDef base_init_model, base_predict_model;
-
+  ModelUtil base(base_init_model, base_predict_model);
   // read model files
   load_time -= clock();
-  Keeper(FLAGS_model).AddModel(base_init_model, base_predict_model, true);
+  Keeper(FLAGS_model).AddModel(base, true);
   load_time += clock();
 
   // extract dream model
-  NetUtil(base_predict_model).CheckLayerAvailable(FLAGS_layer);
+  base.predict.CheckLayerAvailable(FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
-  NetUtil init(init_model), dream(dream_model), display(display_model);
-  split_model(base_init_model, base_predict_model, FLAGS_layer, init_model,
-              dream_model, unused_model, unused_model, FLAGS_device != "cudnn",
-              false);
+  NetUtil display(display_model);
+  ModelUtil dream(init_model, dream_model);
+  ModelUtil unused(unused_model, unused_model);
 
-  // add_cout_op(dream_model, { "_conv2/norm2_scale" })->set_engine("CUDNN");
+  base.Split(FLAGS_layer, dream, unused, FLAGS_device != "cudnn", false);
+
+  // add_cout_op(dream.predict.net, { "_conv2/norm2_scale"
+  // })->set_engine("CUDNN");
 
   // add dream operators
   auto image_size = FLAGS_size;
@@ -167,18 +165,16 @@ void run() {
   if (image_size < 20) {
     image_size = 20;
   }
-  AddNaive(init_model, dream_model, display_model, image_size);
+  AddNaive(dream, display, image_size);
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
-    init.SetDeviceCUDA();
     dream.SetDeviceCUDA();
     display.SetDeviceCUDA();
     // dream.SetEngineCudnnOps();
   }
 
   if (FLAGS_dump_model) {
-    std::cout << init.Short();
     std::cout << dream.Short();
     std::cout << display.Short();
   }
@@ -188,14 +184,14 @@ void run() {
   Workspace workspace;
 
   // setup workspace
-  auto init_net = CreateNet(init_model, &workspace);
-  auto predict_net = CreateNet(dream_model, &workspace);
-  auto display_net = CreateNet(display_model, &workspace);
+  auto init_net = CreateNet(dream.init.net, &workspace);
+  auto predict_net = CreateNet(dream.predict.net, &workspace);
+  auto display_net = CreateNet(display.net, &workspace);
   init_net->Run();
 
   // read image as tensor
   if (FLAGS_image_file.size()) {
-    auto &input_name = dream_model.external_input(0);
+    auto &input_name = dream.predict.Input(0);
     TensorCPU input;
     std::vector<int> x;
     TensorUtil(input).ReadImages({FLAGS_image_file}, image_size, x, 128);

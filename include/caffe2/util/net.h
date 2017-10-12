@@ -166,6 +166,9 @@ class NetUtil {
 
   void AddInput(const std::string input);
   void AddOutput(const std::string output);
+  const std::string& Input(int i) { return net.external_input(i); }
+  const std::string& Output(int i) { return net.external_output(i); }
+
   void SetName(const std::string name);
   void SetType(const std::string type);
 
@@ -193,6 +196,10 @@ class NetUtil {
   std::string Proto();
   std::string Short();
   void Print();
+  size_t Write(const std::string& path) const;
+  size_t WriteText(const std::string& path) const;
+  size_t Read(const std::string& path);
+
   void SetDeviceCUDA();
 
  public:

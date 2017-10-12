@@ -22,7 +22,6 @@ bool cmd_setup_cuda() {
   option.set_device_type(CUDA);
 #ifdef WITH_CUDA
   new CUDAContext(option);
-  std::cout << std::endl << "using CUDA" << std::endl;
   return true;
 #else
   return false;
@@ -50,11 +49,13 @@ bool cmd_init(const std::string title) {
     return false;
   }
 
-  if (FLAGS_device != "cpu") cmd_setup_cuda();
+  auto cuda = (FLAGS_device != "cpu" && cmd_setup_cuda());
 
   std::cout << "optimizer: " << FLAGS_optimizer << std::endl;
   std::cout << "device: " << FLAGS_device << std::endl;
-  std::cout << "dump_model: " << (FLAGS_dump_model ? "true" : "false")
+  std::cout << "using cuda: " << (cuda ? "true" : "false") << std::endl;
+  ;
+  std::cout << "dump-model: " << (FLAGS_dump_model ? "true" : "false")
             << std::endl;
 
   return true;

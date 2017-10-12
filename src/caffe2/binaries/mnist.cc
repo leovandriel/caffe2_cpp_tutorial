@@ -162,11 +162,11 @@ void run() {
     return;
   }
 
-  std::cout << "train_db: " << FLAGS_train_db << std::endl;
-  std::cout << "test_db: " << FLAGS_test_db << std::endl;
-  std::cout << "train_runs: " << FLAGS_train_runs << std::endl;
-  std::cout << "test_runs: " << FLAGS_test_runs << std::endl;
-  std::cout << "force_cpu: " << (FLAGS_force_cpu ? "true" : "false")
+  std::cout << "train-db: " << FLAGS_train_db << std::endl;
+  std::cout << "test-db: " << FLAGS_test_db << std::endl;
+  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
+  std::cout << "force-cpu: " << (FLAGS_force_cpu ? "true" : "false")
             << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
@@ -200,64 +200,62 @@ void run() {
 
   // >>> train_model = model_helper.ModelHelper(name="mnist_train",
   // arg_scope={"order": "NCHW"})
-  NetDef initTrainModel, predictTrainModel;
-  ModelUtil trainModel(initTrainModel, predictTrainModel, "mnist_train");
+  NetDef train_init_model, train_predict_model;
+  ModelUtil train(train_init_model, train_predict_model, "mnist_train");
 
   // >>> data, label = AddInput(train_model, batch_size=64,
   // db=os.path.join(data_folder, 'mnist-train-nchw-leveldb'),
   // db_type='leveldb')
-  AddInput(trainModel, 64, FLAGS_train_db, "leveldb");
+  AddInput(train, 64, FLAGS_train_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(train_model, data)
-  AddLeNetModel(trainModel, false);
+  AddLeNetModel(train, false);
 
   // >>> AddTrainingOperators(train_model, softmax, label)
-  AddTrainingOperators(trainModel);
+  AddTrainingOperators(train);
 
   // >>> AddBookkeepingOperators(train_model)
-  AddBookkeepingOperators(trainModel);
+  AddBookkeepingOperators(train);
 
   // >>> test_model = model_helper.ModelHelper(name="mnist_test",
   // arg_scope=arg_scope, init_params=False)
-  NetDef initTestModel, predictTestModel;
-  ModelUtil testModel(initTestModel, predictTestModel, "mnist_test");
+  NetDef test_init_model, test_predict_model;
+  ModelUtil test(test_init_model, test_predict_model, "mnist_test");
 
   // >>> data, label = AddInput(test_model, batch_size=100,
   // db=os.path.join(data_folder, 'mnist-test-nchw-leveldb'), db_type='leveldb')
-  AddInput(testModel, 100, FLAGS_test_db, "leveldb");
+  AddInput(test, 100, FLAGS_test_db, "leveldb");
 
   // >>> softmax = AddLeNetModel(test_model, data)
-  AddLeNetModel(testModel, true);
+  AddLeNetModel(test, true);
 
   // >>> AddAccuracy(test_model, softmax, label)
-  AddAccuracy(testModel);
+  AddAccuracy(test);
 
   // >>> deploy_model = model_helper.ModelHelper(name="mnist_deploy",
   // arg_scope=arg_scope, init_params=False)
-  NetDef initDeployModel, predictDeployModel;
-  ModelUtil deployModel(initDeployModel, predictDeployModel, "mnist_model");
-  predictDeployModel.add_external_input("data");
+  NetDef deploy_init_model, deploy_predict_model;
+  ModelUtil deploy(deploy_init_model, deploy_predict_model, "mnist_model");
+  deploy.predict.AddInput("data");
 
   // >>> AddLeNetModel(deploy_model, "data")
-  AddLeNetModel(deployModel, true);
+  AddLeNetModel(deploy, true);
 
 #ifdef WITH_CUDA
   if (!FLAGS_force_cpu) {
-    initTrainModel.mutable_device_option()->set_device_type(CUDA);
-    predictTrainModel.mutable_device_option()->set_device_type(CUDA);
-    initTestModel.mutable_device_option()->set_device_type(CUDA);
-    predictTestModel.mutable_device_option()->set_device_type(CUDA);
+    train.SetDeviceCUDA();
+    test.SetDeviceCUDA();
   }
 #endif
 
   std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(train_model.param_init_net)
-  auto initTrainNet = CreateNet(initTrainModel, &workspace);
+  auto initTrainNet = CreateNet(train.init.net, &workspace);
   initTrainNet->Run();
 
   // >>> workspace.CreateNet(train_model.net)
-  auto predictTrainNet = CreateNet(predictTrainModel, &workspace);
+  auto predictTrainNet = CreateNet(train.predict.net, &workspace);
 
   std::cout << "training.." << std::endl;
 
@@ -280,11 +278,11 @@ void run() {
   std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(test_model.param_init_net)
-  auto initTestNet = CreateNet(initTestModel, &workspace);
+  auto initTestNet = CreateNet(test.init.net, &workspace);
   initTestNet->Run();
 
   // >>> workspace.CreateNet(test_model.net)
-  auto predictTestNet = CreateNet(predictTestModel, &workspace);
+  auto predictTestNet = CreateNet(test.predict.net, &workspace);
 
   std::cout << "testing.." << std::endl;
 
@@ -303,9 +301,9 @@ void run() {
 
   // with open(os.path.join(root_folder, "deploy_net.pbtxt"), 'w') as fid:
   // fid.write(str(deploy_model.net.Proto()))
-  for (auto &param : predictDeployModel.external_input()) {
+  for (auto &param : deploy.predict.net.external_input()) {
     auto tensor = BlobUtil(*workspace.GetBlob(param)).Get();
-    auto op = initDeployModel.add_op();
+    auto op = deploy.init.net.add_op();
     op->set_type("GivenTensorFill");
     auto arg1 = op->add_arg();
     arg1->set_name("shape");
@@ -320,9 +318,8 @@ void run() {
     }
     op->add_output(param);
   }
-  WriteProtoToTextFile(predictDeployModel, "tmp/mnist_predict_net.pbtxt");
-  WriteProtoToBinaryFile(initDeployModel, "tmp/mnist_init_net.pb");
-  WriteProtoToBinaryFile(predictDeployModel, "tmp/mnist_predict_net.pb");
+  deploy.predict.WriteText("tmp/mnist_predict_net.pbtxt");
+  deploy.Write("tmp/mnist");
 }
 
 void predict_example() {
