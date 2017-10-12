@@ -209,7 +209,7 @@ void pre_process(const std::vector<std::pair<std::string, int>> &image_files,
     if (!in_db) {
       batch_files.push_back({filename, class_index});
     }
-    if (image_count % 1000 == 0) {
+    if (image_count % 10 == 0) {
       std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. "
                 << image_count << '/' << image_files.size() << " "
                 << std::setprecision(3)
