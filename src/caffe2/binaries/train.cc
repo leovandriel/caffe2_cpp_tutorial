@@ -78,15 +78,17 @@ void run() {
 
   if (FLAGS_display) {
     superWindow("Full Train Example");
-    moveWindow("undercertain", 0, 0);
-    resizeWindow("undercertain", 300, 300);
-    setWindowTitle("undercertain", "uncertain but correct");
-    moveWindow("overcertain", 0, 300);
-    resizeWindow("overcertain", 300, 300);
-    setWindowTitle("overcertain", "certain but incorrect");
-    moveWindow("accuracy", 300, 0);
+    if (!has_split) {
+      moveWindow("undercertain", 0, 0);
+      resizeWindow("undercertain", 300, 300);
+      setWindowTitle("undercertain", "uncertain but correct");
+      moveWindow("overcertain", 0, 300);
+      resizeWindow("overcertain", 300, 300);
+      setWindowTitle("overcertain", "certain but incorrect");
+    }
+    moveWindow("accuracy", has_split ? 0 : 300, 0);
     resizeWindow("accuracy", 500, 300);
-    moveWindow("loss", 300, 300);
+    moveWindow("loss", has_split ? 0 : 300, 300);
     resizeWindow("loss", 500, 300);
   }
 
@@ -174,8 +176,10 @@ void run() {
   }
 
   if (FLAGS_display) {
-    models[kRunValidate].predict.AddShowWorstOp(output, "label",
-                                                second.predict.Input(0));
+    if (!has_split) {
+      models[kRunValidate].predict.AddShowWorstOp(output, "label",
+                                                  second.predict.Input(0));
+    }
     models[kRunTrain].predict.AddTimePlotOp("accuracy", "iter", "accuracy",
                                             "train", 10);
     models[kRunValidate].predict.AddTimePlotOp("accuracy", "iter", "accuracy",

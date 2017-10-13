@@ -24,3 +24,13 @@ test -d res/mnist-test-nchw-leveldb || make_mnist_db --image_file=res/t10k-image
 
 test -f res/shakespeare.txt || echo "downloading RNN and LSTM test data (1)"
 test -f res/shakespeare.txt || curl --progress-bar --output res/shakespeare.txt https://caffe2.ai/static/datasets/shakespeare.txt
+
+test -d res/images || echo "downloading CNN image test data (2)"
+test -d res/images || mkdir -p res/download/cats
+test -d res/images || cd res/download/cats
+test -d res/images || curl  --progress-bar http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=n02121808 | tail -n 50 | tr -d '\r' | xargs -L1 -P 5 -I {} sh -c "curl --connect-timeout 10 --fail --silent --progress-bar --remote-name '{}' || true"
+test -d res/images || mkdir -p ../dogs
+test -d res/images || cd ../dogs
+test -d res/images || curl  --progress-bar http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=n02084071 | tail -n 50 | tr -d '\r' | xargs -L1 -P 5 -I {} sh -c "curl --connect-timeout 10 --fail --silent --progress-bar --remote-name '{}' || true"
+test -d res/images || cd ../../..
+test -d res/images || mv res/download res/images

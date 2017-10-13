@@ -150,7 +150,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model <name-of-model> --image-file <some-image>
+    ./bin/imagenet --model <model-name> --image-file <some-image>
 
 Where the model name is one of the following:
 
@@ -180,21 +180,25 @@ The article [DeCAF: A Deep Convolutional Activation Feature for Generic Visual R
 
 First divide all images in subfolders with the label a folder name. Then to retrain the final layer of GoogleNet:
 
-    ./bin/train --model googlenet --folder <image-folder> --layer pool5/7x7_s1
+    ./bin/train --model googlenet --folder res/images --layer pool5/7x7_s1
 
 The script starts out by collecting all images and running them through the pre-trained part of the model. This allows for very fast training on the pre-processed image data.
 
 If you have more (GPU) power at your disposal retrain VGG16's final 2 layers:
 
-    ./bin/train --model vgg16 --folder <image-folder> --layer fc6
+    ./bin/train --model vgg16 --folder res/images --layer fc6
+
+Add `--display` for training visualization:
+
+    ./bin/train --model googlenet --folder res/images --layer pool5/7x7_s1 --display
 
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/train --model squeezenet --folder <image-folder> --layer fire9/concat --reshape-output
+    ./bin/train --model squeezenet --folder res/images --layer fire9/concat --reshape-output
 
 You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
 
-    ./bin/train --model res/googlenet_%_net.pb --folder <image-folder> --layer pool5/7x7_s1
+    ./bin/train --model res/googlenet_%_net.pb --folder res/images --layer pool5/7x7_s1
 
 See also:
 
@@ -205,15 +209,13 @@ See also:
 
 To fully train an existing image classification model from scratch, run without the `--layer` option:
 
-    ./bin/train --model <model-name> --folder <image-folder>
+    ./bin/train --model googlenet --folder res/images
 
 The models currently available for training are the ones listed in the [ImageNet](#imagenet-classifiers) section. This will take a lot of time even when runnning on the GPU.
 
-Add `--display` for training visualization.
-
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/train --model squeezenet --folder <image-folder> --reshape-output
+    ./bin/train --model squeezenet --folder res/images --reshape-output
 
 ## Deep Dream
 
