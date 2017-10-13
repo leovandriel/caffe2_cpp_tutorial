@@ -23,6 +23,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
   DCHECK_EQ(X.ndim(), 2);
   int N = X.dim32(0);
   int D = X.dim32(1);
+  DCHECK_EQ(image.ndim(), 4);
   int CHW = image.size() / image.dim32(0);
   DCHECK_EQ(label.ndim(), 1);
   DCHECK_EQ(label.dim32(0), N);
