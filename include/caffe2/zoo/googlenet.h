@@ -119,7 +119,7 @@ class GoogleNetModel : public ModelUtil {
     return AddFcOps(layer, output + "classifier", in_size, out_size, false);
   }
 
-  void Add(int out_size = 1000, bool train = false) {
+  void Add(int out_size, bool train = false) {
     predict.SetName("GoogleNet");
     auto input = "data";
 

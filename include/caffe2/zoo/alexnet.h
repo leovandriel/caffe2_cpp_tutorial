@@ -64,7 +64,7 @@ class AlexNetModel : public ModelUtil {
                                  output + "top-5", 5);
   }
 
-  void Add(int out_size = 1000, bool train = false) {
+  void Add(int out_size, bool train = false) {
     predict.SetName("AlexNet");
     auto input = "data";
 

@@ -74,7 +74,7 @@ void run() {
     std::replace(layer_safe.begin(), layer_safe.end(), '.', '_');
     layer_prefix = layer_safe + '_';
   }
-  auto path_prefix = FLAGS_folder + '/' + '_' + model_safe + '_' + layer_prefix;
+  auto path_prefix = FLAGS_folder + '/' + '_' + layer_prefix;
 
   if (FLAGS_display) {
     superWindow("Full Train Example");
@@ -99,10 +99,18 @@ void run() {
 
   std::cout << std::endl;
 
+  std::cout << "collect images.." << std::endl;
+  auto load_time = -clock();
+  std::vector<std::string> class_labels;
+  std::vector<std::pair<std::string, int>> image_files;
+  load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
+  std::cout << class_labels.size() << " labels found" << std::endl;
+  std::cout << image_files.size() << " images found" << std::endl;
+
   std::cout << "load model.." << std::endl;
   NetDef full_init_model, full_predict_model;
   ModelUtil full(full_init_model, full_predict_model);
-  Keeper(FLAGS_model).AddModel(full, has_split);
+  Keeper(FLAGS_model).AddModel(full, has_split, class_labels.size());
 
   if (FLAGS_device == "cudnn") {
     full.init.SetEngineOps("CUDNN");
@@ -134,14 +142,6 @@ void run() {
     second.init.net = full.init.net;
     second.predict.net = full.predict.net;
   }
-
-  std::cout << "collect images.." << std::endl;
-  auto load_time = -clock();
-  std::vector<std::string> class_labels;
-  std::vector<std::pair<std::string, int>> image_files;
-  load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
-  std::cout << class_labels.size() << " labels found" << std::endl;
-  std::cout << image_files.size() << " images found" << std::endl;
 
   std::cout << "cache images.." << std::endl;
   auto count = preprocess(image_files, db_paths, first, FLAGS_db_type,
@@ -220,7 +220,7 @@ void run() {
                    "train_" + full.init.net.name());
   full.CopyDeploy(deploy, workspace);
 
-  size_t model_size = deploy.Write(path_prefix);
+  size_t model_size = deploy.Write(path_prefix + model_safe + '_');
 
   std::cout << std::endl;
 
