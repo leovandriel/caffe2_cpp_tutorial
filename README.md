@@ -192,6 +192,8 @@ Add `--display` for training visualization:
 
     ./bin/train --model googlenet --folder res/images --layer pool5/7x7_s1 --display
 
+<img src="script/retrain.jpg" alt="Fast Retrain" width="250"/>
+
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
     ./bin/train --model squeezenet --folder res/images --layer fire9/concat --reshape-output
@@ -216,6 +218,8 @@ The models currently available for training are the ones listed in the [ImageNet
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
     ./bin/train --model squeezenet --folder res/images --reshape-output
+
+<img src="script/train.jpg" alt="Training from scratch" width="400"/>
 
 ## Deep Dream
 

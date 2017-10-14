@@ -150,37 +150,37 @@ class Keeper {
     return model.Read("res/" + name_);
   }
 
-  size_t addUntrainedModel(ModelUtil &model) {
+  size_t addUntrainedModel(ModelUtil &model, int out_size) {
     if (name_ == "alexnet") {
-      AlexNetModel(model.init.net, model.predict.net).Add();
+      AlexNetModel(model.init.net, model.predict.net).Add(out_size);
     } else if (name_ == "googlenet") {
-      GoogleNetModel(model.init.net, model.predict.net).Add();
+      GoogleNetModel(model.init.net, model.predict.net).Add(out_size);
     } else if (name_ == "squeezenet") {
-      SqueezeNetModel(model.init.net, model.predict.net).Add();
+      SqueezeNetModel(model.init.net, model.predict.net).Add(out_size);
     } else if (name_ == "vgg16") {
-      VGGModel(model.init.net, model.predict.net).Add(16);
+      VGGModel(model.init.net, model.predict.net).Add(16, out_size);
     } else if (name_ == "vgg19") {
-      VGGModel(model.init.net, model.predict.net).Add(19);
+      VGGModel(model.init.net, model.predict.net).Add(19, out_size);
     } else if (name_ == "resnet50") {
-      ResNetModel(model.init.net, model.predict.net).Add(50);
+      ResNetModel(model.init.net, model.predict.net).Add(50, out_size);
     } else if (name_ == "resnet101") {
-      ResNetModel(model.init.net, model.predict.net).Add(101);
+      ResNetModel(model.init.net, model.predict.net).Add(101, out_size);
     } else if (name_ == "resnet152") {
-      ResNetModel(model.init.net, model.predict.net).Add(152);
+      ResNetModel(model.init.net, model.predict.net).Add(152, out_size);
     } else {
       CAFFE_THROW("model " + name_ + " not implemented");
     }
     return 0;
   }
 
-  size_t AddModel(ModelUtil &model, bool trained) {
+  size_t AddModel(ModelUtil &model, bool trained = true, int out_size = 0) {
     auto at = name_.find("%");
     size_t size = 0;
     if (at == std::string::npos) {
       if (trained) {
         size = addTrainedModel(model);
       } else {
-        size = addUntrainedModel(model);
+        size = addUntrainedModel(model, out_size);
       }
     } else {
       size +=

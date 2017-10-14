@@ -100,7 +100,7 @@ class ResNetModel : public ModelUtil {
     return AddFcOps(layer, "fc1000", in_size, out_size);
   }
 
-  void Add(int type, int out_size = 1000, bool train = false) {
+  void Add(int type, int out_size, bool train = false) {
     predict.SetName("ResNet" + std::to_string(type));
     auto input = "data";
 

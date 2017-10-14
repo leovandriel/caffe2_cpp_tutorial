@@ -44,7 +44,7 @@ class VGGModel : public ModelUtil {
     return predict.AddAccuracyOp("classifier", "label", "top-5", 5);
   }
 
-  void Add(int type, int out_size = 1000, bool train = false) {
+  void Add(int type, int out_size, bool train = false) {
     predict.SetName("VGG" + std::to_string(type));
     auto input = "data";
 

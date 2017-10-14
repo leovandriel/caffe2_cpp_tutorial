@@ -198,6 +198,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     }
     if (!in_db) {
       batch_files.push_back({filename, class_index});
+      sample_count++;
     }
     if (image_count % 10 == 0) {
       std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. "
