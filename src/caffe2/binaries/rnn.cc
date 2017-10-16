@@ -9,9 +9,9 @@ CAFFE2_DEFINE_string(model, "char_rnn", "The RNN model.");
 CAFFE2_DEFINE_string(train_data, "res/shakespeare.txt",
                      "Path to training data in a text file format");
 
-CAFFE2_DEFINE_int(train_runs, 10 * 1000, "The of training runs.");
+CAFFE2_DEFINE_int(epochs, 10 * 1000, "The of training runs.");
 CAFFE2_DEFINE_int(seq_length, 25, "One training example sequence length");
-CAFFE2_DEFINE_int(batch_size, 1, "Training batch size");
+CAFFE2_DEFINE_int(batch, 1, "Training batch size");
 CAFFE2_DEFINE_int(iters_to_report, 500,
                   "How often to report loss and generate text");
 CAFFE2_DEFINE_int(hidden_size, 100, "Dimension of the hidden representation");
@@ -92,9 +92,9 @@ void run() {
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "train-data: " << FLAGS_train_data << std::endl;
-  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "epochs: " << FLAGS_epochs << std::endl;
   std::cout << "seq-length: " << FLAGS_seq_length << std::endl;
-  std::cout << "batch-size: " << FLAGS_batch_size << std::endl;
+  std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "iters-to-report: " << FLAGS_iters_to_report << std::endl;
   std::cout << "hidden-size: " << FLAGS_hidden_size << std::endl;
   std::cout << "gen-length: " << FLAGS_gen_length << std::endl;
@@ -245,18 +245,18 @@ void run() {
   auto N = text.size();
 
   // >>> text_block_positions = np.zeros(self.batch_size, dtype=np.int32)
-  std::vector<int> text_block_positions(FLAGS_batch_size);
+  std::vector<int> text_block_positions(FLAGS_batch);
   // >>> text_block_size = N // self.batch_size
-  auto text_block_size = N / FLAGS_batch_size;
+  auto text_block_size = N / FLAGS_batch;
   // >>> text_block_starts = list(range(0, N, text_block_size))
   std::vector<int> text_block_starts;
   for (auto i = 0; i < N; i += text_block_size) {
     text_block_starts.push_back(i);
   }
   // >>> text_block_sizes = [text_block_size] * self.batch_size
-  std::vector<int> text_block_sizes(FLAGS_batch_size, text_block_size);
+  std::vector<int> text_block_sizes(FLAGS_batch, text_block_size);
   // >>> text_block_sizes[self.batch_size - 1] += N % self.batch_size
-  text_block_sizes[FLAGS_batch_size - 1] += N % FLAGS_batch_size;
+  text_block_sizes[FLAGS_batch - 1] += N % FLAGS_batch;
   // >>> assert sum(text_block_sizes) == N
   CAFFE_ENFORCE_EQ(std::accumulate(text_block_sizes.begin(),
                                    text_block_sizes.end(), 0, std::plus<int>()),
@@ -265,17 +265,17 @@ void run() {
   // >>> workspace.FeedBlob(self.hidden_output, np.zeros([1, self.batch_size,
   // self.hidden_size], dtype=np.float32))
   {
-    std::vector<float> data(FLAGS_batch_size * FLAGS_hidden_size);
+    std::vector<float> data(FLAGS_batch * FLAGS_hidden_size);
     auto value =
-        TensorCPU({1, FLAGS_batch_size, FLAGS_hidden_size}, data, NULL);
+        TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
     BlobUtil(*workspace.CreateBlob(hidden_output)).Set(value, true);
   }
   // >>> workspace.FeedBlob(self.cell_state, np.zeros([1, self.batch_size,
   // self.hidden_size], dtype=np.float32))
   {
-    std::vector<float> data(FLAGS_batch_size * FLAGS_hidden_size);
+    std::vector<float> data(FLAGS_batch * FLAGS_hidden_size);
     auto value =
-        TensorCPU({1, FLAGS_batch_size, FLAGS_hidden_size}, data, NULL);
+        TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
     BlobUtil(*workspace.CreateBlob(cell_state)).Set(value, true);
   }
   // >>> workspace.CreateNet(self.prepare_state)
@@ -296,12 +296,12 @@ void run() {
   auto forwardNet = CreateNet(model.predict.net, &workspace);
 
   // >>> while True:
-  while (num_iter < FLAGS_train_runs) {
+  while (num_iter < FLAGS_epochs) {
     // >>> workspace.FeedBlob("seq_lengths", np.array([self.seq_length] *
     // self.batch_size, dtype=np.int32))
     {
-      std::vector<int> data(FLAGS_batch_size, FLAGS_seq_length);
-      auto value = TensorCPU({FLAGS_batch_size}, data, NULL);
+      std::vector<int> data(FLAGS_batch, FLAGS_seq_length);
+      auto value = TensorCPU({FLAGS_batch}, data, NULL);
       BlobUtil(*workspace.CreateBlob("seq_lengths")).Set(value, true);
     }
 
@@ -310,21 +310,21 @@ void run() {
 
     // >>> input = np.zeros([self.seq_length, self.batch_size,
     // self.D]).astype(np.float32)
-    std::vector<float> input(FLAGS_seq_length * FLAGS_batch_size * D);
+    std::vector<float> input(FLAGS_seq_length * FLAGS_batch * D);
     // >>> target = np.zeros([self.seq_length *
     // self.batch_size]).astype(np.int32)
-    std::vector<int> target(FLAGS_seq_length * FLAGS_batch_size);
+    std::vector<int> target(FLAGS_seq_length * FLAGS_batch);
 
     // >>> for e in range(self.batch_size):
-    for (auto e = 0; e < FLAGS_batch_size; e++) {
+    for (auto e = 0; e < FLAGS_batch; e++) {
       // >>> for i in range(self.seq_length):
       for (auto i = 0; i < FLAGS_seq_length; i++) {
         // >>> pos = text_block_starts[e] + text_block_positions[e]
         auto pos = text_block_starts[e] + text_block_positions[e];
         // >>> input[i][e][self._idx_at_pos(pos)] = 1
-        input[i * FLAGS_batch_size * D + e * D + char_to_idx[text[pos]]] = 1;
+        input[i * FLAGS_batch * D + e * D + char_to_idx[text[pos]]] = 1;
         // >>> target[i * self.batch_size + e] = self._idx_at_pos((pos + 1) % N)
-        target[i * FLAGS_batch_size + e] = char_to_idx[text[(pos + 1) % N]];
+        target[i * FLAGS_batch + e] = char_to_idx[text[(pos + 1) % N]];
         // >>> text_block_positions[e] = (text_block_positions[e] + 1) %
         // text_block_sizes[e]
         text_block_positions[e] =
@@ -337,13 +337,13 @@ void run() {
     // >>> workspace.FeedBlob('input_blob', input)
     {
       auto value =
-          TensorCPU({FLAGS_seq_length, FLAGS_batch_size, D}, input, NULL);
+          TensorCPU({FLAGS_seq_length, FLAGS_batch, D}, input, NULL);
       BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
     }
     // >>> workspace.FeedBlob('target', target)
     {
       auto value =
-          TensorCPU({FLAGS_seq_length * FLAGS_batch_size}, target, NULL);
+          TensorCPU({FLAGS_seq_length * FLAGS_batch}, target, NULL);
       BlobUtil(*workspace.CreateBlob("target")).Set(value, true);
     }
 
@@ -400,8 +400,8 @@ void run() {
         // >>> workspace.FeedBlob("seq_lengths", np.array([1] * self.batch_size,
         // dtype=np.int32))
         {
-          std::vector<int> data(FLAGS_batch_size, 1);
-          auto value = TensorCPU({FLAGS_batch_size}, data, NULL);
+          std::vector<int> data(FLAGS_batch, 1);
+          auto value = TensorCPU({FLAGS_batch}, data, NULL);
           BlobUtil(*workspace.CreateBlob("seq_lengths")).Set(value, true);
         }
 
@@ -409,13 +409,13 @@ void run() {
         prepareNet->Run();
 
         // >>> input = np.zeros([1, self.batch_size, self.D]).astype(np.float32)
-        std::vector<float> input(FLAGS_batch_size * D);
+        std::vector<float> input(FLAGS_batch * D);
         // >>> input[0][0][self.char_to_idx[ch]] = 1
         input[char_to_idx[ch]] = 1;
 
         // >>> workspace.FeedBlob("input_blob", input)
         {
-          auto value = TensorCPU({1, FLAGS_batch_size, D}, input, NULL);
+          auto value = TensorCPU({1, FLAGS_batch, D}, input, NULL);
           BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
         }
         // >>> workspace.RunNet(self.forward_net.Name())

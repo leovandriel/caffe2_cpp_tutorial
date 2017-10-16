@@ -16,18 +16,18 @@ CAFFE2_DEFINE_string(layer, "",
 CAFFE2_DEFINE_string(folder, "", "Folder with subfolders with images");
 
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
-CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
-CAFFE2_DEFINE_int(train_runs, 1000, "The of training runs.");
+CAFFE2_DEFINE_int(size, 224, "The image file.");
+CAFFE2_DEFINE_int(epochs, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
-CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
-CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
+CAFFE2_DEFINE_int(batch, 64, "Training batch size.");
+CAFFE2_DEFINE_double(lr, 1e-4, "Learning rate.");
 CAFFE2_DEFINE_bool(skip_preprocess, false,
                    "Skip going through preprocessed images");
 
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
-CAFFE2_DEFINE_bool(reshape_output, false,
+CAFFE2_DEFINE_bool(reshape, false,
                    "Reshape output (necessary for squeeznet)");
 
 #include "caffe2/util/cmd.h"
@@ -56,16 +56,16 @@ void run() {
   std::cout << "layer: " << FLAGS_layer << std::endl;
   std::cout << "image-dir: " << FLAGS_folder << std::endl;
   std::cout << "db-type: " << FLAGS_db_type << std::endl;
-  std::cout << "size-to-fit: " << FLAGS_size_to_fit << std::endl;
-  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "size: " << FLAGS_size << std::endl;
+  std::cout << "epochs: " << FLAGS_epochs << std::endl;
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
-  std::cout << "batch-size: " << FLAGS_batch_size << std::endl;
-  std::cout << "learning-rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "batch: " << FLAGS_batch << std::endl;
+  std::cout << "lr: " << FLAGS_lr << std::endl;
   std::cout << "skip_preprocess: " << (FLAGS_skip_preprocess ? "true" : "false")
             << std::endl;
   std::cout << "zero-one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
-  std::cout << "reshape-output: " << (FLAGS_reshape_output ? "true" : "false")
+  std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false")
             << std::endl;
 
   auto has_split = FLAGS_layer.size() > 0;
@@ -157,7 +157,7 @@ void run() {
   } else {
     std::cout << "preprocess images.." << std::endl;
     count = preprocess(image_files, db_paths, first, FLAGS_db_type,
-                       FLAGS_batch_size, FLAGS_size_to_fit);
+                       FLAGS_batch, FLAGS_size);
   }
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
@@ -165,14 +165,14 @@ void run() {
   auto model_in = has_split ? FLAGS_layer : full.predict.Input(0);
   for (int i = 0; i < kRunNum; i++) {
     models[i].AddDatabaseOps(name_for_run[i], model_in, db_paths[i],
-                             FLAGS_db_type, FLAGS_batch_size);
+                             FLAGS_db_type, FLAGS_batch);
   }
   second.CopyTrain(model_in, class_labels.size(), models[kRunTrain]);
   second.CopyTest(models[kRunValidate]);
   second.CopyTest(models[kRunTest]);
 
   auto output = models[kRunTrain].predict.Output(0);
-  if (FLAGS_reshape_output) {
+  if (FLAGS_reshape) {
     auto output_reshaped = output + "_reshaped";
     for (int i = 0; i < kRunNum; i++) {
       models[i].predict.AddReshapeOp(output, output_reshaped, {0, -1});
@@ -180,7 +180,7 @@ void run() {
     output = output_reshaped;
   }
 
-  models[kRunTrain].AddTrainOps(output, FLAGS_learning_rate, FLAGS_optimizer);
+  models[kRunTrain].AddTrainOps(output, FLAGS_lr, FLAGS_optimizer);
   ModelUtil(second.predict, models[kRunValidate].predict).AddTestOps(output);
   ModelUtil(second.predict, models[kRunTest].predict).AddTestOps(output);
 
@@ -221,7 +221,7 @@ void run() {
   clock_t test_time = 0;
 
   std::cout << "training.." << std::endl;
-  run_trainer(FLAGS_train_runs, models[kRunTrain], models[kRunValidate],
+  run_trainer(FLAGS_epochs, models[kRunTrain], models[kRunValidate],
               workspace, train_time, validate_time);
 
   std::cout << std::endl;
