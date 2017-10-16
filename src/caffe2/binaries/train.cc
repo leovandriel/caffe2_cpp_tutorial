@@ -21,6 +21,8 @@ CAFFE2_DEFINE_int(train_runs, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch_size, 64, "Training batch size.");
 CAFFE2_DEFINE_double(learning_rate, 1e-4, "Learning rate.");
+CAFFE2_DEFINE_bool(skip_preprocess, false,
+                   "Skip going through preprocessed images");
 
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
@@ -59,6 +61,8 @@ void run() {
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch-size: " << FLAGS_batch_size << std::endl;
   std::cout << "learning-rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "skip_preprocess: " << (FLAGS_skip_preprocess ? "true" : "false")
+            << std::endl;
   std::cout << "zero-one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
   std::cout << "reshape-output: " << (FLAGS_reshape_output ? "true" : "false")
@@ -143,10 +147,16 @@ void run() {
     second.predict.net = full.predict.net;
   }
 
-  std::cout << "cache images.." << std::endl;
-  auto count = preprocess(image_files, db_paths, first, FLAGS_db_type,
-                          FLAGS_batch_size, FLAGS_size_to_fit);
-  std::cout << count << " images processed" << std::endl;
+  auto count = 0;
+  if (FLAGS_skip_preprocess) {
+    std::cout << "count images.. (skipping preprocess)" << std::endl;
+    count = count_samples(db_paths, FLAGS_db_type);
+  } else {
+    std::cout << "preprocess images.." << std::endl;
+    count = preprocess(image_files, db_paths, first, FLAGS_db_type,
+                       FLAGS_batch_size, FLAGS_size_to_fit);
+  }
+  std::cout << count << " images cached" << std::endl;
   load_time += clock();
 
   auto model_in = has_split ? FLAGS_layer : full.predict.Input(0);

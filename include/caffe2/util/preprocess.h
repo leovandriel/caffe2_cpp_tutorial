@@ -196,9 +196,10 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
       cursor->Seek(key);
       in_db |= (cursor->Valid() && cursor->key() == key);
     }
-    if (!in_db) {
-      batch_files.push_back({filename, class_index});
+    if (in_db) {
       sample_count++;
+    } else {
+      batch_files.push_back({filename, class_index});
     }
     if (image_count % 10 == 0) {
       std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. "
@@ -234,6 +235,22 @@ void preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   NetDef n;
   ModelUtil none(n, n);
   preprocess(image_files, db_paths, none, db_type, 64, size_to_fit);
+}
+
+int count_samples(const std::string *db_paths, const std::string &db_type) {
+  std::unique_ptr<db::DB> database[kRunNum];
+  for (int i = 0; i < kRunNum; i++) {
+    database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
+  }
+  auto sample_count = 0;
+  for (int i = 0; i < kRunNum; i++) {
+    auto cursor = database[i]->NewCursor();
+    while (cursor->Valid()) {
+      sample_count++;
+      cursor->Next();
+    }
+  }
+  return sample_count;
 }
 
 }  // namespace caffe2
