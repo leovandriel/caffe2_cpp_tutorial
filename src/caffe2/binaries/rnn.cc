@@ -266,16 +266,14 @@ void run() {
   // self.hidden_size], dtype=np.float32))
   {
     std::vector<float> data(FLAGS_batch * FLAGS_hidden_size);
-    auto value =
-        TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
+    auto value = TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
     BlobUtil(*workspace.CreateBlob(hidden_output)).Set(value, true);
   }
   // >>> workspace.FeedBlob(self.cell_state, np.zeros([1, self.batch_size,
   // self.hidden_size], dtype=np.float32))
   {
     std::vector<float> data(FLAGS_batch * FLAGS_hidden_size);
-    auto value =
-        TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
+    auto value = TensorCPU({1, FLAGS_batch, FLAGS_hidden_size}, data, NULL);
     BlobUtil(*workspace.CreateBlob(cell_state)).Set(value, true);
   }
   // >>> workspace.CreateNet(self.prepare_state)
@@ -336,14 +334,12 @@ void run() {
 
     // >>> workspace.FeedBlob('input_blob', input)
     {
-      auto value =
-          TensorCPU({FLAGS_seq_length, FLAGS_batch, D}, input, NULL);
+      auto value = TensorCPU({FLAGS_seq_length, FLAGS_batch, D}, input, NULL);
       BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
     }
     // >>> workspace.FeedBlob('target', target)
     {
-      auto value =
-          TensorCPU({FLAGS_seq_length * FLAGS_batch}, target, NULL);
+      auto value = TensorCPU({FLAGS_seq_length * FLAGS_batch}, target, NULL);
       BlobUtil(*workspace.CreateBlob("target")).Set(value, true);
     }
 

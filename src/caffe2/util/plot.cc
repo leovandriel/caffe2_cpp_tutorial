@@ -241,7 +241,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
              {(int)(x * xs + xd), buffer.rows - border_size_},
              color2scalar(sub_axis_color_), 1, CV_AA);
     std::ostringstream out;
-    out << std::setprecision(3) << (x == 0 ? 0 : x);
+    out << std::setprecision(4) << (x == 0 ? 0 : x);
     int baseline;
     cv::Size size =
         getTextSize(out.str(), cv::FONT_HERSHEY_SIMPLEX, 0.3, 1.0, &baseline);
@@ -255,7 +255,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
              {buffer.cols - border_size_, (int)(y * ys + yd)},
              color2scalar(sub_axis_color_), 1, CV_AA);
     std::ostringstream out;
-    out << std::setprecision(3) << (y == 0 ? 0 : y);
+    out << std::setprecision(4) << (y == 0 ? 0 : y);
     int baseline;
     cv::Size size =
         getTextSize(out.str(), cv::FONT_HERSHEY_SIMPLEX, 0.3, 1.0, &baseline);

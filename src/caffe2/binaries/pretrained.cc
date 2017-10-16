@@ -55,16 +55,14 @@ void run() {
   std::cout << "image size: " << image.size() << std::endl;
 
   // scale image to fit
-  cv::Size scale(
-      std::max(FLAGS_size * image.cols / image.rows, FLAGS_size),
-      std::max(FLAGS_size, FLAGS_size * image.rows / image.cols));
+  cv::Size scale(std::max(FLAGS_size * image.cols / image.rows, FLAGS_size),
+                 std::max(FLAGS_size, FLAGS_size * image.rows / image.cols));
   cv::resize(image, image, scale);
   std::cout << "scaled size: " << image.size() << std::endl;
 
   // crop image to fit
-  cv::Rect crop((image.cols - FLAGS_size) / 2,
-                (image.rows - FLAGS_size) / 2, FLAGS_size,
-                FLAGS_size);
+  cv::Rect crop((image.cols - FLAGS_size) / 2, (image.rows - FLAGS_size) / 2,
+                FLAGS_size, FLAGS_size);
   image = image(crop);
   std::cout << "cropped size: " << image.size() << std::endl;
 
