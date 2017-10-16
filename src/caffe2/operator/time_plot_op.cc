@@ -45,7 +45,7 @@ template <>
 bool TimePlotOp<float, CUDAContext>::RunOnDevice() {
   auto index = index_++;
   if (InputSize() > 1) {
-    index = TensorCPU(Input(1)).data<int64_t>()[0];
+    index = InputBlob(1).Get<TensorCPU>().data<int64_t>()[0];
   }
   time_plot(TensorCPU(Input(0)), label_, window_, step_, index, step_count_,
             index_sum_, value_sum_);
