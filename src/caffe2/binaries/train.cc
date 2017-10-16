@@ -85,10 +85,8 @@ void run() {
     if (!has_split) {
       moveWindow("undercertain", 0, 0);
       resizeWindow("undercertain", 300, 300);
-      setWindowTitle("undercertain", "uncertain but correct");
       moveWindow("overcertain", 0, 300);
       resizeWindow("overcertain", 300, 300);
-      setWindowTitle("overcertain", "certain but incorrect");
     }
     moveWindow("accuracy", has_split ? 0 : 300, 0);
     resizeWindow("accuracy", 500, 300);
@@ -108,7 +106,12 @@ void run() {
   std::vector<std::string> class_labels;
   std::vector<std::pair<std::string, int>> image_files;
   load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
-  std::cout << class_labels.size() << " labels found" << std::endl;
+  std::cout << class_labels.size() << " labels found,";
+  auto i = 0;
+  for (auto label : class_labels) {
+    std::cout << " " << i++ << ":" << label;
+  }
+  std::cout << std::endl;
   std::cout << image_files.size() << " images found" << std::endl;
 
   std::cout << "load model.." << std::endl;
@@ -230,6 +233,7 @@ void run() {
                    "train_" + full.init.net.name());
   full.CopyDeploy(deploy, workspace);
 
+  std::cout << "saving model.." << std::endl;
   size_t model_size = deploy.Write(path_prefix + model_safe + '_');
 
   std::cout << std::endl;
@@ -241,6 +245,9 @@ void run() {
             << "s  test: " << ((float)test_time / CLOCKS_PER_SEC)
             << "s  model: " << ((float)model_size / 1000000) << "MB"
             << std::endl;
+
+  std::cout << "press Ctrl+C to quit" << std::endl;
+  cvWaitKey(0);
 }
 
 }  // namespace caffe2
