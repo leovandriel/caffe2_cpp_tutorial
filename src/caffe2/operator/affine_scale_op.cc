@@ -1,4 +1,4 @@
-#include <caffe2/operator/affine_scale_op.h>
+#include "caffe2/operator/affine_scale_op.h"
 
 namespace caffe2 {
 
