@@ -59,7 +59,7 @@ class PlotUtil {
       std::vector<std::pair<float, float>> data(values.size());
       auto i = 0;
       for (auto &d : data) {
-        d.first = i;
+        d.first = i + data_.size();
         d.second = values[i++];
       }
       Append(data);
