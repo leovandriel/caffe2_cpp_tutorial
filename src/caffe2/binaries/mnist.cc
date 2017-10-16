@@ -183,10 +183,8 @@ void run() {
     superWindow("Caffe2 MNIST Tutorial");
     moveWindow("undercertain", 0, 0);
     resizeWindow("undercertain", 300, 300);
-    setWindowTitle("undercertain", "uncertain but correct");
     moveWindow("overcertain", 0, 300);
     resizeWindow("overcertain", 300, 300);
-    setWindowTitle("overcertain", "certain but incorrect");
     moveWindow("accuracy", 300, 0);
     resizeWindow("accuracy", 300, 300);
     moveWindow("loss", 300, 300);
