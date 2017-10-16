@@ -27,8 +27,7 @@ CAFFE2_DEFINE_bool(skip_preprocess, false,
 CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
-CAFFE2_DEFINE_bool(reshape, false,
-                   "Reshape output (necessary for squeeznet)");
+CAFFE2_DEFINE_bool(reshape, false, "Reshape output (necessary for squeeznet)");
 
 #include "caffe2/util/cmd.h"
 
@@ -65,8 +64,7 @@ void run() {
             << std::endl;
   std::cout << "zero-one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
-  std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false")
-            << std::endl;
+  std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false") << std::endl;
 
   auto has_split = FLAGS_layer.size() > 0;
   std::string layer_prefix;
@@ -156,8 +154,8 @@ void run() {
     count = count_samples(db_paths, FLAGS_db_type);
   } else {
     std::cout << "preprocess images.." << std::endl;
-    count = preprocess(image_files, db_paths, first, FLAGS_db_type,
-                       FLAGS_batch, FLAGS_size);
+    count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
+                       FLAGS_size);
   }
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
@@ -221,8 +219,8 @@ void run() {
   clock_t test_time = 0;
 
   std::cout << "training.." << std::endl;
-  run_trainer(FLAGS_epochs, models[kRunTrain], models[kRunValidate],
-              workspace, train_time, validate_time);
+  run_trainer(FLAGS_epochs, models[kRunTrain], models[kRunValidate], workspace,
+              train_time, validate_time);
 
   std::cout << std::endl;
   std::cout << "testing.." << std::endl;
@@ -246,8 +244,10 @@ void run() {
             << "s  model: " << ((float)model_size / 1000000) << "MB"
             << std::endl;
 
-  std::cout << "press Ctrl+C to quit" << std::endl;
-  cvWaitKey(0);
+  if (FLAGS_display) {
+    std::cout << "press Ctrl+C to quit" << std::endl;
+    cvWaitKey(0);
+  }
 }
 
 }  // namespace caffe2
