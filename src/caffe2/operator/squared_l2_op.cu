@@ -1,5 +1,5 @@
 #include <caffe2/core/context_gpu.h>
-#include <caffe2/operator/squared_l2_op.h>
+#include "caffe2/operator/squared_l2_op.h"
 
 namespace caffe2 {
 

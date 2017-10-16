@@ -1,4 +1,4 @@
-#include <caffe2/operator/squared_l2_channel_op.h>
+#include "caffe2/operator/squared_l2_channel_op.h"
 
 namespace caffe2 {
 
