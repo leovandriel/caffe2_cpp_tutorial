@@ -98,7 +98,7 @@ This should output something along the lines of `96% 'daisy'`.
 
 To classify `giraffe.jpg`:
 
-    ./bin/pretrained --image_file giraffe.jpg
+    ./bin/pretrained --file giraffe.jpg
 
 This tutorial is also a good test to see if OpenCV is working properly.
 
@@ -130,17 +130,17 @@ This tutorial is transcribed in [rnn.cc](src/caffe2/binaries/rnn.cc). It takes t
 
     ./bin/rnn
 
-In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--train-runs`:
+In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--epochs`:
 
-    ./bin/run --train-runs 100000
+    ./bin/run --epochs 100000
 
 To get better results (loss < 1), expand the hidden layer:
 
-    ./bin/rnn --train-runs 100000 --batch-size 32 --hidden-size 512 --seq-length 32
+    ./bin/rnn --epochs 100000 --batch 32 --hidden_size 512 --seq_length 32
 
 The file `res/dickens.txt` contains a larger volume of text. Because the writing is a bit more recent, it's more challenging to generate convincing results. Also, single newlines are stripped to allow for more creativity.
 
-    ./bin/rnn --train-runs 100000 --batch-size 32 --hidden-size 768 --seq-length 32 --train-data res/dickens.txt
+    ./bin/rnn --epochs 100000 --batch 32 --hidden_size 768 --seq_length 32 --train_data res/dickens.txt
 
 After 200K runs, the loss has not dropped below 36, in contrast to the shakespeare text. Perhaps this requires an additional hidden layer in the LSTM model.
 
@@ -150,7 +150,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model <model-name> --image-file <some-image>
+    ./bin/imagenet --model <model-name> --file <some-image>
 
 Where the model name is one of the following:
 
@@ -196,7 +196,7 @@ Add `--display` for training visualization:
 
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/train --model squeezenet --folder res/images --layer fire9/concat --reshape-output
+    ./bin/train --model squeezenet --folder res/images --layer fire9/concat --reshape
 
 You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
 
@@ -217,7 +217,7 @@ The models currently available for training are the ones listed in the [ImageNet
 
 Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 
-    ./bin/train --model squeezenet --folder res/images --reshape-output
+    ./bin/train --model squeezenet --folder res/images --reshape
 
 <img src="script/train.jpg" alt="Training from scratch" width="400"/>
 

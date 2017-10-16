@@ -19,12 +19,12 @@ CAFFE2_DEFINE_int(channel, -1, "The first channel to run.");
 CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
 CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
-CAFFE2_DEFINE_string(image_file, "", "The image file.");
-CAFFE2_DEFINE_int(train_runs, 60, "The of training runs.");
+CAFFE2_DEFINE_string(file, "", "The image file.");
+CAFFE2_DEFINE_int(epochs, 60, "The of training runs.");
 CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
-CAFFE2_DEFINE_double(learning_rate, 1, "Learning rate.");
+CAFFE2_DEFINE_double(lr, 1, "Learning rate.");
 CAFFE2_DEFINE_bool(display, false, "Show image while dreaming.");
 
 #include "caffe2/util/cmd.h"
@@ -58,7 +58,7 @@ void AddNaive(ModelUtil &dream, NetUtil &display, int size) {
   dream.predict.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
   dream.predict.AddConstantFillWithOp(0.f, input + "_grad_stdev", "zero");
   dream.predict.AddScaleOp(input + "_grad_stdev", input + "_grad_stdev",
-                           1 / FLAGS_learning_rate);
+                           1 / FLAGS_lr);
   dream.predict.AddAffineScaleOp(input + "_grad", "zero", input + "_grad_stdev",
                                  input + "_grad", true);
 
@@ -68,7 +68,7 @@ void AddNaive(ModelUtil &dream, NetUtil &display, int size) {
   dream.predict.AddWeightedSumOp({input, "one", input + "_grad", "one"}, input);
 
   // scale data to image
-  if (FLAGS_image_file.size()) {
+  if (FLAGS_file.size()) {
     display.AddCopyOp(input, "image");
   } else {
     display.AddMeanStdevOp(input, input + "_mean", input + "_stdev");
@@ -103,11 +103,11 @@ void run() {
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "size: " << FLAGS_size << std::endl;
 
-  std::cout << "train-runs: " << FLAGS_train_runs << std::endl;
+  std::cout << "epochs: " << FLAGS_epochs << std::endl;
   std::cout << "scale-runs: " << FLAGS_scale_runs << std::endl;
   std::cout << "percent-incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
-  std::cout << "learning-rate: " << FLAGS_learning_rate << std::endl;
+  std::cout << "lr: " << FLAGS_lr << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
 
   std::cout << std::endl;
@@ -159,7 +159,7 @@ void run() {
 
   // add dream operators
   auto image_size = FLAGS_size;
-  for (int i = 1; i < FLAGS_train_runs / FLAGS_scale_runs; i++) {
+  for (int i = 1; i < FLAGS_epochs / FLAGS_scale_runs; i++) {
     image_size = image_size * 100 / (100 + FLAGS_percent_incr);
   }
   if (image_size < 20) {
@@ -190,11 +190,11 @@ void run() {
   init_net->Run();
 
   // read image as tensor
-  if (FLAGS_image_file.size()) {
+  if (FLAGS_file.size()) {
     auto &input_name = dream.predict.Input(0);
     TensorCPU input;
     std::vector<int> x;
-    TensorUtil(input).ReadImages({FLAGS_image_file}, image_size, x, 128);
+    TensorUtil(input).ReadImages({FLAGS_file}, image_size, x, 128);
     BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   }
 
@@ -213,7 +213,7 @@ void run() {
   }
 
   // run predictor
-  for (auto step = 0; step < FLAGS_train_runs;) {
+  for (auto step = 0; step < FLAGS_epochs;) {
     // scale up image tiny bit
     image_size =
         std::min(image_size * (100 + FLAGS_percent_incr) / 100, FLAGS_size);

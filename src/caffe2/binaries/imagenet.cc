@@ -9,8 +9,8 @@
 #include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
-CAFFE2_DEFINE_int(size_to_fit, 224, "The image file.");
+CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_int(size, 224, "The image file.");
 
 namespace caffe2 {
 
@@ -49,16 +49,16 @@ void run() {
     return;
   }
 
-  if (!std::ifstream(FLAGS_image_file).good()) {
-    std::cerr << "error: Image file missing: " << FLAGS_image_file << std::endl;
+  if (!std::ifstream(FLAGS_file).good()) {
+    std::cerr << "error: Image file missing: " << FLAGS_file << std::endl;
     return;
   }
 
   auto cuda = (FLAGS_device != "cpu" && cmd_setup_cuda());
 
   std::cout << "model: " << FLAGS_model << std::endl;
-  std::cout << "image-file: " << FLAGS_image_file << std::endl;
-  std::cout << "size-to-fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "file: " << FLAGS_file << std::endl;
+  std::cout << "size: " << FLAGS_size << std::endl;
   std::cout << "device: " << FLAGS_device << std::endl;
   std::cout << "using cuda: " << (cuda ? "true" : "false") << std::endl;
   ;
@@ -67,7 +67,7 @@ void run() {
 
   // read image as tensor
   TensorCPU input;
-  TensorUtil(input).ReadImage(FLAGS_image_file, FLAGS_size_to_fit);
+  TensorUtil(input).ReadImage(FLAGS_file, FLAGS_size);
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;

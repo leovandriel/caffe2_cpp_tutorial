@@ -11,8 +11,8 @@ CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb",
                      "The given path to the init protobuffer.");
 CAFFE2_DEFINE_string(predict_net, "res/squeezenet_predict_net.pb",
                      "The given path to the predict protobuffer.");
-CAFFE2_DEFINE_string(image_file, "res/image_file.jpg", "The image file.");
-CAFFE2_DEFINE_int(size_to_fit, 227, "The image file.");
+CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_int(size, 227, "The image file.");
 
 namespace caffe2 {
 
@@ -37,34 +37,34 @@ void run() {
     return;
   }
 
-  if (!std::ifstream(FLAGS_image_file).good()) {
-    std::cerr << "error: Image file missing: " << FLAGS_image_file << std::endl;
+  if (!std::ifstream(FLAGS_file).good()) {
+    std::cerr << "error: Image file missing: " << FLAGS_file << std::endl;
     return;
   }
 
   std::cout << "init-net: " << FLAGS_init_net << std::endl;
   std::cout << "predict-net: " << FLAGS_predict_net << std::endl;
-  std::cout << "image-file: " << FLAGS_image_file << std::endl;
-  std::cout << "size-to-fit: " << FLAGS_size_to_fit << std::endl;
+  std::cout << "file: " << FLAGS_file << std::endl;
+  std::cout << "size: " << FLAGS_size << std::endl;
 
   std::cout << std::endl;
 
   // >>> img =
   // skimage.img_as_float(skimage.io.imread(IMAGE_LOCATION)).astype(np.float32)
-  auto image = cv::imread(FLAGS_image_file);  // CV_8UC3
+  auto image = cv::imread(FLAGS_file);  // CV_8UC3
   std::cout << "image size: " << image.size() << std::endl;
 
   // scale image to fit
   cv::Size scale(
-      std::max(FLAGS_size_to_fit * image.cols / image.rows, FLAGS_size_to_fit),
-      std::max(FLAGS_size_to_fit, FLAGS_size_to_fit * image.rows / image.cols));
+      std::max(FLAGS_size * image.cols / image.rows, FLAGS_size),
+      std::max(FLAGS_size, FLAGS_size * image.rows / image.cols));
   cv::resize(image, image, scale);
   std::cout << "scaled size: " << image.size() << std::endl;
 
   // crop image to fit
-  cv::Rect crop((image.cols - FLAGS_size_to_fit) / 2,
-                (image.rows - FLAGS_size_to_fit) / 2, FLAGS_size_to_fit,
-                FLAGS_size_to_fit);
+  cv::Rect crop((image.cols - FLAGS_size) / 2,
+                (image.rows - FLAGS_size) / 2, FLAGS_size,
+                FLAGS_size);
   image = image(crop);
   std::cout << "cropped size: " << image.size() << std::endl;
 
