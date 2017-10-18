@@ -3,6 +3,12 @@
 all:
 	@test -f build/Makefile || (mkdir -p build && cd build && cmake .. && cd .. && ./script/download_resource.sh); cd build && make
 
+debug:
+	@rm -rf build && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && cd ..
+
+verbose:
+	cd build && make VERBOSE=1
+
 clean:
 	@rm -rf build
 
