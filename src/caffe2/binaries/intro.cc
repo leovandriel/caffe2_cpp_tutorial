@@ -167,11 +167,10 @@ void run() {
   // print(initModel);
 
   // >>> workspace.RunNetOnce(m.param_init_net)
-  auto initNet = CreateNet(initModel, &workspace);
-  initNet->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(initModel));
 
   // >>> workspace.CreateNet(m.net)
-  auto predictNet = CreateNet(predictModel, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(predictModel));
 
   // >>> for j in range(0, 100):
   for (auto i = 0; i < 100; i++) {
@@ -203,7 +202,7 @@ void run() {
 
     // >>> workspace.RunNet(m.name, 10)   # run for 10 times
     for (auto j = 0; j < 10; j++) {
-      predictNet->Run();
+      CAFFE_ENFORCE(workspace.RunNet(predictModel.name()));
       // std::cout << "step: " << i << " loss: ";
       // print(*(workspace.GetBlob("loss")));
       // std::cout << std::endl;

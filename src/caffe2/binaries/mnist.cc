@@ -249,18 +249,17 @@ void run() {
   std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(train_model.param_init_net)
-  auto initTrainNet = CreateNet(train.init.net, &workspace);
-  initTrainNet->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(train.init.net));
 
   // >>> workspace.CreateNet(train_model.net)
-  auto predictTrainNet = CreateNet(train.predict.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(train.predict.net));
 
   std::cout << "training.." << std::endl;
 
   // >>> for i in range(total_iters):
   for (auto i = 1; i <= FLAGS_epochs; i++) {
     // >>> workspace.RunNet(train_model.net.Proto().name)
-    predictTrainNet->Run();
+    CAFFE_ENFORCE(workspace.RunNet(train.predict.net.name()));
 
     // >>> accuracy[i] = workspace.FetchBlob('accuracy')
     // >>> loss[i] = workspace.FetchBlob('loss')
@@ -276,18 +275,17 @@ void run() {
   std::cout << std::endl;
 
   // >>> workspace.RunNetOnce(test_model.param_init_net)
-  auto initTestNet = CreateNet(test.init.net, &workspace);
-  initTestNet->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
 
   // >>> workspace.CreateNet(test_model.net)
-  auto predictTestNet = CreateNet(test.predict.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
   std::cout << "testing.." << std::endl;
 
   // >>> for i in range(100):
   for (auto i = 1; i <= FLAGS_test_runs; i++) {
     // >>> workspace.RunNet(test_model.net.Proto().name)
-    predictTestNet->Run();
+    CAFFE_ENFORCE(workspace.RunNet(test.predict.net.name()));
 
     // >>> test_accuracy[i] = workspace.FetchBlob('accuracy')
     if (i % 10 == 0) {
@@ -406,8 +404,7 @@ void predict_example() {
 
   // load parameters
   Workspace workspace("tmp");
-  auto init_net = CreateNet(init_model, &workspace);
-  init_net->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(init_model));
 
 // input image data for "2"
 #ifdef WITH_CUDA
@@ -420,8 +417,7 @@ void predict_example() {
   data->ShareData(input);
 
   // run predictor
-  auto predict_net = CreateNet(predict_model, &workspace);
-  predict_net->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(predict_model));
 
 // read prediction
 #ifdef WITH_CUDA

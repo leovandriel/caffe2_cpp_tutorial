@@ -95,14 +95,14 @@ void run() {
   // setup workspace
   auto &input_name = model.predict.Input(0);
   auto &output_name = model.predict.Output(0);
-  auto init_net = CreateNet(model.init.net, &workspace);
-  auto predict_net = CreateNet(model.predict.net, &workspace);
-  init_net->Run();
+
+  CAFFE_ENFORCE(workspace.RunNetOnce(model.init.net));
+  CAFFE_ENFORCE(workspace.CreateNet(model.predict.net));
 
   // run predictor
   BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   predict_time -= clock();
-  predict_net->Run();
+  CAFFE_ENFORCE(workspace.RunNet(model.predict.net.name()));
   predict_time += clock();
   auto output = BlobUtil(*workspace.GetBlob(output_name)).Get();
 

@@ -299,11 +299,10 @@ void run() {
   // print(trainModel);
 
   // >>> workspace.RunNetOnce(init_net)
-  auto initNet = CreateNet(initModel, &workspace);
-  initNet->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(initModel));
 
   // >>> workspace.CreateNet(train_net)
-  auto trainNet = CreateNet(trainModel, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(trainModel));
 
   // >>> print("Before training, W is: {}".format(workspace.FetchBlob("W")))
   print(workspace.GetBlob("W"), "W before");
@@ -314,7 +313,7 @@ void run() {
   // >>> for i in range(100):
   for (auto i = 1; i <= 100; i++) {
     // >>> workspace.RunNet(train_net.Proto().name)
-    trainNet->Run();
+    CAFFE_ENFORCE(workspace.RunNet(trainModel.name()));
 
     if (i % 10 == 0) {
       float w = workspace.GetBlob("W")->Get<TensorCPU>().data<float>()[0];

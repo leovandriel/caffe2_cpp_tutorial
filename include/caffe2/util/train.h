@@ -21,11 +21,11 @@ static std::map<int, std::string> name_for_run({
 void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
                  Workspace &workspace, clock_t &train_time,
                  clock_t &validate_time) {
-  CreateNet(train.init.net, &workspace)->Run();
-  CreateNet(validate.init.net, &workspace)->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(train.init.net));
+  CAFFE_ENFORCE(workspace.RunNetOnce(validate.init.net));
 
-  auto train_net = CreateNet(train.predict.net, &workspace);
-  auto validate_net = CreateNet(validate.predict.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(train.predict.net));
+  CAFFE_ENFORCE(workspace.CreateNet(validate.predict.net));
 
   auto last_time = clock();
   auto last_i = 0;
@@ -33,7 +33,7 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
 
   for (auto i = 1; i <= epochs; i++) {
     train_time -= clock();
-    train_net->Run();
+    CAFFE_ENFORCE(workspace.RunNet(train.predict.net.name()));
     train_time += clock();
 
     sum_accuracy +=
@@ -49,7 +49,7 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
       sum_loss = 0;
       sum_accuracy = 0;
       validate_time -= clock();
-      validate_net->Run();
+      CAFFE_ENFORCE(workspace.RunNet(validate.predict.net.name()));
       validate_time += clock();
       auto validate_accuracy =
           BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
@@ -66,14 +66,14 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
 
 void run_tester(int epochs, ModelUtil &test, Workspace &workspace,
                 clock_t &test_time) {
-  CreateNet(test.init.net, &workspace)->Run();
-  auto test_net = CreateNet(test.predict.net, &workspace);
+  CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
+  CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
   auto sum_accuracy = 0.f, sum_loss = 0.f;
   auto test_step = 10;
   for (auto i = 1; i <= epochs; i++) {
     test_time -= clock();
-    test_net->Run();
+    CAFFE_ENFORCE(workspace.RunNet(test.predict.net.name()));
     test_time += clock();
 
     sum_accuracy +=
