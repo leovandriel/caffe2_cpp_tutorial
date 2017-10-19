@@ -184,10 +184,9 @@ void run() {
   Workspace workspace;
 
   // setup workspace
-  auto init_net = CreateNet(dream.init.net, &workspace);
-  auto predict_net = CreateNet(dream.predict.net, &workspace);
-  auto display_net = CreateNet(display.net, &workspace);
-  init_net->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(dream.init.net));
+  CAFFE_ENFORCE(workspace.CreateNet(dream.predict.net));
+  CAFFE_ENFORCE(workspace.CreateNet(display.net));
 
   // read image as tensor
   if (FLAGS_file.size()) {
@@ -202,7 +201,7 @@ void run() {
 
   if (FLAGS_display) {
     // show current images
-    display_net->Run();
+    CAFFE_ENFORCE(workspace.RunNet(display.net.name()));
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     TensorUtil(image).ShowImages("dream");
 
@@ -223,7 +222,7 @@ void run() {
 
     for (int i = 0; i < FLAGS_scale_runs; i++, step++) {
       dream_time -= clock();
-      predict_net->Run();
+      CAFFE_ENFORCE(workspace.RunNet(dream.predict.net.name()));
       dream_time += clock();
 
       if (!step) {
@@ -251,7 +250,7 @@ void run() {
 
         // show current images
         if (FLAGS_display) {
-          display_net->Run();
+          CAFFE_ENFORCE(workspace.RunNet(display.net.name()));
           auto image = BlobUtil(*workspace.GetBlob("image")).Get();
           TensorUtil(image).ShowImages("dream");
         }
@@ -265,7 +264,7 @@ void run() {
   }
 
   {
-    display_net->Run();
+    CAFFE_ENFORCE(workspace.RunNet(display.net.name()));
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     auto safe_layer = FLAGS_layer;
     std::replace(safe_layer.begin(), safe_layer.end(), '/', '_');

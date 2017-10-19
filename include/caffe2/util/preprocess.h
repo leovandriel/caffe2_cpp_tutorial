@@ -98,7 +98,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
   }
 }
 
-int write_batch(Workspace &workspace, NetBase *predict_net,
+int write_batch(Workspace &workspace, ModelUtil &model,
                 std::string &input_name, std::string &output_name,
                 std::vector<std::pair<std::string, int>> &batch_files,
                 std::unique_ptr<db::DB> *database, int size_to_fit) {
@@ -115,9 +115,9 @@ int write_batch(Workspace &workspace, NetBase *predict_net,
   TensorCPU input;
   TensorUtil(input).ReadImages(filenames, size_to_fit, indices);
   TensorCPU output;
-  if (predict_net && input.size() > 0) {
+  if (model.predict.net.external_input_size() && input.size() > 0) {
     BlobUtil(*workspace.GetBlob(input_name)).Set(input);
-    predict_net->Run();
+    CAFFE_ENFORCE(workspace.RunNet(model.predict.net.name()));
     auto tensor = BlobUtil(*workspace.GetBlob(output_name)).Get();
     output.ResizeLike(tensor);
     output.ShareData(tensor);
@@ -173,11 +173,10 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   auto image_count = 0;
   auto sample_count = 0;
   Workspace workspace;
-  auto init_net = CreateNet(model.init.net, &workspace);
-  init_net->Run();
-  auto predict_net = model.predict.net.external_input_size()
-                         ? CreateNet(model.predict.net, &workspace)
-                         : NULL;
+  CAFFE_ENFORCE(workspace.RunNetOnce(model.init.net));
+  if (model.predict.net.external_input_size()) {
+    CAFFE_ENFORCE(workspace.CreateNet(model.predict.net));
+  }
   auto input_name = model.predict.net.external_input_size()
                         ? model.predict.net.external_input(0)
                         : "";
@@ -210,14 +209,14 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     }
     if (batch_files.size() == batch_size) {
       sample_count += write_batch(
-          workspace, predict_net ? predict_net.get() : NULL, input_name,
+          workspace, model, input_name,
           output_name, batch_files, database, size_to_fit);
       batch_files.clear();
     }
   }
   if (batch_files.size() > 0) {
     sample_count += write_batch(
-        workspace, predict_net ? predict_net.get() : NULL, input_name,
+        workspace, model, input_name,
         output_name, batch_files, database, size_to_fit);
   }
   for (int i = 0; i < kRunNum; i++) {

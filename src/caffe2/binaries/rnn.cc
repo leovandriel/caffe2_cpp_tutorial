@@ -178,7 +178,7 @@ void run() {
 
   // >>> self.forward_net = core.Net(model.net.Proto())
   NetDef train_model(model.predict.net);
-  NetUtil train(train_model);
+  NetUtil train(train_model, "train");
 
   // >>> xent = model.net.LabelCrossEntropy([softmax_reshaped, target], 'xent')
   train.AddLabelCrossEntropyOp("softmax_reshaped", "target", "xent");
@@ -205,7 +205,7 @@ void run() {
   // >>> self.prepare_state.Copy(self.hidden_output, hidden_init)
   // >>> self.prepare_state.Copy(self.cell_state, cell_init)
   NetDef prepare_model;
-  NetUtil prepare(prepare_model);
+  NetUtil prepare(prepare_model, "prepare_state");
   prepare.AddCopyOp(hidden_output, "hidden_init");
   prepare.AddCopyOp(cell_state, "cell_init");
   prepare.AddInput(hidden_output);
@@ -230,8 +230,7 @@ void run() {
   std::cout << "Train model" << std::endl;
 
   // >>> workspace.RunNetOnce(self.model.param_init_net)
-  auto initNet = CreateNet(model.init.net, &workspace);
-  initNet->Run();
+  CAFFE_ENFORCE(workspace.RunNetOnce(model.init.net));
 
   // >>> smooth_loss = -np.log(1.0 / self.D) * self.seq_length
   auto smooth_loss = -log(1.0 / D) * FLAGS_seq_length;
@@ -277,7 +276,7 @@ void run() {
     BlobUtil(*workspace.CreateBlob(cell_state)).Set(value, true);
   }
   // >>> workspace.CreateNet(self.prepare_state)
-  auto prepareNet = CreateNet(prepare.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(prepare.net));
 
   // >>> last_time = datetime.now()
   auto last_time = clock();
@@ -288,10 +287,10 @@ void run() {
   workspace.CreateBlob("input_blob");
   workspace.CreateBlob("seq_lengths");
   workspace.CreateBlob("target");
-  auto trainNet = CreateNet(train.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(train.net));
 
   // >>> CreateNetOnce(self.forward_net)
-  auto forwardNet = CreateNet(model.predict.net, &workspace);
+  CAFFE_ENFORCE(workspace.CreateNet(model.predict.net));
 
   // >>> while True:
   while (num_iter < FLAGS_epochs) {
@@ -304,7 +303,7 @@ void run() {
     }
 
     // >>> workspace.RunNet(self.prepare_state.Name())
-    prepareNet->Run();
+    CAFFE_ENFORCE(workspace.RunNet(prepare.net.name()));
 
     // >>> input = np.zeros([self.seq_length, self.batch_size,
     // self.D]).astype(np.float32)
@@ -344,7 +343,7 @@ void run() {
     }
 
     // >>> workspace.RunNet(self.model.net.Name())
-    trainNet->Run();
+    CAFFE_ENFORCE(workspace.RunNet(train.net.name()));
     // >>> num_iter += 1
     num_iter++;
     // >>> last_n_iter += 1
@@ -402,7 +401,7 @@ void run() {
         }
 
         // >>> workspace.RunNet(self.prepare_state.Name())
-        prepareNet->Run();
+        CAFFE_ENFORCE(workspace.RunNet(prepare.net.name()));
 
         // >>> input = np.zeros([1, self.batch_size, self.D]).astype(np.float32)
         std::vector<float> input(FLAGS_batch * D);
@@ -415,7 +414,7 @@ void run() {
           BlobUtil(*workspace.CreateBlob("input_blob")).Set(value, true);
         }
         // >>> workspace.RunNet(self.forward_net.Name())
-        forwardNet->Run();
+        CAFFE_ENFORCE(workspace.RunNet(model.predict.net.name()));
 
         // >>> p = workspace.FetchBlob(self.predictions)
         auto p = BlobUtil(*workspace.GetBlob(predictions)).Get();

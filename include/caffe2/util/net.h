@@ -7,7 +7,12 @@ namespace caffe2 {
 
 class NetUtil {
  public:
-  NetUtil(NetDef& net) : net(net) {}
+  NetUtil(NetDef& net, const std::string &name = "")
+      : net(net) {
+    if (name.size()) {
+      SetName(name);
+    }
+  }
 
   OperatorDef* AddOp(const std::string& name,
                      const std::vector<std::string>& inputs,
