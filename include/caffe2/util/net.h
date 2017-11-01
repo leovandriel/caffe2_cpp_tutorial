@@ -7,8 +7,7 @@ namespace caffe2 {
 
 class NetUtil {
  public:
-  NetUtil(NetDef& net, const std::string &name = "")
-      : net(net) {
+  NetUtil(NetDef& net, const std::string& name = "") : net(net) {
     if (name.size()) {
       SetName(name);
     }

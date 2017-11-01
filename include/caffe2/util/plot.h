@@ -20,8 +20,11 @@ class PlotUtil {
     Color(int v[3]) : Color(v[0], v[1], v[2]) {}
     Color() : Color(0) {}
     Color(float hue);
-    Color(const std::string &seed)
-        : Color(std::hash<std::string>{}(seed) % 600 / 100.f) {}
+    Color(const std::string &seed,
+          float avoid = 1.0)  // avoid yellows by default
+        : Color(
+              (std::hash<std::string>{}(seed) % 500 + (int)(avoid * 100) + 50) %
+              600 / 100.f) {}
   };
 
   static Color Red() { return Color(0.f); }
@@ -127,6 +130,7 @@ class PlotUtil {
     void Clear() { series_.clear(); }
     void Origin(bool x, bool y) { include_zero_x_ = x, include_zero_y_ = y; }
     void Square(bool square) { aspect_square_ = square; }
+    void Border(int size) { border_size_ = size; }
     void Window(const std::string &window) { window_ = window; }
 
     void Draw(void *b, float x_min, float x_max, float y_min, float y_max,
