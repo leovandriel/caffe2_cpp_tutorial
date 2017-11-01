@@ -98,8 +98,8 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
   }
 }
 
-int write_batch(Workspace &workspace, ModelUtil &model,
-                std::string &input_name, std::string &output_name,
+int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
+                std::string &output_name,
                 std::vector<std::pair<std::string, int>> &batch_files,
                 std::unique_ptr<db::DB> *database, int size_to_fit) {
   std::unique_ptr<db::Transaction> transaction[kRunNum];
@@ -208,16 +208,14 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                 << std::flush;
     }
     if (batch_files.size() == batch_size) {
-      sample_count += write_batch(
-          workspace, model, input_name,
-          output_name, batch_files, database, size_to_fit);
+      sample_count += write_batch(workspace, model, input_name, output_name,
+                                  batch_files, database, size_to_fit);
       batch_files.clear();
     }
   }
   if (batch_files.size() > 0) {
-    sample_count += write_batch(
-        workspace, model, input_name,
-        output_name, batch_files, database, size_to_fit);
+    sample_count += write_batch(workspace, model, input_name, output_name,
+                                batch_files, database, size_to_fit);
   }
   for (int i = 0; i < kRunNum; i++) {
     CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
