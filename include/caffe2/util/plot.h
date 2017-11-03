@@ -14,36 +14,46 @@ class PlotUtil {
   enum Type { Line, DotLine, Dots, Histogram, Vistogram, Horizontal, Vertical };
 
   struct Color {
-    int r, g, b;
-    Color(int r, int g, int b) : r(r), g(g), b(b) {}
-    Color(int v) : Color(v, v, v) {}
-    Color(int v[3]) : Color(v[0], v[1], v[2]) {}
-    Color() : Color(0) {}
-    Color(float hue);
-    Color(const std::string &seed,
-          float avoid = 1.0)  // avoid yellows by default
-        : Color(
-              (std::hash<std::string>{}(seed) % 500 + (int)(avoid * 100) + 50) %
-              600 / 100.f) {}
+    uint8_t r, g, b;
+    Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
+    Color(const uint8_t *rgb) : Color(rgb[0], rgb[1], rgb[2]) {}
+    Color() : Color(0, 0, 0) {}
+
+    static Color Gray(uint8_t v) { return Color(v, v, v); }
+    static Color Hue(float hue);
+    static Color Index(uint32_t index, uint32_t density = 16, float avoid = 2.f,
+                       float range = 2.f) {  // avoid greens by default
+      if (avoid > 0) {
+        auto step = density / (6 - range);
+        auto offset = (avoid + range / 2) * step;
+        index = offset + index % density;
+        density += step * range;
+      }
+      auto hue = index % density * 6.f / density;
+      return Color::Hue(hue);
+    }
+    static Color Hash(const std::string &seed) {
+      return Color::Index(std::hash<std::string>{}(seed));
+    }
   };
 
-  static Color Red() { return Color(0.f); }
-  static Color Orange() { return Color(.5f); }
-  static Color Yellow() { return Color(1.f); }
-  static Color Lawn() { return Color(1.5f); }
-  static Color Green() { return Color(2.f); }
-  static Color Aqua() { return Color(2.5f); }
-  static Color Cyan() { return Color(3.f); }
-  static Color Sky() { return Color(3.5f); }
-  static Color Blue() { return Color(4.f); }
-  static Color Purple() { return Color(4.5f); }
-  static Color Magenta() { return Color(5.f); }
-  static Color Pink() { return Color(5.5f); }
-  static Color Black() { return Color(paleness); }
-  static Color Dark() { return Color(paleness * 2); }
-  static Color Gray() { return Color(128); }
-  static Color Light() { return Color(256 - paleness * 2); }
-  static Color White() { return Color(256 - paleness); }
+  static Color Red() { return Color::Hue(0.f); }
+  static Color Orange() { return Color::Hue(.5f); }
+  static Color Yellow() { return Color::Hue(1.f); }
+  static Color Lawn() { return Color::Hue(1.5f); }
+  static Color Green() { return Color::Hue(2.f); }
+  static Color Aqua() { return Color::Hue(2.5f); }
+  static Color Cyan() { return Color::Hue(3.f); }
+  static Color Sky() { return Color::Hue(3.5f); }
+  static Color Blue() { return Color::Hue(4.f); }
+  static Color Purple() { return Color::Hue(4.5f); }
+  static Color Magenta() { return Color::Hue(5.f); }
+  static Color Pink() { return Color::Hue(5.5f); }
+  static Color Black() { return Color::Gray(paleness); }
+  static Color Dark() { return Color::Gray(paleness * 2); }
+  static Color Gray() { return Color::Gray(128); }
+  static Color Light() { return Color::Gray(256 - paleness * 2); }
+  static Color White() { return Color::Gray(256 - paleness); }
 
   struct Series {
     Series() {}
@@ -143,7 +153,7 @@ class PlotUtil {
           return s;
         }
       }
-      series_.push_back(Series(label, Line, Color(label)));
+      series_.push_back(Series(label, Line, Color::Hash(label)));
 
       return series_.back();
     }

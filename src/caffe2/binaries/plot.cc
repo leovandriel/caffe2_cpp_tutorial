@@ -116,6 +116,19 @@ void run() {
     figure.Show();
   }
 
+  if (false) {
+    auto name = "colors";
+    setWindowTitle(name, "hidden axis");
+    moveWindow(name, 900, 0);
+    resizeWindow(name, 300, 300);
+    auto &figure = PlotUtil::Shared(name);
+    for (auto i = 0; i < 16; i++) {
+      figure.Get(std::to_string(i))
+          .Set(2, i + 1, PlotUtil::Vistogram, PlotUtil::Color::Index(i));
+    }
+    figure.Show();
+  }
+
   {
     auto name = "dynamic";
     setWindowTitle(name, "dynamic plotting");
@@ -133,6 +146,7 @@ void run() {
       f = (f + df) * 0.8f;
       df = (df + rand() % 11 / 100.f - .05f) * 0.8f;
       figure.Get("random").Append(x += dx, y += dy);
+      figure.Get("random").Color(PlotUtil::Color::Index(i));
       figure.Show();
       cvWaitKey(10);
     }
