@@ -99,20 +99,22 @@ void run() {
 
   std::cout << std::endl;
 
-  std::cout << "collect images.." << std::endl;
+  std::cerr << "  collecting images.. \r" << std::flush;
   auto load_time = -clock();
   std::vector<std::string> class_labels;
   std::vector<std::pair<std::string, int>> image_files;
-  load_labels(FLAGS_folder, path_prefix, class_labels, image_files);
-  std::cout << class_labels.size() << " labels found,";
+  std::vector<int> class_size;
+  load_labels(FLAGS_folder, path_prefix, class_labels, image_files, class_size);
+  std::cout << class_labels.size() << " labels found:      " << std::endl;
   auto i = 0;
   for (auto label : class_labels) {
-    std::cout << " " << i++ << ":" << label;
+    std::cout << "  " << i << ": " << label << " #" << class_size[i]
+              << std::endl;
+    i++;
   }
-  std::cout << std::endl;
-  std::cout << image_files.size() << " images found" << std::endl;
+  std::cout << image_files.size() << " files found " << std::endl;
 
-  std::cout << "load model.." << std::endl;
+  std::cerr << "  loading model.. \r" << std::flush;
   NetDef full_init_model, full_predict_model;
   ModelUtil full(full_init_model, full_predict_model);
   Keeper(FLAGS_model).AddModel(full, has_split, class_labels.size());
@@ -150,15 +152,20 @@ void run() {
 
   auto count = 0;
   if (FLAGS_skip_preprocess) {
-    std::cout << "count images.. (skipping preprocess)" << std::endl;
-    count = count_samples(db_paths, FLAGS_db_type);
+    std::cerr << "  counting images.. (skipping preprocess) \r" << std::flush;
+    count = count_samples(db_paths, FLAGS_db_type, image_files.size());
   } else {
-    std::cout << "preprocess images.." << std::endl;
+    std::cerr << "  preprocess images.. \r" << std::flush;
     count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
                        FLAGS_size);
   }
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
+
+  if (count == 0) {
+    std::cerr << "no images in database" << std::endl;
+    return;
+  }
 
   auto model_in = has_split ? FLAGS_layer : full.predict.Input(0);
   for (int i = 0; i < kRunNum; i++) {
@@ -198,6 +205,10 @@ void run() {
     models[kRunTrain].predict.AddTimePlotOp("loss", "iter", "loss", "train",
                                             10);
     models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss", "test");
+    PlotUtil::Shared("accuracy").Get("train").Color(PlotUtil::Purple());
+    PlotUtil::Shared("accuracy").Get("test").Color(PlotUtil::Pink());
+    PlotUtil::Shared("loss").Get("train").Color(PlotUtil::Purple());
+    PlotUtil::Shared("loss").Get("test").Color(PlotUtil::Pink());
   }
 
   if (FLAGS_device != "cpu") {

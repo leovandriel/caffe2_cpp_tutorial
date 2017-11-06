@@ -26,7 +26,7 @@ class WindowUtil {
   void AutosizeView(const std::string &name);
   void TitleView(const std::string &name, const std::string &title);
 
-  void ShowImage(const std::string &name, const cv::Mat &image);
+  void ShowImage(const std::string &name, const cv::Mat &image, bool flush);
   void ShowText(const std::string &name, const std::string &text,
                 cv::Point position);
   void ShowFrame(const std::string &name, const std::string &title,
@@ -34,7 +34,7 @@ class WindowUtil {
                  cv::Scalar background = {32, 32, 32},
                  cv::Scalar text = {0, 0, 0});
   cv::Mat GetBuffer(const std::string &name, cv::Rect &rect);
-  void ShowBuffer(const std::string &name);
+  void ShowBuffer(const std::string &name, bool flush);
 
   void SetTitle(const std::string &title);
   void Show();
@@ -51,9 +51,9 @@ void moveWindow(const char *name, int x, int y);
 void resizeWindow(const char *name, int width, int height);
 void autosizeWindow(const char *name);
 void setWindowTitle(const char *name, const char *title);
-void imshow(const char *name, const cv::Mat &mat);
+void imshow(const char *name, const cv::Mat &mat, bool flush = true);
 cv::Mat getBuffer(const char *name, cv::Rect &rect);
-void showBuffer(const char *name);
+void showBuffer(const char *name, bool flush = true);
 
 }  // namespace caffe2
 

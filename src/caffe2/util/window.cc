@@ -111,7 +111,8 @@ void WindowUtil::ShowFrame(const std::string &name, const std::string &title,
               cv::FONT_HERSHEY_PLAIN, 1.0, text, 1.0);
 }
 
-void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
+void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image,
+                           bool flush) {
   auto &view = views_[name];
   auto &rect = view.rect;
   if (rect.width == 0 && rect.height == 0) {
@@ -129,7 +130,9 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image) {
   if (!view.frameless) {
     ShowFrame(name, view.title.size() ? view.title : name);
   }
-  Show();
+  if (flush) {
+    Show();
+  }
 }
 
 cv::Mat WindowUtil::GetBuffer(const std::string &name, cv::Rect &rect) {
@@ -139,12 +142,14 @@ cv::Mat WindowUtil::GetBuffer(const std::string &name, cv::Rect &rect) {
   return buffer_;
 }
 
-void WindowUtil::ShowBuffer(const std::string &name) {
+void WindowUtil::ShowBuffer(const std::string &name, bool flush) {
   auto &view = views_[name];
   if (!view.frameless) {
     ShowFrame(name, view.title.size() ? view.title : name);
   }
-  Show();
+  if (flush) {
+    Show();
+  }
 }
 
 void WindowUtil::SetTitle(const std::string &title) {
@@ -171,14 +176,16 @@ void setWindowTitle(const char *name, const char *title) {
   shared_window.TitleView(name, title);
 }
 
-void imshow(const char *name, const cv::Mat &mat) {
-  shared_window.ShowImage(name, mat);
+void imshow(const char *name, const cv::Mat &mat, bool flush) {
+  shared_window.ShowImage(name, mat, flush);
 }
 
 cv::Mat getBuffer(const char *name, cv::Rect &rect) {
   return shared_window.GetBuffer(name, rect);
 }
 
-void showBuffer(const char *name) { shared_window.ShowBuffer(name); }
+void showBuffer(const char *name, bool flush) {
+  shared_window.ShowBuffer(name, flush);
+}
 
 }  // namespace caffe2

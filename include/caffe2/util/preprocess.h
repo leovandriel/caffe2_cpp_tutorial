@@ -27,7 +27,8 @@ std::string filename_to_key(const std::string &filename) {
 
 void load_labels(const std::string &folder, const std::string &path_prefix,
                  std::vector<std::string> &class_labels,
-                 std::vector<std::pair<std::string, int>> &image_files) {
+                 std::vector<std::pair<std::string, int>> &image_files,
+                 std::vector<int> &class_size) {
   auto classes_text_path = path_prefix + "classes.txt";
   ;
   std::ifstream infile(classes_text_path);
@@ -62,6 +63,10 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
             if (image_file[0] != '.' && !stat(image_path.c_str(), &s) &&
                 (s.st_mode & S_IFREG)) {
               image_files.push_back({image_path, class_index});
+              if (class_size.size() <= class_index) {
+                class_size.resize(class_index + 1);
+              }
+              class_size[class_index]++;
             }
           }
           closedir(subdir);
@@ -98,15 +103,11 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
   }
 }
 
-int write_batch(Workspace &workspace, ModelUtil &model,
-                std::string &input_name, std::string &output_name,
+int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
+                std::string &output_name,
                 std::vector<std::pair<std::string, int>> &batch_files,
-                std::unique_ptr<db::DB> *database, int size_to_fit) {
-  std::unique_ptr<db::Transaction> transaction[kRunNum];
-  for (int i = 0; i < kRunNum; i++) {
-    transaction[i] = database[i]->NewTransaction();
-  }
-
+                std::unique_ptr<db::Transaction> *transaction,
+                int size_to_fit) {
   std::vector<std::string> filenames;
   for (auto &pair : batch_files) {
     filenames.push_back(pair.first);
@@ -155,23 +156,20 @@ int write_batch(Workspace &workspace, ModelUtil &model,
       }
     }
   }
-
-  for (int i = 0; i < kRunNum; i++) {
-    transaction[i]->Commit();
-  }
-
   return indices.size();
 }
 
 int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                const std::string *db_paths, ModelUtil &model,
                const std::string &db_type, int batch_size, int size_to_fit) {
+  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   std::unique_ptr<db::DB> database[kRunNum];
+  std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
+    transaction[i] = database[i]->NewTransaction();
   }
-  auto image_count = 0;
-  auto sample_count = 0;
+  auto image_count = 0, sample_count = 0, transaction_count = 0;
   Workspace workspace;
   CAFFE_ENFORCE(workspace.RunNetOnce(model.init.net));
   if (model.predict.net.external_input_size()) {
@@ -185,6 +183,12 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                          : "";
   std::vector<std::pair<std::string, int>> batch_files;
   for (auto &pair : image_files) {
+    if (image_count % 10 == 0) {
+      std::cerr << "  pre-processing.. " << image_count << '/'
+                << image_files.size() << " " << std::setprecision(3)
+                << ((float)100 * image_count / image_files.size())
+                << "%            \r" << std::flush;
+    }
     auto &filename = pair.first;
     auto class_index = pair.second;
     image_count++;
@@ -200,31 +204,33 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     } else {
       batch_files.push_back({filename, class_index});
     }
-    if (image_count % 10 == 0) {
-      std::cerr << '\r' << std::string(40, ' ') << '\r' << "pre-processing.. "
-                << image_count << '/' << image_files.size() << " "
-                << std::setprecision(3)
-                << ((float)100 * image_count / image_files.size()) << "%"
-                << std::flush;
-    }
     if (batch_files.size() == batch_size) {
-      sample_count += write_batch(
-          workspace, model, input_name,
-          output_name, batch_files, database, size_to_fit);
+      auto count = write_batch(workspace, model, input_name, output_name,
+                               batch_files, transaction, size_to_fit);
+      sample_count += count;
+      transaction_count += count;
       batch_files.clear();
+    }
+    if (transaction_count > 1000) {
+      for (int i = 0; i < kRunNum; i++) {
+        transaction[i]->Commit();
+        transaction[i] = database[i]->NewTransaction();
+      }
+      transaction_count = 0;
     }
   }
   if (batch_files.size() > 0) {
-    sample_count += write_batch(
-        workspace, model, input_name,
-        output_name, batch_files, database, size_to_fit);
+    sample_count += write_batch(workspace, model, input_name, output_name,
+                                batch_files, transaction, size_to_fit);
+  }
+  for (int i = 0; i < kRunNum; i++) {
+    transaction[i]->Commit();
   }
   for (int i = 0; i < kRunNum; i++) {
     CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
                   "database " + name_for_run[i] + " is empty");
   }
-  std::cerr << '\r' << std::string(80, ' ') << '\r';
-
+  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   return sample_count;
 }
 
@@ -236,7 +242,9 @@ void preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   preprocess(image_files, db_paths, none, db_type, 64, size_to_fit);
 }
 
-int count_samples(const std::string *db_paths, const std::string &db_type) {
+int count_samples(const std::string *db_paths, const std::string &db_type,
+                  int est_size) {
+  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   std::unique_ptr<db::DB> database[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
@@ -245,10 +253,17 @@ int count_samples(const std::string *db_paths, const std::string &db_type) {
   for (int i = 0; i < kRunNum; i++) {
     auto cursor = database[i]->NewCursor();
     while (cursor->Valid()) {
+      if (sample_count % 10 == 0) {
+        std::cerr << "  counting.. " << sample_count << '/' << est_size << " "
+                  << std::setprecision(3)
+                  << ((float)100 * sample_count / est_size) << "%         \r"
+                  << std::flush;
+      }
       sample_count++;
       cursor->Next();
     }
   }
+  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   return sample_count;
 }
 
