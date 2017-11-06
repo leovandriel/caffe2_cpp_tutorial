@@ -18,8 +18,8 @@ if(CUDA_LIBRARIES)
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
 
-find_library(CAFFE2_LIB Caffe2_CPU)
-find_library(CAFFE2_GPU_LIB Caffe2_GPU)
+find_library(CAFFE2_LIB caffe2)
+find_library(CAFFE2_GPU_LIB caffe2_gpu)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
 find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
