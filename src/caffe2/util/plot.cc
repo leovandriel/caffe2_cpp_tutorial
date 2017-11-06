@@ -32,42 +32,44 @@ Figure &PlotUtil::Shared(const std::string &window) {
   return shared_plot.Get(window);
 }
 
-PlotUtil::Color::Color(float hue) {
+PlotUtil::Color PlotUtil::Color::Hue(float hue) {
+  Color color;
   auto i = (int)hue;
   auto f = (hue - i) * (256 - paleness * 2) + paleness;
   switch (i) {
     case 0:
-      r = 256 - paleness;
-      g = f;
-      b = paleness;
+      color.r = 256 - paleness;
+      color.g = f;
+      color.b = paleness;
       break;
     case 1:
-      r = 256 - f;
-      g = 256 - paleness;
-      b = paleness;
+      color.r = 256 - f;
+      color.g = 256 - paleness;
+      color.b = paleness;
       break;
     case 2:
-      r = paleness;
-      g = 256 - paleness;
-      b = f;
+      color.r = paleness;
+      color.g = 256 - paleness;
+      color.b = f;
       break;
     case 3:
-      r = paleness;
-      g = 256 - f;
-      b = 256 - paleness;
+      color.r = paleness;
+      color.g = 256 - f;
+      color.b = 256 - paleness;
       break;
     case 4:
-      r = f;
-      g = paleness;
-      b = 256 - paleness;
+      color.r = f;
+      color.g = paleness;
+      color.b = 256 - paleness;
       break;
     case 5:
     default:
-      r = 256 - paleness;
-      g = paleness;
-      b = 256 - f;
+      color.r = 256 - paleness;
+      color.g = paleness;
+      color.b = 256 - f;
       break;
   }
+  return color;
 }
 
 void Series::Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
@@ -311,7 +313,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
   }
 }
 
-void Figure::Show() {
+void Figure::Show(bool flush) {
   auto x_min = (include_zero_x_ ? 0.f : FLT_MAX);
   auto x_max = (include_zero_x_ ? 0.f : FLT_MIN);
   auto y_min = (include_zero_y_ ? 0.f : FLT_MAX);
@@ -328,8 +330,8 @@ void Figure::Show() {
     cv::Rect rect;
     auto buffer = caffe2::getBuffer(window_.c_str(), rect)(rect);
     Draw(&buffer, x_min, x_max, y_min, y_max, n_max, p_max);
-    caffe2::showBuffer(window_.c_str());
-    cvWaitKey(1);
+    caffe2::showBuffer(window_.c_str(), flush);
+    // cvWaitKey(1);
   }
 }
 
