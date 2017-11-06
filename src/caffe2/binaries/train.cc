@@ -205,6 +205,10 @@ void run() {
     models[kRunTrain].predict.AddTimePlotOp("loss", "iter", "loss", "train",
                                             10);
     models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss", "test");
+    PlotUtil::Shared("accuracy").Get("train").Color(PlotUtil::Purple());
+    PlotUtil::Shared("accuracy").Get("test").Color(PlotUtil::Pink());
+    PlotUtil::Shared("loss").Get("train").Color(PlotUtil::Purple());
+    PlotUtil::Shared("loss").Get("test").Color(PlotUtil::Pink());
   }
 
   if (FLAGS_device != "cpu") {
