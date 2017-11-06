@@ -145,7 +145,7 @@ class PlotUtil {
 
     void Draw(void *b, float x_min, float x_max, float y_min, float y_max,
               int n_max, int p_max);
-    void Show();
+    void Show(bool flush = true);
 
     Series &Get(const std::string &label) {
       for (auto &s : series_) {

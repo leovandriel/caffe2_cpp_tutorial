@@ -313,7 +313,7 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
   }
 }
 
-void Figure::Show() {
+void Figure::Show(bool flush) {
   auto x_min = (include_zero_x_ ? 0.f : FLT_MAX);
   auto x_max = (include_zero_x_ ? 0.f : FLT_MIN);
   auto y_min = (include_zero_y_ ? 0.f : FLT_MAX);
@@ -330,8 +330,8 @@ void Figure::Show() {
     cv::Rect rect;
     auto buffer = caffe2::getBuffer(window_.c_str(), rect)(rect);
     Draw(&buffer, x_min, x_max, y_min, y_max, n_max, p_max);
-    caffe2::showBuffer(window_.c_str());
-    cvWaitKey(1);
+    caffe2::showBuffer(window_.c_str(), flush);
+    // cvWaitKey(1);
   }
 }
 
