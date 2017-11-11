@@ -1,6 +1,7 @@
 #ifndef UTIL_PLOT_H
 #define UTIL_PLOT_H
 
+#include <cmath>
 #include <map>
 #include <string>
 #include <vector>
@@ -21,6 +22,11 @@ class PlotUtil {
 
     static Color Gray(uint8_t v) { return Color(v, v, v); }
     static Color Hue(float hue);
+    static Color Cos(float hue) {
+      return Color((cos(hue * 1.047) + 1) * 127.9,
+                   (cos((hue - 2) * 1.047) + 1) * 127.9,
+                   (cos((hue - 4) * 1.047) + 1) * 127.9);
+    }
     static Color Index(uint32_t index, uint32_t density = 16, float avoid = 2.f,
                        float range = 2.f) {  // avoid greens by default
       if (avoid > 0) {
@@ -30,7 +36,7 @@ class PlotUtil {
         density += step * range;
       }
       auto hue = index % density * 6.f / density;
-      return Color::Hue(hue);
+      return Color::Cos(hue);
     }
     static Color Hash(const std::string &seed) {
       return Color::Index(std::hash<std::string>{}(seed));
