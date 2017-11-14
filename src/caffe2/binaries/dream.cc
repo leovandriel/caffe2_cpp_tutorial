@@ -20,7 +20,7 @@ CAFFE2_DEFINE_int(batch, 1, "The number of channels to process in parallel.");
 CAFFE2_DEFINE_int(size, 400, "The goal image size.");
 
 CAFFE2_DEFINE_string(file, "", "The image file.");
-CAFFE2_DEFINE_int(epochs, 60, "The of training runs.");
+CAFFE2_DEFINE_int(iters, 60, "The of training runs.");
 CAFFE2_DEFINE_int(scale_runs, 10, "The amount of iterations per scale.");
 CAFFE2_DEFINE_int(percent_incr, 40, "Percent increase per round.");
 CAFFE2_DEFINE_int(initial, -17, "The of initial value.");
@@ -103,7 +103,7 @@ void run() {
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "size: " << FLAGS_size << std::endl;
 
-  std::cout << "epochs: " << FLAGS_epochs << std::endl;
+  std::cout << "iters: " << FLAGS_iters << std::endl;
   std::cout << "scale-runs: " << FLAGS_scale_runs << std::endl;
   std::cout << "percent-incr: " << FLAGS_percent_incr << std::endl;
   std::cout << "initial: " << FLAGS_initial << std::endl;
@@ -159,7 +159,7 @@ void run() {
 
   // add dream operators
   auto image_size = FLAGS_size;
-  for (int i = 1; i < FLAGS_epochs / FLAGS_scale_runs; i++) {
+  for (int i = 1; i < FLAGS_iters / FLAGS_scale_runs; i++) {
     image_size = image_size * 100 / (100 + FLAGS_percent_incr);
   }
   if (image_size < 20) {
@@ -212,7 +212,7 @@ void run() {
   }
 
   // run predictor
-  for (auto step = 0; step < FLAGS_epochs;) {
+  for (auto step = 0; step < FLAGS_iters;) {
     // scale up image tiny bit
     image_size =
         std::min(image_size * (100 + FLAGS_percent_incr) / 100, FLAGS_size);

@@ -18,7 +18,7 @@ static std::map<int, std::string> name_for_run({
     {kRunTrain, "train"}, {kRunValidate, "validate"}, {kRunTest, "test"},
 });
 
-void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
+void run_trainer(int iters, ModelUtil &train, ModelUtil &validate,
                  Workspace &workspace, clock_t &train_time,
                  clock_t &validate_time) {
   CAFFE_ENFORCE(workspace.RunNetOnce(train.init.net));
@@ -31,7 +31,7 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
   auto last_i = 0;
   auto sum_accuracy = 0.f, sum_loss = 0.f;
 
-  for (auto i = 1; i <= epochs; i++) {
+  for (auto i = 1; i <= iters; i++) {
     train_time -= clock();
     CAFFE_ENFORCE(workspace.RunNet(train.predict.net.name()));
     train_time += clock();
@@ -41,7 +41,7 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
     sum_loss += BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
 
     auto steps_time = (float)(clock() - last_time) / CLOCKS_PER_SEC;
-    if (steps_time > 5 || i >= epochs) {
+    if (steps_time > 5 || i >= iters) {
       auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
       auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
       auto train_loss = sum_loss / (i - last_i),
@@ -64,14 +64,14 @@ void run_trainer(int epochs, ModelUtil &train, ModelUtil &validate,
   }
 }
 
-void run_tester(int epochs, ModelUtil &test, Workspace &workspace,
+void run_tester(int iters, ModelUtil &test, Workspace &workspace,
                 clock_t &test_time) {
   CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
   CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
   auto sum_accuracy = 0.f, sum_loss = 0.f;
   auto test_step = 10;
-  for (auto i = 1; i <= epochs; i++) {
+  for (auto i = 1; i <= iters; i++) {
     test_time -= clock();
     CAFFE_ENFORCE(workspace.RunNet(test.predict.net.name()));
     test_time += clock();

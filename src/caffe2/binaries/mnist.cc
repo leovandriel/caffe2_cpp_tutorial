@@ -13,7 +13,7 @@ CAFFE2_DEFINE_string(train_db, "res/mnist-train-nchw-leveldb",
                      "The given path to the training leveldb.");
 CAFFE2_DEFINE_string(test_db, "res/mnist-test-nchw-leveldb",
                      "The given path to the testing leveldb.");
-CAFFE2_DEFINE_int(epochs, 100, "The of training runs.");
+CAFFE2_DEFINE_int(iters, 100, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of test runs.");
 CAFFE2_DEFINE_bool(force_cpu, false, "Only use CPU, no CUDA.");
 CAFFE2_DEFINE_bool(display, false, "Display graphical training info.");
@@ -164,7 +164,7 @@ void run() {
 
   std::cout << "train-db: " << FLAGS_train_db << std::endl;
   std::cout << "test-db: " << FLAGS_test_db << std::endl;
-  std::cout << "epochs: " << FLAGS_epochs << std::endl;
+  std::cout << "iters: " << FLAGS_iters << std::endl;
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
   std::cout << "force-cpu: " << (FLAGS_force_cpu ? "true" : "false")
             << std::endl;
@@ -257,7 +257,7 @@ void run() {
   std::cout << "training.." << std::endl;
 
   // >>> for i in range(total_iters):
-  for (auto i = 1; i <= FLAGS_epochs; i++) {
+  for (auto i = 1; i <= FLAGS_iters; i++) {
     // >>> workspace.RunNet(train_model.net.Proto().name)
     CAFFE_ENFORCE(workspace.RunNet(train.predict.net.name()));
 

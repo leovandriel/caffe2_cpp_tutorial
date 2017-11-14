@@ -17,7 +17,7 @@ CAFFE2_DEFINE_string(folder, "", "Folder with subfolders with images");
 
 CAFFE2_DEFINE_string(db_type, "leveldb", "The database type.");
 CAFFE2_DEFINE_int(size, 224, "The image file.");
-CAFFE2_DEFINE_int(epochs, 1000, "The of training runs.");
+CAFFE2_DEFINE_int(iters, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch, 64, "Training batch size.");
 CAFFE2_DEFINE_double(lr, 1e-4, "Learning rate.");
@@ -56,7 +56,7 @@ void run() {
   std::cout << "image-dir: " << FLAGS_folder << std::endl;
   std::cout << "db-type: " << FLAGS_db_type << std::endl;
   std::cout << "size: " << FLAGS_size << std::endl;
-  std::cout << "epochs: " << FLAGS_epochs << std::endl;
+  std::cout << "iters: " << FLAGS_iters << std::endl;
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "lr: " << FLAGS_lr << std::endl;
@@ -230,7 +230,7 @@ void run() {
   clock_t test_time = 0;
 
   std::cout << "training.." << std::endl;
-  run_trainer(FLAGS_epochs, models[kRunTrain], models[kRunValidate], workspace,
+  run_trainer(FLAGS_iters, models[kRunTrain], models[kRunValidate], workspace,
               train_time, validate_time);
 
   std::cout << std::endl;

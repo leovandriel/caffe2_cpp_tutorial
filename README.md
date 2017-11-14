@@ -130,17 +130,17 @@ This tutorial is transcribed in [rnn.cc](src/caffe2/binaries/rnn.cc). It takes t
 
     ./bin/rnn
 
-In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--epochs`:
+In contrast to the tutorial, this script terminates after 10K iterations. To get more, use `--iters`:
 
-    ./bin/run --epochs 100000
+    ./bin/run --iters 100000
 
 To get better results (loss < 1), expand the hidden layer:
 
-    ./bin/rnn --epochs 100000 --batch 32 --hidden_size 512 --seq_length 32
+    ./bin/rnn --iters 100000 --batch 32 --hidden_size 512 --seq_length 32
 
 The file `res/dickens.txt` contains a larger volume of text. Because the writing is a bit more recent, it's more challenging to generate convincing results. Also, single newlines are stripped to allow for more creativity.
 
-    ./bin/rnn --epochs 100000 --batch 32 --hidden_size 768 --seq_length 32 --train_data res/dickens.txt
+    ./bin/rnn --iters 100000 --batch 32 --hidden_size 768 --seq_length 32 --train_data res/dickens.txt
 
 After 200K runs, the loss has not dropped below 36, in contrast to the shakespeare text. Perhaps this requires an additional hidden layer in the LSTM model.
 
