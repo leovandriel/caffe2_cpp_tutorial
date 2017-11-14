@@ -8,6 +8,7 @@
 #include "caffe2/util/blob.h"
 #include "caffe2/util/model.h"
 #include "caffe2/util/net.h"
+#include "caffe2/util/progress.h"
 #include "caffe2/util/tensor.h"
 #include "caffe2/util/train.h"
 
@@ -162,7 +163,6 @@ int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
 int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                const std::string *db_paths, ModelUtil &model,
                const std::string &db_type, int batch_size, int size_to_fit) {
-  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   std::unique_ptr<db::DB> database[kRunNum];
   std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
@@ -182,13 +182,10 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                          ? model.predict.net.external_output(0)
                          : "";
   std::vector<std::pair<std::string, int>> batch_files;
+  Progress progress(image_files.size());
+  progress.clear();
   for (auto &pair : image_files) {
-    if (image_count % 10 == 0) {
-      std::cerr << "  pre-processing.. " << image_count << '/'
-                << image_files.size() << " " << std::setprecision(3)
-                << ((float)100 * image_count / image_files.size())
-                << "%            \r" << std::flush;
-    }
+    progress.update();
     auto &filename = pair.first;
     auto class_index = pair.second;
     image_count++;
@@ -230,7 +227,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
                   "database " + name_for_run[i] + " is empty");
   }
-  std::cerr << std::string(80, ' ') << '\r' << std::flush;
+  progress.clear();
   return sample_count;
 }
 
@@ -244,26 +241,21 @@ void preprocess(const std::vector<std::pair<std::string, int>> &image_files,
 
 int count_samples(const std::string *db_paths, const std::string &db_type,
                   int est_size) {
-  std::cerr << std::string(80, ' ') << '\r' << std::flush;
   std::unique_ptr<db::DB> database[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
     database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
   }
   auto sample_count = 0;
-  for (int i = 0; i < kRunNum; i++) {
+  Progress progress(est_size);
+  progress.clear();
+  for (int i = 0; i < kRunNum; i++, progress.update()) {
     auto cursor = database[i]->NewCursor();
     while (cursor->Valid()) {
-      if (sample_count % 10 == 0) {
-        std::cerr << "  counting.. " << sample_count << '/' << est_size << " "
-                  << std::setprecision(3)
-                  << ((float)100 * sample_count / est_size) << "%         \r"
-                  << std::flush;
-      }
       sample_count++;
       cursor->Next();
     }
   }
-  std::cerr << std::string(80, ' ') << '\r' << std::flush;
+  progress.clear();
   return sample_count;
 }
 
