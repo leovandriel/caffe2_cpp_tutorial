@@ -9,7 +9,7 @@ CAFFE2_DEFINE_string(model, "char_rnn", "The RNN model.");
 CAFFE2_DEFINE_string(train_data, "res/shakespeare.txt",
                      "Path to training data in a text file format");
 
-CAFFE2_DEFINE_int(epochs, 10 * 1000, "The of training runs.");
+CAFFE2_DEFINE_int(iters, 10 * 1000, "The of training runs.");
 CAFFE2_DEFINE_int(seq_length, 25, "One training example sequence length");
 CAFFE2_DEFINE_int(batch, 1, "Training batch size");
 CAFFE2_DEFINE_int(iters_to_report, 500,
@@ -92,7 +92,7 @@ void run() {
 
   std::cout << "model: " << FLAGS_model << std::endl;
   std::cout << "train-data: " << FLAGS_train_data << std::endl;
-  std::cout << "epochs: " << FLAGS_epochs << std::endl;
+  std::cout << "iters: " << FLAGS_iters << std::endl;
   std::cout << "seq-length: " << FLAGS_seq_length << std::endl;
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "iters-to-report: " << FLAGS_iters_to_report << std::endl;
@@ -293,7 +293,7 @@ void run() {
   CAFFE_ENFORCE(workspace.CreateNet(model.predict.net));
 
   // >>> while True:
-  while (num_iter < FLAGS_epochs) {
+  while (num_iter < FLAGS_iters) {
     // >>> workspace.FeedBlob("seq_lengths", np.array([self.seq_length] *
     // self.batch_size, dtype=np.int32))
     {
