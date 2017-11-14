@@ -56,7 +56,7 @@ class Progress {
   float eta(float speed) const {
     return speed > 0 && size > 0 ? (size - index) / speed : -1.f;
   }
-  void update(float interval = 1);
+  void update(int step = 1, float interval = 1);
   void clear();
   std::string string() const;
 
