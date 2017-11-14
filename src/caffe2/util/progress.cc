@@ -5,8 +5,8 @@
 
 namespace caffe2 {
 
-void Progress::update(float interval) {
-  inc();
+void Progress::update(int step, float interval) {
+  inc(step);
   if (mark_has() && mark_lapse() > interval) {
     std::cerr << "  " << string() << "  \r" << std::flush;
     mark();
