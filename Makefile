@@ -4,7 +4,10 @@ all:
 	@test -f build/Makefile || (mkdir -p build && cd build && cmake .. && cd .. && ./script/download_resource.sh); cd build && make
 
 debug:
-	@rm -rf build && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && cd ..
+	@rm -rf build && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && cd .. && make
+
+profile:
+	@rm -rf build && mkdir -p build && cd build && cmake -DCMAKE_CXX_FLAGS=-pg .. && cd .. && make
 
 verbose:
 	cd build && make VERBOSE=1

@@ -24,7 +24,6 @@ CAFFE2_DEFINE_double(lr, 1e-4, "Learning rate.");
 CAFFE2_DEFINE_bool(skip_preprocess, false,
                    "Skip going through preprocessed images");
 
-CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
 CAFFE2_DEFINE_bool(reshape, false, "Reshape output (necessary for squeeznet)");
@@ -63,7 +62,6 @@ void run() {
   std::cout << "lr: " << FLAGS_lr << std::endl;
   std::cout << "skip_preprocess: " << (FLAGS_skip_preprocess ? "true" : "false")
             << std::endl;
-  std::cout << "zero-one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
   std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false") << std::endl;
   std::cout << "matrix: " << (FLAGS_matrix ? "true" : "false") << std::endl;
@@ -190,10 +188,6 @@ void run() {
   models[kRunTrain].AddTrainOps(output, FLAGS_lr, FLAGS_optimizer);
   ModelUtil(second.predict, models[kRunValidate].predict).AddTestOps(output);
   ModelUtil(second.predict, models[kRunTest].predict).AddTestOps(output);
-
-  if (FLAGS_zero_one) {
-    models[kRunValidate].predict.AddZeroOneOp(output, "label");
-  }
 
   if (FLAGS_display) {
     if (!has_split) {
