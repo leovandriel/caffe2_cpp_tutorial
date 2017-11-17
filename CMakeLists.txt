@@ -54,7 +54,6 @@ link_whole_archive(caffe2_cpp)
 
 if(CUDA_LIBRARIES)
   # set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-  list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
   list(APPEND CUDA_NVCC_FLAGS "-Wno-deprecated-gpu-targets")
   file(GLOB CUDA_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cu")
   cuda_add_library(caffe2_cpp_gpu ${CUDA_SOURCES})

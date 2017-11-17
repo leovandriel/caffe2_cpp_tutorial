@@ -237,7 +237,8 @@ void run() {
 
   std::cout << std::endl;
   std::cout << "testing.." << std::endl;
-  run_tester(FLAGS_test_runs, models[kRunTest], workspace, test_time, FLAGS_matrix);
+  run_tester(FLAGS_test_runs, models[kRunTest], workspace, test_time,
+             FLAGS_matrix);
 
   NetDef deploy_init_model;  // the final initialization model
   ModelUtil deploy(deploy_init_model, full.predict.net,
