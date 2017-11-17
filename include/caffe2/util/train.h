@@ -65,12 +65,15 @@ void run_trainer(int iters, ModelUtil &train, ModelUtil &validate,
 }
 
 void run_tester(int iters, ModelUtil &test, Workspace &workspace,
-                clock_t &test_time) {
+                clock_t &test_time, bool show_matrix = false) {
   CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
   CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
+  auto &output_name = test.predict.net.external_output(0);
+
   auto sum_accuracy = 0.f, sum_loss = 0.f;
-  auto test_step = 10;
+  auto test_step = 10, batch_length = 0;
+  std::map<std::pair<int, int>, int> counts;
   for (auto i = 1; i <= iters; i++) {
     test_time -= clock();
     CAFFE_ENFORCE(workspace.RunNet(test.predict.net.name()));
@@ -80,12 +83,46 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
         BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
     sum_loss += BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
 
+    auto label =
+        caffe2::BlobUtil(*workspace.GetBlob("label")).Get().data<int>();
+    auto output = caffe2::BlobUtil(*workspace.GetBlob(output_name)).Get();
+    auto batch_count = output.dim(0);
+    batch_length = output.size() / batch_count;
+    auto data = output.data<float>();
+    for (int i = 0; i < batch_count; i++, data += batch_length) {
+      auto max =
+          std::distance(data, std::max_element(data, data + batch_length));
+      counts[{label[i], max}]++;
+    }
+
     if (i % test_step == 0) {
       auto loss = sum_loss / test_step, accuracy = sum_accuracy / test_step;
       sum_loss = 0;
       sum_accuracy = 0;
       std::cout << "step: " << i << " loss: " << loss
                 << " accuracy: " << accuracy << std::endl;
+    }
+  }
+
+  if (show_matrix) {
+    std::cout << "  %  ";
+    for (int j = 0; j < batch_length; j++) {
+      std::cout << std::setw(6) << j;
+    }
+    std::cout << std::endl;
+    for (int i = 0; i < batch_length; i++) {
+      auto sum = 0;
+      for (int j = 0; j < batch_length; j++) {
+        sum += counts[{i, j}];
+      }
+      if (sum > 0) {
+        std::cout << std::setw(4) << i << ":";
+        for (int j = 0; j < batch_length; j++) {
+          std::cout << std::fixed << std::setw(6) << std::setprecision(1)
+                    << (100.0 * counts[{i, j}] / sum);
+        }
+        std::cout << " (" << sum << ")" << std::endl;
+      }
     }
   }
 }

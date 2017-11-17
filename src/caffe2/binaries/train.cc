@@ -28,6 +28,7 @@ CAFFE2_DEFINE_bool(zero_one, false, "Show zero-one for batch.");
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
 CAFFE2_DEFINE_bool(reshape, false, "Reshape output (necessary for squeeznet)");
+CAFFE2_DEFINE_bool(matrix, false, "Show test result matrix");
 
 #include "caffe2/util/cmd.h"
 
@@ -65,6 +66,7 @@ void run() {
   std::cout << "zero-one: " << (FLAGS_zero_one ? "true" : "false") << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
   std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false") << std::endl;
+  std::cout << "matrix: " << (FLAGS_matrix ? "true" : "false") << std::endl;
 
   auto has_split = FLAGS_layer.size() > 0;
   std::string layer_prefix;
@@ -235,7 +237,7 @@ void run() {
 
   std::cout << std::endl;
   std::cout << "testing.." << std::endl;
-  run_tester(FLAGS_test_runs, models[kRunTest], workspace, test_time);
+  run_tester(FLAGS_test_runs, models[kRunTest], workspace, test_time, FLAGS_matrix);
 
   NetDef deploy_init_model;  // the final initialization model
   ModelUtil deploy(deploy_init_model, full.predict.net,
