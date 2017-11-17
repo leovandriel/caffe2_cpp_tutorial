@@ -148,7 +148,7 @@ void run() {
   // extract dream model
   base.predict.CheckLayerAvailable(FLAGS_layer);
   NetDef init_model, dream_model, display_model, unused_model;
-  NetUtil display(display_model);
+  NetUtil display(display_model, "display");
   ModelUtil dream(init_model, dream_model);
   ModelUtil unused(unused_model, unused_model);
 
