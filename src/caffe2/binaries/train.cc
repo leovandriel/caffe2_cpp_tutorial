@@ -243,7 +243,7 @@ void run() {
   full.CopyDeploy(deploy, workspace);
 
   std::cout << "saving model.." << std::endl;
-  size_t model_size = deploy.Write(path_prefix + model_safe + '_');
+  size_t model_size = deploy.Write(path_prefix + model_safe);
 
   std::cout << std::endl;
 
