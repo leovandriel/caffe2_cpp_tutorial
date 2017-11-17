@@ -150,7 +150,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model <model-name> --file <some-image>
+    ./bin/imagenet --model googlenet --file res/file.jpg
 
 Where the model name is one of the following:
 
