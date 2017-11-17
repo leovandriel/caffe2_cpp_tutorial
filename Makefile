@@ -31,3 +31,6 @@ format:
 	@find . -iname "*.h" -o -iname "*.cc" -o -iname "*.cu" | xargs clang-format --style=Google -i
 
 # for i in "LLVM" "Google" "Chromium" "Mozilla" "WebKit"; do; git reset --hard; echo $i; find . -iname "*.h" -o -iname "*.cc" | xargs clang-format --style=$i -i; git diff --shortstat | cat; done
+
+%:
+	cd build && make $@
