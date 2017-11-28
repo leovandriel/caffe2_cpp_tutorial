@@ -239,10 +239,10 @@ void run() {
                    "train_" + full.init.net.name());
   full.CopyDeploy(deploy, workspace);
 
-  std::cout << "saving model.." << std::endl;
-  size_t model_size = deploy.Write(path_prefix + model_safe);
-
   std::cout << std::endl;
+
+  std::cout << "saving model.. (" << (path_prefix + model_safe) << "_%_net.pb)" << std::endl;
+  size_t model_size = deploy.Write(path_prefix + model_safe);
 
   std::cout << std::setprecision(3)
             << "load: " << ((float)load_time / CLOCKS_PER_SEC)
