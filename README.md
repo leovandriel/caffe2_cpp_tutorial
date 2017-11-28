@@ -122,6 +122,8 @@ To see the training in action, run with `--display`:
 
 <img src="script/mnist.jpg" alt="MNIST" width="300"/>
 
+After testing the trained model is stored in `tmp/mnist_init_net.pb` and `tmp/mnist_predict_net.pb`. For an example implentation of how to use this trained model, take a look at `predict_example()` in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321). This implementation is "pure" Caffe2 and does not rely on any helper methods. For an implementation that does use helper methods, take a look at `imagenet`.
+
 ## RNNs and LSTM Networks
 
 In [The Unreasonable Effectiveness of Recurrent Neural Networks](http://karpathy.github.io/2015/05/21/rnn-effectiveness/) Andrej Karpathy describes how to train a recurrent neural network (RNN) on a large volume of text and how to generate new text using such a network. The Caffe2 tutorial [RNNs and LSTM Networks](https://caffe2.ai/docs/RNNs-and-LSTM-networks.html) covers this technique using the [char_rnn.py](https://github.com/caffe2/caffe2/blob/master/caffe2/python/examples/char_rnn.py) script.
@@ -168,6 +170,11 @@ The pre-trained weights for these models are automatically downloaded and stored
 
 Additional models can be made available on request!
 
+To classify an image using a model that you trained yourself, specify the location of the init and predict `.pb` file including a `%` character. For example:
+
+    ./bin/imagenet --model res/images/googlenet_%_net.pb --file res/file.jpg
+
+
 See also:
 
 - [Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo)
@@ -201,6 +208,12 @@ Some models, like SqueezeNet require reshaping of their output to N x D tensor:
 You can also provide your own pre-trained model. Specify the location of the init and predict `.pb` file including a `%` character:
 
     ./bin/train --model res/googlenet_%_net.pb --folder res/images --layer pool5/7x7_s1
+
+After the test runs, the model is saved in the `--folder` under the name `_<layer>_<model>_<init/predict>_net.pb`. You can now use this model like any other, for example in the `imagenet` example:
+
+    ./bin/imagenet --model res/images/_pool5_7x7_s1_googlenet_%_net.pb --file res/images/dog/Tjoise.jpg
+
+Note that the label names are probably incorrent (goldfish instead of dog), but the index should refer to the correct label. Another example implementation of a classifier can be found in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321), see `predict_example()`.
 
 See also:
 

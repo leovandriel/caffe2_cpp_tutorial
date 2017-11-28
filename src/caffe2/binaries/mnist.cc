@@ -314,6 +314,9 @@ void run() {
     }
     op->add_output(param);
   }
+
+  std::cout << std::endl;
+  std::cout << "saving model.. (tmp/mnist_%_net.pb)" << std::endl;
   deploy.predict.WriteText("tmp/mnist_predict_net.pbtxt");
   deploy.Write("tmp/mnist");
 }
