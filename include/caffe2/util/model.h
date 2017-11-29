@@ -39,6 +39,8 @@ class ModelUtil {
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, bool test = false);
+  void AddSpatialBNOp(const std::string & input, const std::string &output,
+				int size, float epsilon = 1e-5f, float momentum = 0.9, bool test = false);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }
 
