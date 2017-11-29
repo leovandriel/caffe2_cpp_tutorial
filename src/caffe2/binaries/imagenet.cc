@@ -10,6 +10,7 @@
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_string(classes, "", "The class file.")
 CAFFE2_DEFINE_int(size, 224, "The image file.");
 
 namespace caffe2 {
@@ -51,6 +52,12 @@ void run() {
 
   if (!std::ifstream(FLAGS_file).good()) {
     std::cerr << "error: Image file missing: " << FLAGS_file << std::endl;
+    return;
+  }
+  
+  // detect classes if specified
+  if (FLAGS_classes.size() && !std::ifstream(FLAGS_classes).good()) {
+    std::cerr << "error: Class file invalid: " << FLAGS_classes << std::endl;
     return;
   }
 
@@ -108,8 +115,30 @@ void run() {
 
   std::cout << std::endl;
 
-  // show prediction result
-  printBest(output, imagenet_classes);
+  // show prediction result using classes
+  if(FLAGS_classes.size()){
+    std::ifstream file(FLAGS_classes);
+    std::string temp;
+
+    std::vector<std::string> strings;
+
+    int i = 0;
+    while(std::getline(file, temp)) {
+      //Do with temp
+      strings.push_back(temp);  
+    }
+
+    // convert out vector of strings to char*
+    std::vector<const char*> cstrings;
+    cstrings.reserve(strings.size());
+
+    for(size_t i = 0; i < strings.size(); ++i)
+      cstrings.push_back(const_cast<char*>(strings[i].c_str()));
+
+    printBest(output, &cstrings[0]);
+  } else {
+    printBest(output, imagenet_classes);    
+  }
 
   std::cout << std::endl;
 
