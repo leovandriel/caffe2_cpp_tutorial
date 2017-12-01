@@ -48,8 +48,8 @@ class NetUtil {
                                const std::string& param);
   OperatorDef* AddUniformFillOp(const std::vector<int>& shape, float min,
                                 float max, const std::string& param);
-  OperatorDef * AddGausianFillOp(const std::vector<int>& shape, float mean,
-										float std, const std::string& param);
+  OperatorDef* AddGausianFillOp(const std::vector<int>& shape, float mean,
+                                float std, const std::string& param);
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape, float value,
                                  const std::string& param);
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape, int64_t value,
@@ -66,10 +66,10 @@ class NetUtil {
                          int stride, int padding, int kernel,
                          const std::string& order = "NCHW");
   OperatorDef* AddReluOp(const std::string& input, const std::string& output);
-  OperatorDef * AddLeakyReluOp(const std::string& input,
-								const std::string& output, float alpha);
-  OperatorDef * AddSigmoidOp(const std::string& input,
-								const std::string& output);
+  OperatorDef* AddLeakyReluOp(const std::string& input,
+                              const std::string& output, float alpha);
+  OperatorDef* AddSigmoidOp(const std::string& input,
+                            const std::string& output);
   OperatorDef* AddLrnOp(const std::string& input, const std::string& output,
                         int size, float alpha, float beta, float bias,
                         const std::string& order = "NCHW");
