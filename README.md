@@ -152,7 +152,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model googlenet --file res/file.jpg
+    ./bin/imagenet --model googlenet --file res/image_file.jpg
 
 Where the model name is one of the following:
 
@@ -172,7 +172,7 @@ Additional models can be made available on request!
 
 To classify an image using a model that you trained yourself, specify the location of the init and predict `.pb` file including a `%` character. For example:
 
-    ./bin/imagenet --model res/images/googlenet_%_net.pb --file res/file.jpg
+    ./bin/imagenet --model res/images/googlenet_%_net.pb --file res/image_file.jpg
 
 
 See also:
@@ -209,11 +209,11 @@ You can also provide your own pre-trained model. Specify the location of the ini
 
     ./bin/train --model res/googlenet_%_net.pb --folder res/images --layer pool5/7x7_s1
 
-After the test runs, the model is saved in the `--folder` under the name `_<layer>_<model>_<init/predict>_net.pb`. You can now use this model like any other, for example in the `imagenet` example:
+After the test runs, the model is saved in the `--folder` under the name `_<layer>_<model>_<init/predict>_net.pb`. Please note that you'll need to specify the generated class .txt file by using the `--classes` flag. You can now use this model like any other, for example in the `imagenet` example:
 
-    ./bin/imagenet --model res/images/_pool5_7x7_s1_googlenet_%_net.pb --file res/images/dog/Tjoise.jpg
+    ./bin/imagenet --model res/images/_pool5_7x7_s1_googlenet_%_net.pb --file res/images/dog/Tjoise.jpg --classes res/images/_pool5_7x7_s1_classes.txt
 
-Note that the label names are probably incorrent (goldfish instead of dog), but the index should refer to the correct label. Another example implementation of a classifier can be found in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321), see `predict_example()`.
+Another example implementation of a classifier can be found in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321), see `predict_example()`.
 
 See also:
 
