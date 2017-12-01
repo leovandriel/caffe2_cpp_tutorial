@@ -5,8 +5,9 @@ set -e
 mkdir -p res
 mkdir -p tmp
 
-test -f res/image_file.jpg || echo "downloading test image (1)"
+test -f res/imagenet_classes.txt || echo "downloading test image (2)"
 test -f res/image_file.jpg || curl --progress-bar --output res/image_file.jpg https://cdn.pixabay.com/photo/2015/02/10/21/28/flower-631765_1280.jpg
+test -f res/imagenet_classes.txt || curl --progress-bar --location https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h | grep '".*",*' | sed -e 's/"\(.*\)",*/\1/g' > res/imagenet_classes.txt
 
 test -f res/squeezenet_init_net.pb || echo "downloading Squeezenet model (2)"
 test -f res/squeezenet_predict_net.pb || curl --progress-bar --location --output res/squeezenet_predict_net.pb https://github.com/caffe2/models/raw/master/squeezenet/predict_net.pb

@@ -34,10 +34,6 @@ set(ALL_LIBRARIES)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
-  file(DOWNLOAD "https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h" "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
-endif()
-
 macro(link_whole_archive lib)
   if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     list(APPEND ALL_LIBRARIES -Wl,-force_load,$<TARGET_FILE_NAME:${lib}> ${lib})

@@ -6,11 +6,10 @@
 #include "caffe2/zoo/keeper.h"
 
 #include "caffe2/util/cmd.h"
-#include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
-CAFFE2_DEFINE_string(classes, "", "The class file.");
+CAFFE2_DEFINE_string(classes, "res/imagenet_classes.txt", "The classes file.");
 CAFFE2_DEFINE_int(size, 224, "The image file.");
 
 namespace caffe2 {
@@ -59,7 +58,7 @@ void run() {
   }
 
   // detect classes if specified
-  if (FLAGS_classes.size() && !std::ifstream(FLAGS_classes).good()) {
+  if (!std::ifstream(FLAGS_classes).good()) {
     std::cerr << "error: Class file invalid: " << FLAGS_classes << std::endl;
     return;
   }
@@ -119,21 +118,14 @@ void run() {
   std::cout << std::endl;
 
   // show prediction result using classes
-  if (FLAGS_classes.size()) {
-    std::ifstream file(FLAGS_classes);
-    std::string temp;
-
-    std::vector<std::string> strings;
-
-    while (std::getline(file, temp)) {
-      strings.push_back(temp);
-    }
-
-    printBest(output, strings);
-  } else {
-    printBest(output, std::vector<std::string>(imagenet_classes,
-                                               imagenet_classes + 1000));
+  std::ifstream file(FLAGS_classes);
+  std::string temp;
+  std::vector<std::string> classes;
+  while (std::getline(file, temp)) {
+    classes.push_back(temp);
   }
+
+  printBest(output, classes);
 
   std::cout << std::endl;
 

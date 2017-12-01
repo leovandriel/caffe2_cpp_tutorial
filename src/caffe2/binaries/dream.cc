@@ -10,8 +10,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "res/imagenet_classes.h"
-
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
                      "Name of the layer on which to split the model.");
