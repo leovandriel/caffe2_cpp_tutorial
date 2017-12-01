@@ -16,8 +16,11 @@ CAFFE2_DEFINE_int(size, 224, "The image file.");
 namespace caffe2 {
 
 template <typename C>
-void printBest(const Tensor<C> &tensor, const char **classes,
+void printBest(const Tensor<C> &tensor, const std::vector<std::string> &classes,
                const std::string &name = "") {
+  CAFFE_ENFORCE_EQ(classes.size(), tensor.size(),
+                   "output size does not match number of classes");
+
   // sort top results
   const auto &probs = tensor.template data<float>();
   std::vector<std::pair<int, int>> pairs;
@@ -122,23 +125,14 @@ void run() {
 
     std::vector<std::string> strings;
 
-    int i = 0;
     while (std::getline(file, temp)) {
-      // Do with temp
       strings.push_back(temp);
     }
 
-    // convert out vector of strings to char*
-    std::vector<const char *> cstrings;
-    cstrings.reserve(strings.size());
-
-    for (size_t i = 0; i < strings.size(); ++i) {
-      cstrings.push_back(const_cast<char *>(strings[i].c_str()));
-    }
-
-    printBest(output, &cstrings[0]);
+    printBest(output, strings);
   } else {
-    printBest(output, imagenet_classes);
+    printBest(output, std::vector<std::string>(imagenet_classes,
+                                               imagenet_classes + 1000));
   }
 
   std::cout << std::endl;
