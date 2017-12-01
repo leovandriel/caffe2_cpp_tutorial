@@ -8,8 +8,6 @@
 #include "caffe2/util/window.h"
 #include "caffe2/zoo/keeper.h"
 
-#include "res/imagenet_classes.h"
-
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
                      "Name of the layer on which to split the model.");
