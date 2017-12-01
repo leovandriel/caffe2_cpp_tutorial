@@ -241,7 +241,8 @@ void run() {
 
   std::cout << std::endl;
 
-  std::cout << "saving model.. (" << (path_prefix + model_safe) << "_%_net.pb)" << std::endl;
+  std::cout << "saving model.. (" << (path_prefix + model_safe) << "_%_net.pb)"
+            << std::endl;
   size_t model_size = deploy.Write(path_prefix + model_safe);
 
   std::cout << std::setprecision(3)

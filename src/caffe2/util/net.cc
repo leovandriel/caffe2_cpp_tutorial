@@ -254,13 +254,14 @@ OperatorDef* NetUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
   return op;
 }
 
-OperatorDef * NetUtil::AddGausianFillOp(const std::vector<int>& shape, float mean,
-										float std, const std::string& param) {
-	auto op = AddOp("GaussianFill", {}, {param});
-	net_add_arg(*op, "shape", shape);
-	net_add_arg(*op, "mean", mean);
-	net_add_arg(*op, "std", std);
-	return op;
+OperatorDef* NetUtil::AddGausianFillOp(const std::vector<int>& shape,
+                                       float mean, float std,
+                                       const std::string& param) {
+  auto op = AddOp("GaussianFill", {}, {param});
+  net_add_arg(*op, "shape", shape);
+  net_add_arg(*op, "mean", mean);
+  net_add_arg(*op, "std", std);
+  return op;
 }
 
 OperatorDef* NetUtil::AddConstantFillOp(const std::vector<int>& shape,
@@ -332,17 +333,17 @@ OperatorDef* NetUtil::AddReluOp(const std::string& input,
   return AddOp("Relu", {input}, {output});
 }
 
-OperatorDef * NetUtil::AddLeakyReluOp(const std::string& input,
-								const std::string& output, float alpha) {
-	auto op = AddOp("LeakyRelu", {input}, {output});
-	net_add_arg(*op,"alpha",alpha);
-	return op;
+OperatorDef* NetUtil::AddLeakyReluOp(const std::string& input,
+                                     const std::string& output, float alpha) {
+  auto op = AddOp("LeakyRelu", {input}, {output});
+  net_add_arg(*op, "alpha", alpha);
+  return op;
 }
 
-OperatorDef * NetUtil::AddSigmoidOp(const std::string& input,
-								const std::string& output) {
-	auto op = AddOp("Sigmoid",{input},{output});
-	return op;
+OperatorDef* NetUtil::AddSigmoidOp(const std::string& input,
+                                   const std::string& output) {
+  auto op = AddOp("Sigmoid", {input}, {output});
+  return op;
 }
 
 OperatorDef* NetUtil::AddLrnOp(const std::string& input,

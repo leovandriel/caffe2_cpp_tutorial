@@ -1,4 +1,5 @@
 *.swp
+.vimrc
 
 build
 bin

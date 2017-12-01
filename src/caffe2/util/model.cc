@@ -167,29 +167,27 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
                     padding, kernel);
 }
 
- void ModelUtil::AddSpatialBNOp(const std::string & input, const std::string &output,
-				int size, float epsilon, float momentum, bool test) {
-	 if(!test) {
-		init.AddConstantFillOp({size},1.0f, output + "_scale");
-		init.AddConstantFillOp({size},0.0f, output + "_bias");
-		init.AddConstantFillOp({size},0.0f, output + "_mean");
-		init.AddConstantFillOp({size},1.0f, output + "_var");
-	}
-	predict.AddInput(output + "_scale");
-	predict.AddInput(output + "_bias");
-	if(!test)
-		predict.AddSpatialBNOp(
-			{input, output + "_scale", output + "_bias", output + "_mean", output+ "_var"},
-			{output, output + "_mean", output+ "_var", output + "_saved_mean", output + "_saved_var"},
-			epsilon,momentum,test
-		);
-	else
-		predict.AddSpatialBNOp(
-			{input, output + "_scale", output + "_bias"},
-			{output},
-			epsilon,momentum,test
-		);
- }
+void ModelUtil::AddSpatialBNOp(const std::string &input,
+                               const std::string &output, int size,
+                               float epsilon, float momentum, bool test) {
+  if (!test) {
+    init.AddConstantFillOp({size}, 1.0f, output + "_scale");
+    init.AddConstantFillOp({size}, 0.0f, output + "_bias");
+    init.AddConstantFillOp({size}, 0.0f, output + "_mean");
+    init.AddConstantFillOp({size}, 1.0f, output + "_var");
+  }
+  predict.AddInput(output + "_scale");
+  predict.AddInput(output + "_bias");
+  if (!test)
+    predict.AddSpatialBNOp({input, output + "_scale", output + "_bias",
+                            output + "_mean", output + "_var"},
+                           {output, output + "_mean", output + "_var",
+                            output + "_saved_mean", output + "_saved_var"},
+                           epsilon, momentum, test);
+  else
+    predict.AddSpatialBNOp({input, output + "_scale", output + "_bias"},
+                           {output}, epsilon, momentum, test);
+}
 
 void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
                       ModelUtil &secondModel, bool force_cpu, bool inclusive) {
