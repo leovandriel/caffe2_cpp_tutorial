@@ -183,7 +183,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                          : "";
   std::vector<std::pair<std::string, int>> batch_files;
   Progress progress(image_files.size());
-  progress.clear();
+  progress.wipe();
   for (auto &pair : image_files) {
     progress.update();
     auto &filename = pair.first;
@@ -227,7 +227,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
                   "database " + name_for_run[i] + " is empty");
   }
-  progress.clear();
+  progress.summarize();
   return sample_count;
 }
 
@@ -247,7 +247,7 @@ int count_samples(const std::string *db_paths, const std::string &db_type,
   }
   auto sample_count = 0;
   Progress progress(est_size);
-  progress.clear();
+  progress.wipe();
   for (int i = 0; i < kRunNum; i++, progress.update()) {
     auto cursor = database[i]->NewCursor();
     while (cursor->Valid()) {
@@ -255,7 +255,7 @@ int count_samples(const std::string *db_paths, const std::string &db_type,
       cursor->Next();
     }
   }
-  progress.clear();
+  progress.summarize();
   return sample_count;
 }
 
