@@ -11,12 +11,11 @@ namespace caffe2 {
 
 const std::set<std::string> trainable_ops({
     "Add",
-	"Sub",
     "AffineScale",
     "AveragedLoss",
-	"SoftmaxWithLoss",
     "AveragePool",
     "BackMean",
+	"Cast",
     "Concat",
     "Conv",
     "Diagonal",
@@ -27,22 +26,26 @@ const std::set<std::string> trainable_ops({
     "LRN",
     "MaxPool",
     "Mul",
+	"Pow",
     "RecurrentNetwork",
     "Relu",
 	"LeakyRelu",
-	"Sigmoid",
     "Reshape",
+	"Scale", 
+	"Sigmoid",
     "Slice",
     "Softmax",
+	"SoftmaxWithLoss",
     "SpatialBN",
     "SquaredL2",
     "SquaredL2Channel",
 	"SquaredL2Distance",
+	"Sub",
     "Sum",
 });
 
 const std::set<std::string> non_trainable_ops({
-    "Accuracy", "Cast", "Cout", "ConstantFill", "GaussianFill", "Iter", "Scale", "Pow", "StopGradient",
+    "Accuracy",  "Cout", "ConstantFill", "GaussianFill", "Iter",  "StopGradient",
     "TensorProtosDBInput", "TimePlot", "ShowWorst",
 });
 
