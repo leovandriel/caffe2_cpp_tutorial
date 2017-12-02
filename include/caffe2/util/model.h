@@ -90,6 +90,10 @@ class ModelUtil {
   void AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int axis = 1,
                         int broadcast = 1);
+  void AddScaleOp(const std::string& input, const std::string& output,
+                          float scale);
+  void AddWeightedSumOp(const std::vector<std::string>& inputs,
+                                const std::string& sum);
   //TODO:
   void AddStopGradientOp(const std::string& param);
 

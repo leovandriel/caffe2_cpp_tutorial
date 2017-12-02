@@ -302,6 +302,16 @@ void ModelUtil::AddAddOp(const std::vector<std::string>& inputs,
 	predict.AddAddOp(inputs,output,axis,broadcast);
 }
 
+void ModelUtil::AddScaleOp(const std::string& input, const std::string& output,
+                          float scale) {
+	predict.AddScaleOp(input,output,scale);
+}
+
+void ModelUtil::AddWeightedSumOp(const std::vector<std::string>& inputs,
+                                const std::string& sum) {
+	predict.AddWeightedSumOp(inputs,sum);
+}
+
 void ModelUtil::AddStopGradientOp(const std::string& param)
 {
 	predict.AddStopGradientOp(param);
