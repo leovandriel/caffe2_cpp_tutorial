@@ -312,6 +312,23 @@ void ModelUtil::AddWeightedSumOp(const std::vector<std::string>& inputs,
 	predict.AddWeightedSumOp(inputs,sum);
 }
 
+void ModelUtil::AddCopyOp(const std::string& input, const std::string& output) {
+	predict.AddCopyOp(input,output);
+}
+
+void ModelUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
+						const std::string& output) {
+	predict.AddSquaredL2DistanceOp(inputs,output);
+}
+
+void ModelUtil::AddPowOp(const std::string & input, const std::string & output, float exponent) {
+	predict.AddPowOp(input,output,exponent);
+}
+
+void ModelUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis, int broadcast) {
+	predict.AddSubOp(inputs,output,axis,broadcast);
+}
+
 void ModelUtil::AddStopGradientOp(const std::string& param)
 {
 	predict.AddStopGradientOp(param);

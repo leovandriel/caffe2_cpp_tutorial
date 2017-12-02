@@ -101,6 +101,10 @@ class NetUtil {
   OperatorDef* AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int axis = 1,
                         int broadcast = 1);
+  OperatorDef* AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
+						const std::string& output);
+  OperatorDef* AddPowOp(const std::string & input, const std::string & output, float exponent);
+  OperatorDef* AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis = 1, int broadcast = 1);
 
   OperatorDef* AddLSTMUnitOp(const std::vector<std::string>& inputs,
                              const std::vector<std::string>& outputs,

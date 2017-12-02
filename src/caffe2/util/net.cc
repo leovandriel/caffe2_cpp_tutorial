@@ -11,6 +11,7 @@ namespace caffe2 {
 
 const std::set<std::string> trainable_ops({
     "Add",
+	"Sub",
     "AffineScale",
     "AveragedLoss",
     "AveragePool",
@@ -35,11 +36,12 @@ const std::set<std::string> trainable_ops({
     "SpatialBN",
     "SquaredL2",
     "SquaredL2Channel",
+	"SquaredL2Distance",
     "Sum",
 });
 
 const std::set<std::string> non_trainable_ops({
-    "Accuracy", "Cast", "Cout", "ConstantFill", "GaussianFill", "Iter", "Scale", "StopGradient",
+    "Accuracy", "Cast", "Cout", "ConstantFill", "GaussianFill", "Iter", "Scale", "Pow", "StopGradient",
     "TensorProtosDBInput", "TimePlot", "ShowWorst",
 });
 
@@ -454,6 +456,25 @@ OperatorDef* NetUtil::AddAddOp(const std::vector<std::string>& inputs,
   net_add_arg(*op, "axis", axis);
   net_add_arg(*op, "broadcast", broadcast);
   return op;
+}
+
+OperatorDef* NetUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
+						const std::string& output) {
+	auto op = AddOp("SquaredL2Distance",inputs,{output});
+	return op;
+}
+
+OperatorDef* NetUtil::AddPowOp(const std::string & input, const std::string & output, float exponent) {
+	auto op = AddOp("Pow",{input},{output});
+	net_add_arg(*op, "exponent", exponent);
+	return op;
+}
+
+OperatorDef* NetUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis, int broadcast) {
+	auto op = AddOp("Sub",inputs,{output});
+	net_add_arg(*op, "axis", axis);
+	net_add_arg(*op, "broadcast", broadcast);
+	return op;
 }
 
 OperatorDef* NetUtil::AddLSTMUnitOp(const std::vector<std::string>& inputs,
