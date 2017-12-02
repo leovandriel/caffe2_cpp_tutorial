@@ -206,9 +206,9 @@ void ModelUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
 	predict.AddUniformFillOp(shape,min,max,param);
 }
  
-void ModelUtil::AddGausianFillOp(const std::vector<int>& shape, float mean,
+void ModelUtil::AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param) {
-	predict.AddGausianFillOp(shape,mean,std,param);
+	predict.AddGaussianFillOp(shape,mean,std,param);
 }
 
 void ModelUtil::AddConstantFillOp(const std::vector<int>& shape, float value,
@@ -333,6 +333,18 @@ void ModelUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
 								const std::vector<std::string>& outputs) {
 	predict.AddSoftmaxWithLossOp(inputs,outputs);
 }
+
+void ModelUtil::AddAveragedLossOp(const std::string& input,
+                                 const std::string& loss) {
+	predict.AddAveragedLossOp(input,loss);
+}
+
+ void ModelUtil::AddLearningRateOp(const std::string& iter,
+                                 const std::string& rate, float base_rate,
+                                 float gamma,  float stepsize) {
+	 predict.AddInput(iter);
+	 predict.AddLearningRateOp(iter,rate,base_rate,gamma,stepsize);
+ }
 
 void ModelUtil::AddStopGradientOp(const std::string& param)
 {

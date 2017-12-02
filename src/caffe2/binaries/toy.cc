@@ -1,6 +1,10 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/operator.h>
 #include <caffe2/core/operator_gradient.h>
+//model helper
+#include <caffe2/util/blob.h>
+#include <caffe2/util/model.h>
+#include <caffe2/util/net.h>
 
 namespace caffe2 {
 
@@ -23,280 +27,92 @@ void run() {
   Workspace workspace;
 
   // >>> init_net = core.Net("init")
-  NetDef initModel;
-  initModel.set_name("init");
+  NetDef initModel,trainModel;
+  ModelUtil model_helper(initModel,trainModel,"toy");
 
   // >>> W_gt = init_net.GivenTensorFill([], "W_gt", shape=[1, 2],
   // values=[2.0, 1.5])
   {
-    auto op = initModel.add_op();
-    op->set_type("GivenTensorFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    arg1->add_ints(2);
-    auto arg2 = op->add_arg();
-    arg2->set_name("values");
-    arg2->add_floats(2.0);
-    arg2->add_floats(1.5);
-    op->add_output("W_gt");
+		vector<float> data = {2.0,1.5};
+		auto tensor = TensorCPU({1,2},data,NULL);
+		model_helper.init.AddGivenTensorFillOp(tensor,"W_gt");
   }
 
   // >>> B_gt = init_net.GivenTensorFill([], "B_gt", shape=[1], values=[0.5])
   {
-    auto op = initModel.add_op();
-    op->set_type("GivenTensorFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("values");
-    arg2->add_floats(0.5);
-    op->add_output("B_gt");
+	  vector<float> data = {0.5};
+	  auto tensor = TensorCPU({1},data,NULL);
+	  model_helper.init.AddGivenTensorFillOp(tensor,"B_gt");
   }
 
   // >>> ONE = init_net.ConstantFill([], "ONE", shape=[1], value=1.)
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_f(1.0);
-    op->add_output("ONE");
-  }
+  model_helper.init.AddConstantFillOp({1},1.0f,"ONE");
 
   // >>> ITER = init_net.ConstantFill([], "ITER", shape=[1], value=0,
   // dtype=core.DataType.INT32)
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_i(0);
-    auto arg3 = op->add_arg();
-    arg3->set_name("dtype");
-    arg3->set_i(TensorProto_DataType_INT32);
-    op->add_output("ITER");
-  }
+  model_helper.init.AddConstantFillOp({1},(int64_t)0,"ITER");
 
   // >>> W = init_net.UniformFill([], "W", shape=[1, 2], min=-1., max=1.)
-  {
-    auto op = initModel.add_op();
-    op->set_type("UniformFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    arg1->add_ints(2);
-    auto arg2 = op->add_arg();
-    arg2->set_name("min");
-    arg2->set_f(-1);
-    auto arg3 = op->add_arg();
-    arg3->set_name("max");
-    arg3->set_f(1);
-    op->add_output("W");
-  }
+  model_helper.init.AddUniformFillOp({1,2},-1,1,"W");
 
   // >>> B = init_net.ConstantFill([], "B", shape=[1], value=0.0)
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("value");
-    arg2->set_f(0);
-    op->add_output("B");
-  }
+  model_helper.init.AddConstantFillOp({1},0.0f,"B");
 
   // print(initModel);
+  model_helper.init.Print();
 
   // >>> train_net = core.Net("train")
-  NetDef trainModel;
-  trainModel.set_name("train");
 
   // >>> X = train_net.GaussianFill([], "X", shape=[64, 2], mean=0.0, std=1.0,
   // run_once=0)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("GaussianFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(64);
-    arg1->add_ints(2);
-    auto arg2 = op->add_arg();
-    arg2->set_name("mean");
-    arg2->set_f(0);
-    auto arg3 = op->add_arg();
-    arg3->set_name("std");
-    arg3->set_f(1);
-    auto arg4 = op->add_arg();
-    arg4->set_name("run_once");
-    arg4->set_i(0);
-    op->add_output("X");
-  }
+  model_helper.AddGaussianFillOp({64,2},0,1,"X");
 
   // >>> Y_gt = X.FC([W_gt, B_gt], "Y_gt")
-  {
-    auto op = trainModel.add_op();
-    op->set_type("FC");
-    op->add_input("X");
-    op->add_input("W_gt");
-    op->add_input("B_gt");
-    op->add_output("Y_gt");
-  }
+  model_helper.predict.AddInput("W_gt");
+  model_helper.predict.AddInput("B_gt");
+  model_helper.predict.AddFcOp("X","W_gt","B_gt","Y_gt");
 
   // >>> noise = train_net.GaussianFill([], "noise", shape=[64, 1], mean=0.0,
   // std=1.0, run_once=0)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("GaussianFill");
-    auto arg1 = op->add_arg();
-    arg1->set_name("shape");
-    arg1->add_ints(64);
-    arg1->add_ints(1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("mean");
-    arg2->set_f(0);
-    auto arg3 = op->add_arg();
-    arg3->set_name("std");
-    arg3->set_f(1);
-    auto arg4 = op->add_arg();
-    arg4->set_name("run_once");
-    arg4->set_i(0);
-    op->add_output("noise");
-  }
+  model_helper.AddGaussianFillOp({64,1},0,1,"noise");
 
   // >>> Y_noise = Y_gt.Add(noise, "Y_noise")
-  {
-    auto op = trainModel.add_op();
-    op->set_type("Add");
-    op->add_input("Y_gt");
-    op->add_input("noise");
-    op->add_output("Y_noise");
-  }
+  model_helper.AddAddOp({"Y_gt","noise"},"Y_noise",0,0);
 
   // >>> Y_noise = Y_noise.StopGradient([], "Y_noise")
-  {
-    auto op = trainModel.add_op();
-    op->set_type("StopGradient");
-    op->add_input("Y_noise");
-    op->add_output("Y_noise");
-  }
-
-  std::vector<OperatorDef *> gradient_ops;
+  model_helper.AddStopGradientOp("Y_noise");
 
   // >>> Y_pred = X.FC([W, B], "Y_pred")
-  {
-    auto op = trainModel.add_op();
-    op->set_type("FC");
-    op->add_input("X");
-    op->add_input("W");
-    op->add_input("B");
-    op->add_output("Y_pred");
-    gradient_ops.push_back(op);
-  }
+  model_helper.predict.AddInput("W");
+  model_helper.predict.AddInput("B");
+  model_helper.predict.AddFcOp("X","W","B","Y_pred");
 
   // >>> dist = train_net.SquaredL2Distance([Y_noise, Y_pred], "dist")
-  {
-    auto op = trainModel.add_op();
-    op->set_type("SquaredL2Distance");
-    op->add_input("Y_noise");
-    op->add_input("Y_pred");
-    op->add_output("dist");
-    gradient_ops.push_back(op);
-  }
+  model_helper.AddSquaredL2DistanceOp({"Y_noise","Y_pred"},"dist");
 
   // >>> loss = dist.AveragedLoss([], ["loss"])
-  {
-    auto op = trainModel.add_op();
-    op->set_type("AveragedLoss");
-    op->add_input("dist");
-    op->add_output("loss");
-    gradient_ops.push_back(op);
-  }
+  model_helper.AddAveragedLossOp("dist","loss");
 
   // >>> gradient_map = train_net.AddGradientOperators([loss])
-  {
-    auto op = trainModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("value");
-    arg->set_f(1.0);
-    op->add_input("loss");
-    op->add_output("loss_grad");
-    op->set_is_gradient_op(true);
-  }
-  std::reverse(gradient_ops.begin(), gradient_ops.end());
-  for (auto op : gradient_ops) {
-    vector<GradientWrapper> output(op->output_size());
-    for (auto i = 0; i < output.size(); i++) {
-      output[i].dense_ = op->output(i) + "_grad";
-    }
-    GradientOpsMeta meta = GetGradientForOp(*op, output);
-    auto grad = trainModel.add_op();
-    grad->CopyFrom(meta.ops_[0]);
-    grad->set_is_gradient_op(true);
-  }
+  model_helper.AddGradientOps();
 
   // >>> train_net.Iter(ITER, ITER)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("Iter");
-    op->add_input("ITER");
-    op->add_output("ITER");
-  }
+  model_helper.predict.AddInput("ITER");
+  model_helper.predict.AddIterOp("ITER");
 
   // >>> LR = train_net.LearningRate(ITER, "LR", base_lr=-0.1, policy="step",
   // stepsize=20, gamma=0.9)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("LearningRate");
-    auto arg1 = op->add_arg();
-    arg1->set_name("base_lr");
-    arg1->set_f(-0.1);
-    auto arg2 = op->add_arg();
-    arg2->set_name("policy");
-    arg2->set_s("step");
-    auto arg3 = op->add_arg();
-    arg3->set_name("stepsize");
-    arg3->set_i(20);
-    auto arg4 = op->add_arg();
-    arg4->set_name("gamma");
-    arg4->set_f(0.9);
-    op->add_input("ITER");
-    op->add_output("LR");
-  }
+  model_helper.AddLearningRateOp("ITER","LR",-0.1,0.9, 20);
 
   // >>> train_net.WeightedSum([W, ONE, gradient_map[W], LR], W)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("WeightedSum");
-    op->add_input("W");
-    op->add_input("ONE");
-    op->add_input("W_grad");
-    op->add_input("LR");
-    op->add_output("W");
-  }
+  model_helper.predict.AddInput("ONE");
+  model_helper.AddWeightedSumOp({"W","ONE","W_grad","LR"},"W");
 
   // >>> train_net.WeightedSum([B, ONE, gradient_map[B], LR], B)
-  {
-    auto op = trainModel.add_op();
-    op->set_type("WeightedSum");
-    op->add_input("B");
-    op->add_input("ONE");
-    op->add_input("B_grad");
-    op->add_input("LR");
-    op->add_output("B");
-  }
+  model_helper.AddWeightedSumOp({"B","ONE","B_grad","LR"},"B");
 
   // print(trainModel);
+  model_helper.predict.Print();
 
   // >>> workspace.RunNetOnce(init_net)
   CAFFE_ENFORCE(workspace.RunNetOnce(initModel));

@@ -48,7 +48,7 @@ class NetUtil {
                                const std::string& param);
   OperatorDef* AddUniformFillOp(const std::vector<int>& shape, float min,
                                 float max, const std::string& param);
-  OperatorDef * AddGausianFillOp(const std::vector<int>& shape, float mean,
+  OperatorDef * AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param);
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape, float value,
                                  const std::string& param);
@@ -175,7 +175,7 @@ class NetUtil {
                                const std::string& iter);
   OperatorDef* AddLearningRateOp(const std::string& iter,
                                  const std::string& rate, float base_rate,
-                                 float gamma = 0.999f);
+                                 float gamma = 0.999f, float stepsize = 1.0);
   OperatorDef* AddCheckpointOp(const std::vector<std::string>& inputs,
                                int every, const std::string& db_type,
                                const std::string& db);

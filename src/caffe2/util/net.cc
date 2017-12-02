@@ -262,7 +262,7 @@ OperatorDef* NetUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
   return op;
 }
 
-OperatorDef * NetUtil::AddGausianFillOp(const std::vector<int>& shape, float mean,
+OperatorDef * NetUtil::AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param) {
 	auto op = AddOp("GaussianFill", {}, {param});
 	net_add_arg(*op, "shape", shape);
@@ -681,11 +681,11 @@ OperatorDef* NetUtil::AddAtomicIterOp(const std::string& mutex,
 
 OperatorDef* NetUtil::AddLearningRateOp(const std::string& iter,
                                         const std::string& rate,
-                                        float base_rate, float gamma) {
+                                        float base_rate, float gamma, float stepsize) {
   auto op = AddOp("LearningRate", {iter}, {rate});
   net_add_arg(*op, "policy", "step");
-  net_add_arg(*op, "stepsize", 1);
-  net_add_arg(*op, "base_lr", -base_rate);
+  net_add_arg(*op, "stepsize", stepsize);
+  net_add_arg(*op, "base_lr", base_rate);
   net_add_arg(*op, "gamma", gamma);
   return op;
 }
@@ -841,8 +841,6 @@ std::vector<std::string> NetUtil::CollectParams() {
 
 std::vector<OperatorDef> NetUtil::CollectGradientOps(
     std::map<std::string, std::pair<int, int>>& split_inputs) {
-  std::set<std::string> external_inputs(net.external_input().begin(),
-                                        net.external_input().end());
   std::vector<OperatorDef> gradient_ops;
   std::map<std::string, int> input_count;
   for (auto& op : net.op()) {

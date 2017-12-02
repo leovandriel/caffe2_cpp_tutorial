@@ -33,7 +33,7 @@ class ModelUtil {
   void AddTestOps(const std::string &output);
   void AddTrainOps(const std::string &output, float base_rate,
                    std::string &optimizer);
-	//operators with trainable parameters
+	//operators with initializable parameters
   void AddFcOps(const std::string &input, const std::string &output,
                 int in_size, int out_size, bool test = false);
   void AddConvOps(const std::string &input, const std::string &output,
@@ -41,14 +41,14 @@ class ModelUtil {
                   int kernel, bool test = false);
   void AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon = 1e-5f, float momentum = 0.9, bool test = false);
-  //operators without trainable parameters
+  //operators without initializable parameters
   void AddConstantFillOp(const std::vector<int>& shape,
                                  const std::string& param);
   void AddXavierFillOp(const std::vector<int>& shape,
                                const std::string& param);
   void AddUniformFillOp(const std::vector<int>& shape, float min,
                                 float max, const std::string& param);
-  void AddGausianFillOp(const std::vector<int>& shape, float mean,
+  void AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param);
   void AddConstantFillOp(const std::vector<int>& shape, float value,
                                  const std::string& param);
@@ -101,6 +101,11 @@ class ModelUtil {
   void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis = 1, int broadcast = 1);
   void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
 								const std::vector<std::string>& outputs);
+  void AddAveragedLossOp(const std::string& input,
+                                 const std::string& loss);
+  void AddLearningRateOp(const std::string& iter,
+                                 const std::string& rate, float base_rate,
+                                 float gamma = 0.999f,  float stepsize = 1.0);
   //TODO:
   void AddStopGradientOp(const std::string& param);
 
