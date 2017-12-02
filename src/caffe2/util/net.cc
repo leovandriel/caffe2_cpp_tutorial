@@ -27,6 +27,8 @@ const std::set<std::string> trainable_ops({
     "Mul",
     "RecurrentNetwork",
     "Relu",
+	"LeakyRelu",
+	"Sigmoid",
     "Reshape",
     "Slice",
     "Softmax",
@@ -37,7 +39,7 @@ const std::set<std::string> trainable_ops({
 });
 
 const std::set<std::string> non_trainable_ops({
-    "Accuracy", "Cast", "Cout", "ConstantFill", "Iter", "Scale", "StopGradient",
+    "Accuracy", "Cast", "Cout", "ConstantFill", "GaussianFill", "Iter", "Scale", "StopGradient",
     "TensorProtosDBInput", "TimePlot", "ShowWorst",
 });
 
