@@ -397,10 +397,10 @@ OperatorDef* NetUtil::AddFcOp(const std::string& input, const std::string& w,
 }
 
 OperatorDef* NetUtil::AddDropoutOp(const std::string& input,
-                                   const std::string& output, float ratio) {
+                                   const std::string& output, float ratio, bool test) {
   auto op = AddOp("Dropout", {input}, {output, "_" + output + "_mask"});
   net_add_arg(*op, "ratio", ratio);
-  net_add_arg(*op, "is_test", 1);  // TODO
+  net_add_arg(*op, "is_test", test);  // TODO
   return op;
 }
 

@@ -84,7 +84,7 @@ class NetUtil {
                        const std::string& b, const std::string& output,
                        int axis = 1);
   OperatorDef* AddDropoutOp(const std::string& input, const std::string& output,
-                            float ratio);
+                            float ratio, bool test = false);
   OperatorDef* AddSoftmaxOp(const std::string& input, const std::string& output,
                             int axis = 1);
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs,

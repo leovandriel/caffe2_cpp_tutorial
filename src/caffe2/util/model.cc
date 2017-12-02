@@ -167,7 +167,7 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
                     padding, kernel);
 }
 
- void ModelUtil::AddSpatialBNOp(const std::string & input, const std::string &output,
+ void ModelUtil::AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon, float momentum, bool test) {
 	 if(!test) {
 		init.AddConstantFillOp({size},1.0f, output + "_scale");
@@ -190,6 +190,122 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
 			epsilon,momentum,test
 		);
  }
+ 
+void ModelUtil::AddConstantFillOp(const std::vector<int>& shape,
+                                 const std::string& param) {
+	predict.AddConstantFillOp(shape,param);
+}
+
+void ModelUtil::AddXavierFillOp(const std::vector<int>& shape,
+                               const std::string& param) {
+	predict.AddXavierFillOp(shape,param);
+}
+
+void ModelUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
+                                float max, const std::string& param) {
+	predict.AddUniformFillOp(shape,min,max,param);
+}
+ 
+void ModelUtil::AddGausianFillOp(const std::vector<int>& shape, float mean,
+										float std, const std::string& param) {
+	predict.AddGausianFillOp(shape,mean,std,param);
+}
+
+void ModelUtil::AddConstantFillOp(const std::vector<int>& shape, float value,
+                                 const std::string& param) {
+	predict.AddConstantFillOp(shape,value,param);
+}
+
+void ModelUtil::AddConstantFillOp(const std::vector<int>& shape, int64_t value,
+                                 const std::string& param) {
+	predict.AddConstantFillOp(shape,value,param);
+}
+
+void ModelUtil::AddConstantFillWithOp(float value, const std::string& input,
+                                     const std::string& output) {
+	predict.AddConstantFillWithOp(value,input,output);
+}
+
+void ModelUtil::AddVectorFillOp(const std::vector<int>& values,
+                               const std::string& name) {
+	predict.AddVectorFillOp(values,name);
+}
+
+void ModelUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
+                                    const std::string& name) {
+	predict.AddGivenTensorFillOp(tensor,name);
+}
+
+void ModelUtil::AddReluOp(const std::string& input, const std::string& output) {
+	predict.AddReluOp(input,output);
+}
+
+void ModelUtil::AddLeakyReluOp(const std::string& input,
+								const std::string& output, float alpha) {
+	predict.AddLeakyReluOp(input,output,alpha);
+}
+
+void ModelUtil::AddReshapeOp(const std::string& input, const std::string& output,
+                            const std::vector<int>& shape) {
+	predict.AddReshapeOp(input,output,shape);
+}
+
+void ModelUtil::AddSigmoidOp(const std::string& input,
+								const std::string& output) {
+	predict.AddSigmoidOp(input,output);
+}
+
+void ModelUtil::AddLrnOp(const std::string& input, const std::string& output,
+                        int size, float alpha, float beta, float bias,
+                        const std::string& order) {
+	predict.AddLrnOp(input,output,size,alpha,beta,bias,order);
+}
+
+void ModelUtil::AddMaxPoolOp(const std::string& input, const std::string& output,
+                            int stride, int padding, int kernel,
+                            const std::string& order) {
+	predict.AddMaxPoolOp(input,output,stride,padding,kernel,order);
+}
+
+void ModelUtil::AddAveragePoolOp(const std::string& input,
+                                const std::string& output, int stride,
+                                int padding, int kernel,
+                                const std::string& order) {
+	predict.AddAveragePoolOp(input,output,stride,padding,kernel);
+}
+
+void ModelUtil::AddDropoutOp(const std::string& input, const std::string& output,
+                            float ratio, bool test) {
+	predict.AddDropoutOp(input,output,ratio,test);
+}
+
+void ModelUtil::AddSoftmaxOp(const std::string& input, const std::string& output,
+                            int axis) {
+	predict.AddSoftmaxOp(input,output,axis);
+}
+
+void ModelUtil::AddConcatOp(const std::vector<std::string>& inputs,
+                           const std::string& output,
+                           const std::string& order) {
+	predict.AddConcatOp(inputs,output,order);
+}
+
+void ModelUtil::AddMulOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis,
+                        int broadcast) {
+	predict.AddMulOp(inputs,output,axis,broadcast);
+}
+
+void ModelUtil::AddAddOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis,
+                        int broadcast) {
+	predict.AddAddOp(inputs,output,axis,broadcast);
+}
+
+void ModelUtil::AddStopGradientOp(const std::string& param)
+{
+	predict.AddStopGradientOp(param);
+}
 
 void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
                       ModelUtil &secondModel, bool force_cpu, bool inclusive) {

@@ -33,14 +33,65 @@ class ModelUtil {
   void AddTestOps(const std::string &output);
   void AddTrainOps(const std::string &output, float base_rate,
                    std::string &optimizer);
-
+	//operators with trainable parameters
   void AddFcOps(const std::string &input, const std::string &output,
                 int in_size, int out_size, bool test = false);
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, bool test = false);
-  void AddSpatialBNOp(const std::string & input, const std::string &output,
+  void AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon = 1e-5f, float momentum = 0.9, bool test = false);
+  //operators without trainable parameters
+  void AddConstantFillOp(const std::vector<int>& shape,
+                                 const std::string& param);
+  void AddXavierFillOp(const std::vector<int>& shape,
+                               const std::string& param);
+  void AddUniformFillOp(const std::vector<int>& shape, float min,
+                                float max, const std::string& param);
+  void AddGausianFillOp(const std::vector<int>& shape, float mean,
+										float std, const std::string& param);
+  void AddConstantFillOp(const std::vector<int>& shape, float value,
+                                 const std::string& param);
+  void AddConstantFillOp(const std::vector<int>& shape, int64_t value,
+                                 const std::string& param);
+  void AddConstantFillWithOp(float value, const std::string& input,
+                                     const std::string& output);
+  void AddVectorFillOp(const std::vector<int>& values,
+                               const std::string& name);
+  void AddGivenTensorFillOp(const TensorCPU& tensor,
+                                    const std::string& name);
+  void AddReluOp(const std::string& input, const std::string& output);
+  void AddLeakyReluOp(const std::string& input,
+								const std::string& output, float alpha);
+  void AddReshapeOp(const std::string& input, const std::string& output,
+                            const std::vector<int>& shape);
+  void AddSigmoidOp(const std::string& input,
+								const std::string& output);
+  void AddLrnOp(const std::string& input, const std::string& output,
+                        int size, float alpha, float beta, float bias,
+                        const std::string& order = "NCHW");
+  void AddMaxPoolOp(const std::string& input, const std::string& output,
+                            int stride, int padding, int kernel,
+                            const std::string& order = "NCHW");
+  void AddAveragePoolOp(const std::string& input,
+                                const std::string& output, int stride,
+                                int padding, int kernel,
+                                const std::string& order = "NCHW");
+  void AddDropoutOp(const std::string& input, const std::string& output,
+                            float ratio, bool test = false);
+  void AddSoftmaxOp(const std::string& input, const std::string& output,
+                            int axis = 1);
+  void AddConcatOp(const std::vector<std::string>& inputs,
+                           const std::string& output,
+                           const std::string& order = "NCHW");
+  void AddMulOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis = 1,
+                        int broadcast = 1);
+  void AddAddOp(const std::vector<std::string>& inputs,
+                        const std::string& output, int axis = 1,
+                        int broadcast = 1);
+  //TODO:
+  void AddStopGradientOp(const std::string& param);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }
 
