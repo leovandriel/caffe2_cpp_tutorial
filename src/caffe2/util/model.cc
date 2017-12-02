@@ -329,6 +329,11 @@ void ModelUtil::AddSubOp(const std::vector<std::string> & inputs, const std::str
 	predict.AddSubOp(inputs,output,axis,broadcast);
 }
 
+void ModelUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
+								const std::vector<std::string>& outputs) {
+	predict.AddSoftmaxWithLossOp(inputs,outputs);
+}
+
 void ModelUtil::AddStopGradientOp(const std::string& param)
 {
 	predict.AddStopGradientOp(param);

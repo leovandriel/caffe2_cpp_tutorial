@@ -14,6 +14,7 @@ const std::set<std::string> trainable_ops({
 	"Sub",
     "AffineScale",
     "AveragedLoss",
+	"SoftmaxWithLoss",
     "AveragePool",
     "BackMean",
     "Concat",
@@ -507,6 +508,11 @@ OperatorDef* NetUtil::AddLabelCrossEntropyOp(const std::string& pred,
 OperatorDef* NetUtil::AddAveragedLossOp(const std::string& input,
                                         const std::string& loss) {
   return AddOp("AveragedLoss", {input}, {loss});
+}
+
+OperatorDef* NetUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
+								const std::vector<std::string>& outputs) {
+	return AddOp("SoftmaxWithLoss", inputs, outputs);
 }
 
 OperatorDef* NetUtil::AddDiagonalOp(const std::string& input,

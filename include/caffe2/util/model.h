@@ -99,6 +99,8 @@ class ModelUtil {
 						const std::string& output);
   void AddPowOp(const std::string & input, const std::string & output, float exponent);
   void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis = 1, int broadcast = 1);
+  void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
+								const std::vector<std::string>& outputs);
   //TODO:
   void AddStopGradientOp(const std::string& param);
 

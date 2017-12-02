@@ -1,6 +1,9 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/operator.h>
 #include <caffe2/core/operator_gradient.h>
+#include <caffe2/util/blob.h>
+#include <caffe2/util/model.h>
+#include <caffe2/util/net.h>
 
 namespace caffe2 {
 
@@ -76,95 +79,32 @@ void run() {
 
   // >>> m = model_helper.ModelHelper(name="my first net")
   NetDef initModel;
-  initModel.set_name("my first net_init");
   NetDef predictModel;
-  predictModel.set_name("my first net");
+  ModelUtil model_helper(initModel,predictModel,"my first net");
 
   // >>> weight = m.param_initModel.XavierFill([], 'fc_w', shape=[10, 100])
-  {
-    auto op = initModel.add_op();
-    op->set_type("XavierFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(10);
-    arg->add_ints(100);
-    op->add_output("fc_w");
-  }
-
   // >>> bias = m.param_initModel.ConstantFill([], 'fc_b', shape=[10, ])
-  {
-    auto op = initModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("shape");
-    arg->add_ints(10);
-    op->add_output("fc_b");
-  }
-
-  std::vector<OperatorDef*> gradient_ops;
-
   // >>> fc_1 = m.net.FC(["data", "fc_w", "fc_b"], "fc1")
-  {
-    auto op = predictModel.add_op();
-    op->set_type("FC");
-    op->add_input("data");
-    op->add_input("fc_w");
-    op->add_input("fc_b");
-    op->add_output("fc1");
-    gradient_ops.push_back(op);
-  }
-
+  model_helper.predict.AddInput("data");
+  model_helper.AddFcOps("data","fc1",100,10);
+  
   // >>> pred = m.net.Sigmoid(fc_1, "pred")
-  {
-    auto op = predictModel.add_op();
-    op->set_type("Sigmoid");
-    op->add_input("fc1");
-    op->add_output("pred");
-    gradient_ops.push_back(op);
-  }
+  model_helper.AddSigmoidOp("fc1","pred");
 
   // >>> [softmax, loss] = m.net.SoftmaxWithLoss([pred, "label"], ["softmax",
   // "loss"])
-  {
-    auto op = predictModel.add_op();
-    op->set_type("SoftmaxWithLoss");
-    op->add_input("pred");
-    op->add_input("label");
-    op->add_output("softmax");
-    op->add_output("loss");
-    gradient_ops.push_back(op);
-  }
+  model_helper.predict.AddInput("pred");
+  model_helper.predict.AddInput("label");
+  model_helper.AddSoftmaxWithLossOp({"pred","label"},{"softmax","loss"});
 
   // >>> m.AddGradientOperators([loss])
-  {
-    auto op = predictModel.add_op();
-    op->set_type("ConstantFill");
-    auto arg = op->add_arg();
-    arg->set_name("value");
-    arg->set_f(1.0);
-    op->add_input("loss");
-    op->add_output("loss_grad");
-    op->set_is_gradient_op(true);
-  }
-  std::reverse(gradient_ops.begin(), gradient_ops.end());
-  for (auto op : gradient_ops) {
-    vector<GradientWrapper> output(op->output_size());
-    for (auto i = 0; i < output.size(); i++) {
-      output[i].dense_ = op->output(i) + "_grad";
-    }
-    GradientOpsMeta meta = GetGradientForOp(*op, output);
-    auto grad = predictModel.add_op();
-    grad->CopyFrom(meta.ops_[0]);
-    grad->set_is_gradient_op(true);
-  }
+  model_helper.AddGradientOps();
 
   // >>> print(str(m.net.Proto()))
-  // std::cout << std::endl;
-  // print(predictModel);
+  model_helper.predict.Print();
 
   // >>> print(str(m.param_init_net.Proto()))
-  // std::cout << std::endl;
-  // print(initModel);
+  model_helper.init.Print();
 
   // >>> workspace.RunNetOnce(m.param_init_net)
   CAFFE_ENFORCE(workspace.RunNetOnce(initModel));
