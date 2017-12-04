@@ -127,12 +127,16 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image,
   } else {
     image.copyTo(buffer_(rect));
   }
-  if (!view.frameless) {
-    ShowFrame(name, view.title.size() ? view.title : name);
-  }
-  if (flush) {
-    Show();
-  }
+  ShowBuffer(name, flush);
+}
+
+void WindowUtil::ClearView(const std::string &name, bool flush,
+                           cv::Scalar background) {
+  auto &rect = views_[name].rect;
+  cv::rectangle(buffer_, {rect.x, rect.y},
+                {rect.x + rect.width - 1, rect.y + rect.height - 1}, background,
+                -1);
+  ShowBuffer(name, flush);
 }
 
 cv::Mat WindowUtil::GetBuffer(const std::string &name, cv::Rect &rect) {
@@ -186,6 +190,10 @@ cv::Mat getBuffer(const char *name, cv::Rect &rect) {
 
 void showBuffer(const char *name, bool flush) {
   shared_window.ShowBuffer(name, flush);
+}
+
+void clearWindow(const char *name, bool flush) {
+  shared_window.ClearView(name, flush);
 }
 
 }  // namespace caffe2

@@ -25,6 +25,8 @@ class WindowUtil {
   void OffsetView(const std::string &name, cv::Point offset);
   void AutosizeView(const std::string &name);
   void TitleView(const std::string &name, const std::string &title);
+  void ClearView(const std::string &name, bool flush,
+                 cv::Scalar background = {32, 32, 32});
 
   void ShowImage(const std::string &name, const cv::Mat &image, bool flush);
   void ShowText(const std::string &name, const std::string &text,
@@ -49,6 +51,7 @@ class WindowUtil {
 void superWindow(const char *title, int width = 0, int height = 0);
 void moveWindow(const char *name, int x, int y);
 void resizeWindow(const char *name, int width, int height);
+void clearWindow(const char *name, bool flush = true);
 void autosizeWindow(const char *name);
 void setWindowTitle(const char *name, const char *title);
 void imshow(const char *name, const cv::Mat &mat, bool flush = true);
