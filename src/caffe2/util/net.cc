@@ -1,3 +1,6 @@
+#include <functional>
+#include <set>
+#include <string>
 #include "caffe2/util/net.h"
 
 #ifdef WITH_CUDA
@@ -445,20 +448,20 @@ OperatorDef* NetUtil::AddSumOp(const std::vector<std::string>& inputs,
 }
 
 OperatorDef* NetUtil::AddMulOp(const std::vector<std::string>& inputs,
-                               const std::string& output, int axis,
-                               int broadcast) {
+                               const std::string& output, int broadcast,
+                               int axis) {
   auto op = AddOp("Mul", inputs, {output});
-  net_add_arg(*op, "axis", axis);
   net_add_arg(*op, "broadcast", broadcast);
+  if(broadcast) net_add_arg(*op, "axis", axis);
   return op;
 }
 
 OperatorDef* NetUtil::AddAddOp(const std::vector<std::string>& inputs,
-                               const std::string& output, int axis,
-                               int broadcast) {
+                               const std::string& output, int broadcast,
+                               int axis) {
   auto op = AddOp("Add", inputs, {output});
-  net_add_arg(*op, "axis", axis);
   net_add_arg(*op, "broadcast", broadcast);
+  if(broadcast) net_add_arg(*op, "axis", axis);
   return op;
 }
 
@@ -474,10 +477,10 @@ OperatorDef* NetUtil::AddPowOp(const std::string & input, const std::string & ou
 	return op;
 }
 
-OperatorDef* NetUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis, int broadcast) {
+OperatorDef* NetUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast, int axis) {
 	auto op = AddOp("Sub",inputs,{output});
-	net_add_arg(*op, "axis", axis);
 	net_add_arg(*op, "broadcast", broadcast);
+	if(broadcast) net_add_arg(*op, "axis", axis);
 	return op;
 }
 
@@ -681,7 +684,7 @@ OperatorDef* NetUtil::AddAtomicIterOp(const std::string& mutex,
 
 OperatorDef* NetUtil::AddLearningRateOp(const std::string& iter,
                                         const std::string& rate,
-                                        float base_rate, float gamma, float stepsize) {
+                                        float base_rate, float gamma, int stepsize) {
   auto op = AddOp("LearningRate", {iter}, {rate});
   net_add_arg(*op, "policy", "step");
   net_add_arg(*op, "stepsize", stepsize);
@@ -843,7 +846,36 @@ std::vector<OperatorDef> NetUtil::CollectGradientOps(
     std::map<std::string, std::pair<int, int>>& split_inputs) {
   std::vector<OperatorDef> gradient_ops;
   std::map<std::string, int> input_count;
-  for (auto& op : net.op()) {
+  auto ops = net.op();
+  std::set<std::string> open,newopen;
+	//delete all StopGradient ops
+	ops.erase(remove_if(ops.begin(),ops.end(),
+		[&](const OperatorDef& op){
+			if(op.type() == "StopGradient") {
+				for(auto & input : op.input()) open.insert(input);
+					return true;
+			}
+			return false;
+		}
+	),ops.end());
+	//delete all precursor of StopGradient ops
+	while(false == open.empty()) {
+		ops.erase(remove_if(ops.begin(),ops.end(),
+			[&](const OperatorDef& op) {
+				for(auto & output: op.output())
+					if(open.end() != open.find(output)) {
+						for(auto & input: op.input())
+							if(std::find(net.external_input().begin(),net.external_input().end(),input) == net.external_input().end())
+								newopen.insert(input);
+						return true;
+					}
+				return false;
+			}
+		),ops.end());
+		open = newopen;
+		newopen.clear();
+	}
+  for (auto& op : ops) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       gradient_ops.push_back(op);
       for (auto& input : op.input()) {

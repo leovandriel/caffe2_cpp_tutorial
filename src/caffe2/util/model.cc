@@ -291,15 +291,15 @@ void ModelUtil::AddConcatOp(const std::vector<std::string>& inputs,
 }
 
 void ModelUtil::AddMulOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis,
-                        int broadcast) {
-	predict.AddMulOp(inputs,output,axis,broadcast);
+                        const std::string& output, int broadcast,
+                        int axis) {
+	predict.AddMulOp(inputs,output,broadcast,axis);
 }
 
 void ModelUtil::AddAddOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis,
-                        int broadcast) {
-	predict.AddAddOp(inputs,output,axis,broadcast);
+                        const std::string& output, int broadcast,
+                        int axis) {
+	predict.AddAddOp(inputs,output,broadcast,axis);
 }
 
 void ModelUtil::AddScaleOp(const std::string& input, const std::string& output,
@@ -325,8 +325,8 @@ void ModelUtil::AddPowOp(const std::string & input, const std::string & output, 
 	predict.AddPowOp(input,output,exponent);
 }
 
-void ModelUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis, int broadcast) {
-	predict.AddSubOp(inputs,output,axis,broadcast);
+void ModelUtil::AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast, int axis) {
+	predict.AddSubOp(inputs,output,broadcast,axis);
 }
 
 void ModelUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
@@ -341,7 +341,7 @@ void ModelUtil::AddAveragedLossOp(const std::string& input,
 
  void ModelUtil::AddLearningRateOp(const std::string& iter,
                                  const std::string& rate, float base_rate,
-                                 float gamma,  float stepsize) {
+                                 float gamma,  int stepsize) {
 	 predict.AddInput(iter);
 	 predict.AddLearningRateOp(iter,rate,base_rate,gamma,stepsize);
  }

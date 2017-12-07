@@ -85,11 +85,11 @@ class ModelUtil {
                            const std::string& output,
                            const std::string& order = "NCHW");
   void AddMulOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis = 1,
-                        int broadcast = 1);
+                        const std::string& output, int broadcast = 1,
+                        int axis = 1);
   void AddAddOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis = 1,
-                        int broadcast = 1);
+                        const std::string& output, int broadcast = 1,
+                        int axis = 1);
   void AddScaleOp(const std::string& input, const std::string& output,
                           float scale);
   void AddWeightedSumOp(const std::vector<std::string>& inputs,
@@ -98,14 +98,14 @@ class ModelUtil {
   void AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output);
   void AddPowOp(const std::string & input, const std::string & output, float exponent);
-  void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis = 1, int broadcast = 1);
+  void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
   void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
 								const std::vector<std::string>& outputs);
   void AddAveragedLossOp(const std::string& input,
                                  const std::string& loss);
   void AddLearningRateOp(const std::string& iter,
                                  const std::string& rate, float base_rate,
-                                 float gamma = 0.999f,  float stepsize = 1.0);
+                                 float gamma = 0.999f,  int stepsize = 1.0);
   //TODO:
   void AddStopGradientOp(const std::string& param);
 

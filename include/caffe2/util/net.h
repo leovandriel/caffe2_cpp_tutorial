@@ -96,15 +96,15 @@ class NetUtil {
                               bool test = false,
                               const std::string& order = "NCHW");
   OperatorDef* AddMulOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis = 1,
-                        int broadcast = 1);
+                        const std::string& output, int broadcast = 1,
+                        int axis = 1);
   OperatorDef* AddAddOp(const std::vector<std::string>& inputs,
-                        const std::string& output, int axis = 1,
-                        int broadcast = 1);
+                        const std::string& output, int broadcast = 1,
+                        int axis = 1);
   OperatorDef* AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output);
   OperatorDef* AddPowOp(const std::string & input, const std::string & output, float exponent);
-  OperatorDef* AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int axis = 1, int broadcast = 1);
+  OperatorDef* AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
 
   OperatorDef* AddLSTMUnitOp(const std::vector<std::string>& inputs,
                              const std::vector<std::string>& outputs,
@@ -175,7 +175,7 @@ class NetUtil {
                                const std::string& iter);
   OperatorDef* AddLearningRateOp(const std::string& iter,
                                  const std::string& rate, float base_rate,
-                                 float gamma = 0.999f, float stepsize = 1.0);
+                                 float gamma = 0.999f, int stepsize = 1);
   OperatorDef* AddCheckpointOp(const std::vector<std::string>& inputs,
                                int every, const std::string& db_type,
                                const std::string& db);
