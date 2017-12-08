@@ -18,7 +18,9 @@
 namespace caffe2 {
 
 static std::map<int, int> percentage_for_run({
-    {kRunTest, 10}, {kRunValidate, 20}, {kRunTrain, 70},
+    {kRunTest, 10},
+    {kRunValidate, 20},
+    {kRunTrain, 70},
 });
 
 std::string filename_to_key(const std::string &filename) {
