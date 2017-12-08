@@ -88,8 +88,8 @@ class ResNetModel : public ModelUtil {
     layer = predict.AddSoftmaxOp(layer, "softmax")->output(0);
     layer = predict.AddLabelCrossEntropyOp(layer, "label", "xent")->output(0);
     layer = predict.AddAveragedLossOp(layer, "loss")->output(0);
-    predict.AddAccuracyOp("classifier", "label", "top-1");
-    return predict.AddAccuracyOp("classifier", "label", "top-5", 5);
+    predict.AddAccuracyOp("softmax", "label", "top-1");
+    return predict.AddAccuracyOp("softmax", "label", "top-5", 5);
   }
 
   OperatorDef *AddEnd(const std::string &prefix, const std::string &input,
