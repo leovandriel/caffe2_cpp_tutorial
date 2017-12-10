@@ -422,7 +422,7 @@ void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
 }
 
 void set_trainable(OperatorDef &op, bool train) {
-  if (op.type() == "Dropout") {
+  if (op.type() == "Dropout" || op.type() == "SpatialBN") {
     for (auto &arg : *op.mutable_arg()) {
       if (arg.name() == "is_test") {
         arg.set_i(!train);
@@ -441,6 +441,12 @@ void ModelUtil::CopyTrain(const std::string &layer, int out_size,
     if (op.type() == "FC") {
       last_w = op.input(1);
       last_b = op.input(2);
+    }
+    if (op.type() == "SpatialBN") {
+      if (op.output_size() < 2) new_op->add_output(op.input(3));
+      if (op.output_size() < 3) new_op->add_output(op.input(4));
+      if (op.output_size() < 4) new_op->add_output(op.input(3) + "_save");
+      if (op.output_size() < 5) new_op->add_output(op.input(4) + "_save");
     }
   }
   train.predict.SetRenameInplace();
@@ -469,8 +475,11 @@ void ModelUtil::CopyTrain(const std::string &layer, int out_size,
   existing_inputs.insert(train.predict.net.external_input().begin(),
                          train.predict.net.external_input().end());
   for (const auto &op : train.predict.net.op()) {
+    auto inputs = op.input();
     for (auto &output : op.output()) {
-      existing_inputs.insert(output);
+      if (std::find(inputs.begin(), inputs.end(), output) == inputs.end()) {
+        existing_inputs.insert(output);
+      }
     }
   }
   for (const auto &input : predict.net.external_input()) {

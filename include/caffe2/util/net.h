@@ -193,11 +193,12 @@ class NetUtil {
   void SetEngineOps(const std::string engine);
 
   OperatorDef* AddGradientOp(
-      OperatorDef& op,
-      std::map<std::string, std::pair<int, int>>& split_inputs);
+      OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs,
+      std::map<std::string, std::string>& pass_replace);
   OperatorDef* AddGradientOp(OperatorDef& op) {
     std::map<std::string, std::pair<int, int>> split_inputs;
-    return AddGradientOp(op, split_inputs);
+    std::map<std::string, std::string> pass_replace;
+    return AddGradientOp(op, split_inputs, pass_replace);
   }
   void AddAllGradientOp();
 
