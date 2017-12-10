@@ -15,7 +15,9 @@ namespace caffe2 {
 enum { kRunTrain = 0, kRunValidate = 1, kRunTest = 2, kRunNum = 3 };
 
 static std::map<int, std::string> name_for_run({
-    {kRunTrain, "train"}, {kRunValidate, "validate"}, {kRunTest, "test"},
+    {kRunTrain, "train"}, 
+	{kRunValidate, "validate"}, 
+	{kRunTest, "test"},
 });
 
 void run_trainer(int iters, ModelUtil &train, ModelUtil &validate,
