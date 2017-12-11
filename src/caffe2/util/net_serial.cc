@@ -133,4 +133,42 @@ size_t NetUtil::Read(const std::string& path) {
       .tellg();
 }
 
+#include <fcntl.h>
+#include <cerrno>
+#include <fstream>
+
+size_t NetUtil::WriteGraph(const std::string& path) const {
+  std::ofstream file(path);
+  if (file.is_open()) {
+    file << "digraph {" << std::endl;
+    auto index = 0;
+    file << '\t' << "node [shape=box];";
+    for (const auto& op : net.op()) {
+      auto name = op.type() + '_' + std::to_string(index++);
+      file << ' ' << name;
+      // if (index > 250) break;
+    }
+    file << ';';
+    file << '\t' << "node [shape=oval];";
+    index = 0;
+    for (const auto& op : net.op()) {
+      auto name = op.type() + '_' + std::to_string(index++);
+      for (const auto& input : op.input()) {
+        file << '\t' << '"' << input << '"' << " -> " << '"' << name << '"'
+             << ';' << std::endl;
+      }
+      for (const auto& output : op.output()) {
+        file << '\t' << '"' << name << '"' << " -> " << '"' << output << '"'
+             << ';' << std::endl;
+      }
+      // if (index > 250) break;
+    }
+    // file << "overlap=false" << std::endl;
+    file << "}" << std::endl;
+    file.close();
+  }
+  return std::ifstream(path, std::ifstream::ate | std::ifstream::binary)
+      .tellg();
+}
+
 }  // namespace caffe2
