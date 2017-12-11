@@ -137,6 +137,7 @@ size_t NetUtil::Read(const std::string& path) {
 #include <cerrno>
 #include <fstream>
 
+// dot -Tsvg -omodel.svg model.gv
 size_t NetUtil::WriteGraph(const std::string& path) const {
   std::ofstream file(path);
   if (file.is_open()) {
