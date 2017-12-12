@@ -230,7 +230,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     CAFFE_ENFORCE(database[i]->NewCursor()->Valid(),
                   "database " + name_for_run[i] + " is empty");
   }
-  progress.summarize();
+  progress.wipe();
   return sample_count;
 }
 
@@ -258,7 +258,7 @@ int count_samples(const std::string *db_paths, const std::string &db_type,
       cursor->Next();
     }
   }
-  progress.summarize();
+  progress.wipe();
   return sample_count;
 }
 
