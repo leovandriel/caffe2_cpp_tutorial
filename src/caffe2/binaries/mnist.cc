@@ -235,6 +235,7 @@ void run() {
   NetDef deploy_init_model, deploy_predict_model;
   ModelUtil deploy(deploy_init_model, deploy_predict_model, "mnist_model");
   deploy.predict.AddInput("data");
+  deploy.predict.AddOutput("softmax");
 
   // >>> AddLeNetModel(deploy_model, "data")
   AddLeNetModel(deploy, true);
