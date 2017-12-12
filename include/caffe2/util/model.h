@@ -19,7 +19,6 @@ class ModelUtil {
   void AddDatabaseOps(const std::string &name, const std::string &data,
                       const std::string &db, const std::string &db_type,
                       int batch_size);
-  void AddGradientOps();
   void AddXentOps(const std::string &output);
   void AddIterOps();
 

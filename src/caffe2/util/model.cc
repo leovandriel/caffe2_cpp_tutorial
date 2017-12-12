@@ -31,15 +31,11 @@ void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data,
   // predict.AddCoutOp(label_name);
 }
 
-void ModelUtil::AddGradientOps() {
-  predict.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
-  predict.AddAllGradientOp();
-}
-
 void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
                             std::string &optimizer) {
   AddXentOps(output);
-  AddGradientOps();
+  predict.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
+  predict.AddGradientOps();
   AddIterOps();
   predict.AddLearningRateOp(iter_name, lr_name, base_rate);
   AddOptimizerOps(optimizer);

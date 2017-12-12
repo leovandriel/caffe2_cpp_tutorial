@@ -188,7 +188,7 @@ void run() {
 
   // >>> model.AddGradientOperators([loss])
   train.AddConstantFillWithOp(1.f, "loss", "loss_grad");
-  train.AddAllGradientOp();
+  train.AddGradientOps();
 
   // >>> build_sgd(model, base_learning_rate=0.1 * self.seq_length,
   // policy="step", stepsize=1, gamma=0.9999)

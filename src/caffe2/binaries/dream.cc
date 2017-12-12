@@ -50,7 +50,7 @@ void AddNaive(ModelUtil &dream, NetUtil &display, int size, int colors) {
   }
 
   // add back prop
-  dream.predict.AddAllGradientOp();
+  dream.predict.AddGradientOps();
 
   // scale gradient
   dream.predict.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
