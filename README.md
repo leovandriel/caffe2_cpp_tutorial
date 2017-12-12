@@ -35,7 +35,7 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     On Ubuntu:
 
-        apt-get install cmake libgoogle-glog-dev libprotobuf-dev libleveldb-dev libopencv-dev libeigen3-dev
+        apt-get install cmake libgoogle-glog-dev libprotobuf-dev libleveldb-dev libopencv-dev libeigen3-dev curl
 
     In case you're using CUDA an run into CMake issues with `NCCL`, try adding this to your `.bashrc` (assuming Caffe2 at `$HOME/caffe2`):
 
@@ -172,7 +172,7 @@ Additional models can be made available on request!
 
 To classify an image using a model that you trained yourself, specify the location of the init and predict `.pb` file including a `%` character. For example:
 
-    ./bin/imagenet --model res/images/googlenet_%_net.pb --file res/image_file.jpg
+    ./bin/imagenet --model res/googlenet_%_net.pb --file res/image_file.jpg
 
 
 See also:
