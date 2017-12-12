@@ -76,7 +76,7 @@ void run() {
 
   // read image as tensor
   TensorCPU input;
-  TensorUtil(input).ReadImage(FLAGS_file, FLAGS_size);
+  TensorUtil(input).ReadImage(FLAGS_file, FLAGS_size, FLAGS_size);
 
   std::cout << "loading model.." << std::endl;
   clock_t load_time = 0;
