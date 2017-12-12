@@ -1,6 +1,6 @@
 #include "caffe2/util/net.h"
-#include <gtest/gtest.h>
 #include <caffe2/core/init.h>
+#include <gtest/gtest.h>
 
 namespace caffe2 {
 

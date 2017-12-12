@@ -188,13 +188,15 @@ class NetUtil {
 
   OperatorDef* AddGradientOp(
       OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs,
-      std::map<std::string, std::string>& pass_replace);
+      std::map<std::string, std::string>& pass_replace,
+      std::set<std::string>& stop_inputs);
   OperatorDef* AddGradientOp(OperatorDef& op) {
     std::map<std::string, std::pair<int, int>> split_inputs;
     std::map<std::string, std::string> pass_replace;
-    return AddGradientOp(op, split_inputs, pass_replace);
+    std::set<std::string> stop_inputs;
+    return AddGradientOp(op, split_inputs, pass_replace, stop_inputs);
   }
-  void AddAllGradientOp();
+  void AddGradientOps();
 
   std::map<std::string, int> CollectParamSizes();
   std::vector<std::string> CollectParams();
