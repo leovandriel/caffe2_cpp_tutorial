@@ -192,7 +192,7 @@ void run() {
     auto &input_name = dream.predict.Input(0);
     TensorCPU input;
     std::vector<int> x;
-    TensorUtil(input).ReadImages({FLAGS_file}, image_size, x, 128);
+    TensorUtil(input).ReadImages({FLAGS_file}, image_size, image_size, x, 128);
     BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   }
 

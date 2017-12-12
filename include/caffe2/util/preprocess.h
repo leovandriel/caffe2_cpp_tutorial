@@ -109,15 +109,15 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
 int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
                 std::string &output_name,
                 std::vector<std::pair<std::string, int>> &batch_files,
-                std::unique_ptr<db::Transaction> *transaction,
-                int size_to_fit) {
+                std::unique_ptr<db::Transaction> *transaction, int width,
+                int height) {
   std::vector<std::string> filenames;
   for (auto &pair : batch_files) {
     filenames.push_back(pair.first);
   }
   std::vector<int> indices;
   TensorCPU input;
-  TensorUtil(input).ReadImages(filenames, size_to_fit, indices);
+  TensorUtil(input).ReadImages(filenames, width, height, indices);
   TensorCPU output;
   if (model.predict.net.external_input_size() && input.size() > 0) {
     BlobUtil(*workspace.GetBlob(input_name)).Set(input);
@@ -164,7 +164,8 @@ int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
 
 int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                const std::string *db_paths, ModelUtil &model,
-               const std::string &db_type, int batch_size, int size_to_fit) {
+               const std::string &db_type, int batch_size, int width,
+               int height) {
   std::unique_ptr<db::DB> database[kRunNum];
   std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
@@ -205,7 +206,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     }
     if (batch_files.size() == batch_size) {
       auto count = write_batch(workspace, model, input_name, output_name,
-                               batch_files, transaction, size_to_fit);
+                               batch_files, transaction, width, height);
       sample_count += count;
       transaction_count += count;
       batch_files.clear();
@@ -220,7 +221,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   }
   if (batch_files.size() > 0) {
     sample_count += write_batch(workspace, model, input_name, output_name,
-                                batch_files, transaction, size_to_fit);
+                                batch_files, transaction, width, height);
   }
   for (int i = 0; i < kRunNum; i++) {
     transaction[i]->Commit();
@@ -235,10 +236,10 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
 
 void preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                 const std::string *db_paths, const std::string &db_type,
-                int size_to_fit) {
+                int width, int height) {
   NetDef n;
   ModelUtil none(n, n);
-  preprocess(image_files, db_paths, none, db_type, 64, size_to_fit);
+  preprocess(image_files, db_paths, none, db_type, 64, width, height);
 }
 
 int count_samples(const std::string *db_paths, const std::string &db_type,

@@ -155,7 +155,7 @@ void run() {
   } else {
     std::cerr << "  preprocess images.. \r" << std::flush;
     count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
-                       FLAGS_size);
+                       FLAGS_size, FLAGS_size);
   }
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
