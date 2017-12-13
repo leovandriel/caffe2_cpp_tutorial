@@ -124,11 +124,11 @@ void image_to_tensor(TensorCPU &tensor, cv::Mat &image, float mean = 128) {
 
 template <typename T>
 void read_image_tensor(TensorCPU &tensor,
-                       const std::vector<std::string> &filenames, int size,
-                       std::vector<int> &indices, float mean,
+                       const std::vector<std::string> &filenames, int width,
+                       int height, std::vector<int> &indices, float mean,
                        TensorProto::DataType type) {
   std::vector<T> data;
-  data.reserve(filenames.size() * 3 * size * size);
+  data.reserve(filenames.size() * 3 * width * height);
   auto count = 0;
 
   for (auto &filename : filenames) {
@@ -141,16 +141,16 @@ void read_image_tensor(TensorCPU &tensor,
       continue;
     }
 
-    if (image.cols != size || image.rows != size) {
+    if (image.cols != width || image.rows != height) {
       // scale image to fit
-      cv::Size scale(std::max(size * image.cols / image.rows, size),
-                     std::max(size, size * image.rows / image.cols));
-      cv::resize(image, image, scale);
+      cv::Size scaled(std::max(height * image.cols / image.rows, width),
+                     std::max(height, width * image.rows / image.cols));
+      cv::resize(image, image, scaled);
       // std::cout << "scaled size: " << image.size() << std::endl;
 
       // crop image to fit
-      cv::Rect crop((image.cols - size) / 2, (image.rows - size) / 2, size,
-                    size);
+      cv::Rect crop((image.cols - width) / 2, (image.rows - height) / 2, width,
+                    height);
       image = image(crop);
       // std::cout << "cropped size: " << image.size() << std::endl;
     }
@@ -170,8 +170,8 @@ void read_image_tensor(TensorCPU &tensor,
     // *)image.dataend) << ")" << std::endl;
 
     CAFFE_ENFORCE_EQ(image.channels(), 3);
-    CAFFE_ENFORCE_EQ(image.rows, size);
-    CAFFE_ENFORCE_EQ(image.cols, size);
+    CAFFE_ENFORCE_EQ(image.rows, height);
+    CAFFE_ENFORCE_EQ(image.cols, width);
 
     // convert NHWC to NCHW
     vector<cv::Mat> channels(3);
@@ -184,33 +184,36 @@ void read_image_tensor(TensorCPU &tensor,
   }
 
   // create tensor
-  std::vector<TIndex> dims({(TIndex)indices.size(), 3, size, size});
+  std::vector<TIndex> dims({(TIndex)indices.size(), 3, height, width});
   TensorCPU t(dims, data, NULL);
   tensor.ResizeLike(t);
   tensor.ShareData(t);
 }
 
-void TensorUtil::ReadImages(const std::vector<std::string> &filenames, int size,
-                            std::vector<int> &indices, float mean,
-                            TensorProto::DataType type) {
+void TensorUtil::ReadImages(const std::vector<std::string> &filenames, 
+							int width, int height, std::vector<int> &indices, 
+							float mean, TensorProto::DataType type) {
   switch (type) {
     case TensorProto_DataType_FLOAT:
-      read_image_tensor<float>(tensor_, filenames, size, indices, mean, type);
+      read_image_tensor<float>(tensor_, filenames, width, height, indices, mean, 
+							   type);
       break;
     case TensorProto_DataType_INT8:
-      read_image_tensor<int8_t>(tensor_, filenames, size, indices, mean, type);
+      read_image_tensor<int8_t>(tensor_, filenames, width, height, indices, 
+								mean, type);
       break;
     case TensorProto_DataType_UINT8:
-      read_image_tensor<uint8_t>(tensor_, filenames, size, indices, mean, type);
+      read_image_tensor<uint8_t>(tensor_, filenames, width, height, indices, 
+								 mean, type);
       break;
     default:
       LOG(FATAL) << "datatype " << type << " not implemented" << std::endl;
   }
 }
 
-void TensorUtil::ReadImage(const std::string &filename, int size) {
+void TensorUtil::ReadImage(const std::string &filename, int width, int height) {
   std::vector<int> indices;
-  ReadImages({filename}, size, indices);
+  ReadImages({filename}, width, height, indices);
 }
 
 template <typename T, typename C>

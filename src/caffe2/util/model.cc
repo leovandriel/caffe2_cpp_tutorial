@@ -31,15 +31,11 @@ void ModelUtil::AddDatabaseOps(const std::string &name, const std::string &data,
   // predict.AddCoutOp(label_name);
 }
 
-void ModelUtil::AddGradientOps() {
-  predict.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
-  predict.AddAllGradientOp();
-}
-
 void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
                             std::string &optimizer) {
   AddXentOps(output);
-  AddGradientOps();
+  predict.AddConstantFillWithOp(1.0, loss_name, loss_name + gradient_suffix);
+  predict.AddGradientOps();
   AddIterOps();
   predict.AddLearningRateOp(iter_name, lr_name, base_rate);
   AddOptimizerOps(optimizer);
@@ -429,6 +425,18 @@ void set_trainable(OperatorDef &op, bool train) {
       }
     }
   }
+  if (op.type() == "SpatialBN") {
+    if (train) {
+      if (op.output_size() < 2) op.add_output(op.input(3));
+      if (op.output_size() < 3) op.add_output(op.input(4));
+      if (op.output_size() < 4) op.add_output(op.input(3) + "_save");
+      if (op.output_size() < 5) op.add_output(op.input(4) + "_save");
+    } else if (op.output_size() > 1) {
+      auto output = op.output(0);
+      op.clear_output();
+      op.add_output(output);
+    }
+  }
 }
 
 void ModelUtil::CopyTrain(const std::string &layer, int out_size,
@@ -441,12 +449,6 @@ void ModelUtil::CopyTrain(const std::string &layer, int out_size,
     if (op.type() == "FC") {
       last_w = op.input(1);
       last_b = op.input(2);
-    }
-    if (op.type() == "SpatialBN") {
-      if (op.output_size() < 2) new_op->add_output(op.input(3));
-      if (op.output_size() < 3) new_op->add_output(op.input(4));
-      if (op.output_size() < 4) new_op->add_output(op.input(3) + "_save");
-      if (op.output_size() < 5) new_op->add_output(op.input(4) + "_save");
     }
   }
   train.predict.SetRenameInplace();

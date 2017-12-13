@@ -98,7 +98,8 @@ void run() {
   model_helper.AddSoftmaxWithLossOp({"pred","label"},{"softmax","loss"});
 
   // >>> m.AddGradientOperators([loss])
-  model_helper.AddGradientOps();
+  model_helper.predict.AddConstantFillWithOp(1.0, "loss", "loss_grad");
+  model_helper.predict.AddGradientOps();
 
   // >>> print(str(m.net.Proto()))
   model_helper.predict.Print();

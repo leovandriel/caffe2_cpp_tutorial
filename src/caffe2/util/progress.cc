@@ -8,23 +8,32 @@ namespace caffe2 {
 void Progress::update(int step, float interval) {
   inc(step);
   if (mark_has() && mark_lapse() > interval) {
-    std::cerr << "  " << string() << "  \r" << std::flush;
+    std::cerr << "\\|/-"[print_count++ % 4] << " " << string() << "  \r"
+              << std::flush;
     mark();
   }
 }
 
-void Progress::clear() {
-  std::cerr << std::string(80, ' ') << '\r' << std::flush;
+void Progress::wipe() {
+  std::cerr << std::string(50, ' ') << '\r' << std::flush;
 }
 
-std::string Progress::string() const {
+void Progress::summarize() {
+  wipe();
+  std::cout << report(true) << "  " << std::endl;
+}
+
+std::string Progress::report(bool past) const {
   std::ostringstream stream;
-  stream << index << "/" << size << " ";
   stream << std::fixed << std::setprecision(1);
-  stream << percent() << "%";
-  auto s = smooth_speed();
+  if (past) {
+    stream << "#" << index;
+  } else {
+    stream << index << "/" << size << " " << percent() << "%";
+  }
+  auto s = past ? avg_speed() : smooth_speed();
   if (size > 0) {
-    auto e = eta(s);
+    auto e = past ? avg_lapse() : eta(s);
     auto h = (int)e / 3600;
     e -= h * 3600;
     auto m = (int)e / 60;

@@ -10,8 +10,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "res/imagenet_classes.h"
-
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
                      "Name of the layer on which to split the model.");
@@ -31,12 +29,12 @@ CAFFE2_DEFINE_bool(display, false, "Show image while dreaming.");
 
 namespace caffe2 {
 
-void AddNaive(ModelUtil &dream, NetUtil &display, int size) {
+void AddNaive(ModelUtil &dream, NetUtil &display, int size, int colors) {
   auto &input = dream.predict.Input(0);
   auto &output = dream.predict.Output(0);
 
   // initialize input data
-  dream.init.AddUniformFillOp({FLAGS_batch, 3, size, size}, FLAGS_initial,
+  dream.init.AddUniformFillOp({FLAGS_batch, colors, size, size}, FLAGS_initial,
                               FLAGS_initial + 1, input);
 
   // add squared l2 distance to zero as loss
@@ -52,7 +50,7 @@ void AddNaive(ModelUtil &dream, NetUtil &display, int size) {
   }
 
   // add back prop
-  dream.predict.AddAllGradientOp();
+  dream.predict.AddGradientOps();
 
   // scale gradient
   dream.predict.AddMeanStdevOp(input + "_grad", "_", input + "_grad_stdev");
@@ -165,7 +163,8 @@ void run() {
   if (image_size < 20) {
     image_size = 20;
   }
-  AddNaive(dream, display, image_size);
+  auto colors = base.init.net.op(0).arg(0).ints(1);
+  AddNaive(dream, display, image_size, colors);
 
   // set model to use CUDA
   if (FLAGS_device != "cpu") {
@@ -193,7 +192,7 @@ void run() {
     auto &input_name = dream.predict.Input(0);
     TensorCPU input;
     std::vector<int> x;
-    TensorUtil(input).ReadImages({FLAGS_file}, image_size, x, 128);
+    TensorUtil(input).ReadImages({FLAGS_file}, image_size, image_size, x, 128);
     BlobUtil(*workspace.GetBlob(input_name)).Set(input);
   }
 

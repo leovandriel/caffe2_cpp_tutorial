@@ -34,6 +34,7 @@ const std::set<std::string> trainable_ops({
     "SquaredL2Channel",
 	"SquaredL2Distance",
 	"Sub",
+	"StopGradient",
     "Sum",
 });
 
@@ -42,8 +43,7 @@ const std::set<std::string> non_trainable_ops({
 	"Cout", 
 	"ConstantFill", 
 	"GaussianFill", 
-	"Iter",  
-	"StopGradient",
+	"Iter", 
     "TensorProtosDBInput", 
 	"TimePlot", 
 	"ShowWorst",
@@ -72,9 +72,29 @@ const std::string gradient_suffix("_grad");
 
 // Gradient
 
+void NetUtil::AddGradientOps() {
+  std::map<std::string, std::pair<int, int>> split_inputs;
+  std::map<std::string, std::string> pass_replace;
+  std::set<std::string> stop_inputs;
+  for (auto op : CollectGradientOps(split_inputs)) {
+    AddGradientOp(op, split_inputs, pass_replace, stop_inputs);
+  }
+}
+
+bool net_util_op_has_output(const OperatorDef& op,
+                            const std::set<std::string>& names) {
+  for (const auto& output : op.output()) {
+    if (names.find(output) != names.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 OperatorDef* NetUtil::AddGradientOp(
     OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs,
-    std::map<std::string, std::string>& pass_replace) {
+    std::map<std::string, std::string>& pass_replace,
+	std::set<std::string>& stop_inputs) {
   OperatorDef* grad = NULL;
   if (custom_gradient.find(op.type()) != custom_gradient.end()) {
     grad = net.add_op();
@@ -92,6 +112,11 @@ OperatorDef* NetUtil::AddGradientOp(
   } else if (pass_gradient.find(op.type()) != pass_gradient.end()) {
     for (auto input : op.input()) {
       pass_replace[input + gradient_suffix] = op.output(0) + gradient_suffix;
+    }
+  } else if (op.type() == "StopGradient" ||
+             net_util_op_has_output(op, stop_inputs)) {
+    for (const auto& input : op.input()) {
+      stop_inputs.insert(input);
     }
   } else {
     grad = net.add_op();
@@ -147,48 +172,11 @@ OperatorDef* NetUtil::AddGradientOp(
   return grad;
 }
 
-void NetUtil::AddAllGradientOp() {
-  std::map<std::string, std::pair<int, int>> split_inputs;
-  std::map<std::string, std::string> pass_replace;
-  for (auto op : CollectGradientOps(split_inputs)) {
-    AddGradientOp(op, split_inputs, pass_replace);
-  }
-}
-
 std::vector<OperatorDef> NetUtil::CollectGradientOps(
     std::map<std::string, std::pair<int, int>>& split_inputs) {
   std::vector<OperatorDef> gradient_ops;
   std::map<std::string, int> input_count;
-  auto ops = net.op();
-  std::set<std::string> open,newopen;
-	//delete all StopGradient ops
-	ops.erase(remove_if(ops.begin(),ops.end(),
-		[&](const OperatorDef& op){
-			if(op.type() == "StopGradient") {
-				for(auto & input : op.input()) open.insert(input);
-					return true;
-			}
-			return false;
-		}
-	),ops.end());
-	//delete all precursor of StopGradient ops
-	while(false == open.empty()) {
-		ops.erase(remove_if(ops.begin(),ops.end(),
-			[&](const OperatorDef& op) {
-				for(auto & output: op.output())
-					if(open.end() != open.find(output)) {
-						for(auto & input: op.input())
-							if(std::find(net.external_input().begin(),net.external_input().end(),input) == net.external_input().end())
-								newopen.insert(input);
-						return true;
-					}
-				return false;
-			}
-		),ops.end());
-		open = newopen;
-		newopen.clear();
-	}
-  for (auto& op : ops) {
+  for (auto& op : net.op()) {
     if (trainable_ops.find(op.type()) != trainable_ops.end()) {
       gradient_ops.push_back(op);
       for (auto& input : op.input()) {

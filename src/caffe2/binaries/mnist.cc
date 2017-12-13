@@ -100,7 +100,8 @@ void AddTrainingOperators(ModelUtil &model) {
   AddAccuracy(model);
 
   // >>> model.AddGradientOperators([loss])
-  model.AddGradientOps();
+  model.predict.AddConstantFillWithOp(1.0, "loss", "loss_grad");
+  model.predict.AddGradientOps();
 
   // >>> LR = model.LearningRate(ITER, "LR", base_lr=-0.1, policy="step",
   // stepsize=1, gamma=0.999 )
@@ -235,6 +236,7 @@ void run() {
   NetDef deploy_init_model, deploy_predict_model;
   ModelUtil deploy(deploy_init_model, deploy_predict_model, "mnist_model");
   deploy.predict.AddInput("data");
+  deploy.predict.AddOutput("softmax");
 
   // >>> AddLeNetModel(deploy_model, "data")
   AddLeNetModel(deploy, true);

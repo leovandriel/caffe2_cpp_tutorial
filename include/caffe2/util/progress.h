@@ -57,8 +57,10 @@ class Progress {
     return speed > 0 && size > 0 ? (size - index) / speed : -1.f;
   }
   void update(int step = 1, float interval = 1);
-  void clear();
-  std::string string() const;
+  void wipe();
+  void summarize();
+  std::string report(bool past = false) const;
+  std::string string() const { return report(index >= size); }
 
  protected:
   size_t index;
@@ -67,6 +69,7 @@ class Progress {
   int mark_count;
   size_t mark_index[mark_size];
   clock_t mark_time[mark_size];
+  size_t print_count;
 };
 
 std::ostream &operator<<(std::ostream &os, Progress const &obj);

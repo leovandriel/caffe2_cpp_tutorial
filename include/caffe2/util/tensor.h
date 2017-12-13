@@ -17,10 +17,10 @@ class TensorUtil {
   void WriteImage(const std::string& name, int index, float mean = 128,
                   bool lossy = false);
   TensorCPU ScaleImageTensor(int width, int height);
-  void ReadImages(const std::vector<std::string>& filenames, int size,
-                  std::vector<int>& indices, float mean = 128,
+  void ReadImages(const std::vector<std::string>& filenames, int width,
+                  int height, std::vector<int>& indices, float mean = 128,
                   TensorProto::DataType type = TensorProto_DataType_FLOAT);
-  void ReadImage(const std::string& filename, int size);
+  void ReadImage(const std::string& filename, int width, int height);
   void Print(const std::string& name = "", int max = 100);
 
  protected:
