@@ -9,12 +9,12 @@ namespace {
 WindowUtil shared_window;
 }
 
-void WindowUtil::ResizeWindow(cv::Rect rect) {
+void WindowUtil::ResizeWindow(cv::Rect rect, bool flush) {
   PositionWindow({rect.x, rect.y});
-  SizeWindow({rect.width, rect.height});
+  SizeWindow({rect.width, rect.height}, flush);
 }
 
-void WindowUtil::SizeWindow(cv::Size size) {
+void WindowUtil::SizeWindow(cv::Size size, bool flush) {
   auto buffer = cv::Mat(size, CV_8UC3, 0.0);
   if (buffer_.cols > 0 && buffer_.rows > 0 && size.width > 0 &&
       size.height > 0) {
@@ -23,7 +23,7 @@ void WindowUtil::SizeWindow(cv::Size size) {
     buffer_(inter).copyTo(buffer(inter));
   }
   buffer_ = buffer;
-  Show();
+  Show(flush);
 }
 
 void WindowUtil::PositionWindow(cv::Point position) {
@@ -31,16 +31,17 @@ void WindowUtil::PositionWindow(cv::Point position) {
   cv::moveWindow(title_, position.x, position.y);
 }
 
-void WindowUtil::EnsureWindow(cv::Rect rect) {
+void WindowUtil::EnsureWindow(cv::Rect rect, bool flush) {
   if (rect.x + rect.width > buffer_.cols ||
       rect.y + rect.height > buffer_.rows) {
     SizeWindow({std::max(buffer_.cols, rect.x + rect.width),
-                std::max(buffer_.rows, rect.y + rect.height)});
+                std::max(buffer_.rows, rect.y + rect.height)},
+               flush);
   }
 }
 
-void WindowUtil::Show() {
-  if (buffer_.cols > 0 && buffer_.rows > 0) {
+void WindowUtil::Show(bool flush) {
+  if (flush && buffer_.cols > 0 && buffer_.rows > 0) {
     cv::imshow(title_.c_str(), buffer_);
     cvWaitKey(1);
   }
@@ -119,7 +120,7 @@ void WindowUtil::ShowImage(const std::string &name, const cv::Mat &image,
     rect.width = image.cols;
     rect.height = image.rows;
   }
-  EnsureWindow(rect);
+  EnsureWindow(rect, flush);
   if (image.cols != rect.width || image.rows != rect.height) {
     cv::Mat resized;
     resize(image, resized, {rect.width, rect.height});
@@ -141,7 +142,7 @@ void WindowUtil::ClearView(const std::string &name, bool flush,
 
 cv::Mat WindowUtil::GetBuffer(const std::string &name, cv::Rect &rect) {
   auto &view = views_[name];
-  EnsureWindow(view.rect);
+  EnsureWindow(view.rect, false);
   rect = view.rect;
   return buffer_;
 }
@@ -151,9 +152,7 @@ void WindowUtil::ShowBuffer(const std::string &name, bool flush) {
   if (!view.frameless) {
     ShowFrame(name, view.title.size() ? view.title : name);
   }
-  if (flush) {
-    Show();
-  }
+  Show(flush);
 }
 
 void WindowUtil::SetTitle(const std::string &title) {
@@ -161,9 +160,9 @@ void WindowUtil::SetTitle(const std::string &title) {
   cv::namedWindow(title, cv::WINDOW_AUTOSIZE);
 }
 
-void superWindow(const char *title, int width, int height) {
+void superWindow(const char *title, int width, int height, bool flush) {
   shared_window.SetTitle(title);
-  shared_window.SizeWindow({width, height});
+  shared_window.SizeWindow({width, height}, flush);
 }
 
 void moveWindow(const char *name, int x, int y) {
@@ -195,5 +194,7 @@ void showBuffer(const char *name, bool flush) {
 void clearWindow(const char *name, bool flush) {
   shared_window.ClearView(name, flush);
 }
+
+void show() { shared_window.Show(true); }
 
 }  // namespace caffe2
