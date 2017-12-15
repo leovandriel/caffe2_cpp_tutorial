@@ -23,6 +23,21 @@ void Progress::summarize() {
   std::cout << report(true) << "  " << std::endl;
 }
 
+std::string seconds_to_string(int seconds) {
+  std::ostringstream stream;
+  stream << std::setfill('0');
+  auto h = (int)seconds / 3600;
+  if (h != 0) {
+    stream << std::setw(2) << h << ":";
+  }
+  seconds -= h * 3600;
+  auto m = (int)seconds / 60;
+  stream << std::setw(2) << m << ":";
+  seconds -= m * 60;
+  stream << std::setw(2) << seconds;
+  return stream.str();
+}
+
 std::string Progress::report(bool past) const {
   std::ostringstream stream;
   stream << std::fixed << std::setprecision(1);
@@ -32,15 +47,9 @@ std::string Progress::report(bool past) const {
     stream << index << "/" << size << " " << percent() << "%";
   }
   auto s = past ? avg_speed() : smooth_speed();
-  if (size > 0) {
-    auto e = past ? avg_lapse() : eta(s);
-    auto h = (int)e / 3600;
-    e -= h * 3600;
-    auto m = (int)e / 60;
-    e -= m * 60;
-    auto s = (int)e;
-    stream << " " << std::setfill('0') << std::setw(2) << h << ":"
-           << std::setw(2) << m << ":" << std::setw(2) << s;
+  stream << " " << seconds_to_string(avg_lapse());
+  if (size > 0 && !past) {
+    stream << "+" << seconds_to_string(eta(s));
   }
   stream << " " << s << "/s";
   return stream.str();
