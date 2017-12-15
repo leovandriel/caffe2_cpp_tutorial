@@ -246,10 +246,10 @@ int count_samples(const std::string *db_paths, const std::string &db_type,
   }
   auto sample_count = 0;
   Progress progress(est_size);
-  for (int i = 0; i < kRunNum; i++, progress.update()) {
+  for (int i = 0; i < kRunNum; i++) {
     if (database[i] != NULL) {
       for (auto cursor = database[i]->NewCursor(); cursor->Valid();
-           cursor->Next()) {
+           cursor->Next(), progress.update()) {
         keys.insert(cursor->key());
         sample_count++;
       }
