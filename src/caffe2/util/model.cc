@@ -187,6 +187,11 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
 		);
  }
  
+void ModelUtil::AddGradientOps(const std::string & loss) {
+	predict.AddConstantFillWithOp(1.0, loss, loss + "_grad");
+	predict.AddGradientOps();
+}
+ 
 void ModelUtil::AddConstantFillOp(const std::vector<int>& shape,
                                  const std::string& param) {
 	predict.AddConstantFillOp(shape,param);

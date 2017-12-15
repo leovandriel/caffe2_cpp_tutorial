@@ -94,8 +94,7 @@ void run() {
   model_helper.AddAveragedLossOp("dist","loss");
 
   // >>> gradient_map = train_net.AddGradientOperators([loss])
-  model_helper.predict.AddConstantFillWithOp(1.0, "loss", "loss_grad");
-  model_helper.predict.AddGradientOps();
+  model_helper.AddGradientOps("loss");
 
   // >>> train_net.Iter(ITER, ITER)
   model_helper.predict.AddInput("ITER");

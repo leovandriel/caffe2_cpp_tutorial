@@ -40,6 +40,7 @@ class ModelUtil {
                   int kernel, bool test = false);
   void AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon = 1e-5f, float momentum = 0.9, bool test = false);
+  void AddGradientOps(const std::string & loss);
   //operators without initializable parameters
   void AddConstantFillOp(const std::vector<int>& shape,
                                  const std::string& param);
