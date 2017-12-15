@@ -147,7 +147,7 @@ void run() {
   std::cerr << "  counting cached images.. \r" << std::flush;
   std::set<std::string> keys;
   auto count = count_samples(db_paths, FLAGS_db_type, image_files.size(), keys);
-  std::cout << count << " xx" << std::endl;
+  std::cerr << "  preprocessing images.. \r" << std::flush;
   count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
                      FLAGS_size, FLAGS_size, keys);
   std::cout << count << " images cached" << std::endl;
