@@ -50,14 +50,15 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
 }
 
 void TensorUtil::ShowImage(const std::string &title, int index, float scale,
-                           float mean) {
+                           float mean, bool flush) {
   auto image = to_image(tensor_, index, scale, mean);
-  imshow(title.c_str(), image);
+  imshow(title.c_str(), image, flush);
 }
 
-void TensorUtil::ShowImages(const std::string &name, float scale, float mean) {
+void TensorUtil::ShowImages(const std::string &name, float scale, float mean,
+                            bool flush) {
   for (auto i = 0; i < tensor_.dim(0); i++) {
-    ShowImage(name + "-" + std::to_string(i), i, scale, mean);
+    ShowImage(name + "-" + std::to_string(i), i, scale, mean, flush);
   }
 }
 
@@ -144,7 +145,7 @@ void read_image_tensor(TensorCPU &tensor,
     if (image.cols != width || image.rows != height) {
       // scale image to fit
       cv::Size scaled(std::max(height * image.cols / image.rows, width),
-                     std::max(height, width * image.rows / image.cols));
+                      std::max(height, width * image.rows / image.cols));
       cv::resize(image, image, scaled);
       // std::cout << "scaled size: " << image.size() << std::endl;
 
@@ -190,21 +191,21 @@ void read_image_tensor(TensorCPU &tensor,
   tensor.ShareData(t);
 }
 
-void TensorUtil::ReadImages(const std::vector<std::string> &filenames, 
-							int width, int height, std::vector<int> &indices, 
-							float mean, TensorProto::DataType type) {
+void TensorUtil::ReadImages(const std::vector<std::string> &filenames,
+                            int width, int height, std::vector<int> &indices,
+                            float mean, TensorProto::DataType type) {
   switch (type) {
     case TensorProto_DataType_FLOAT:
-      read_image_tensor<float>(tensor_, filenames, width, height, indices, mean, 
-							   type);
+      read_image_tensor<float>(tensor_, filenames, width, height, indices, mean,
+                               type);
       break;
     case TensorProto_DataType_INT8:
-      read_image_tensor<int8_t>(tensor_, filenames, width, height, indices, 
-								mean, type);
+      read_image_tensor<int8_t>(tensor_, filenames, width, height, indices,
+                                mean, type);
       break;
     case TensorProto_DataType_UINT8:
-      read_image_tensor<uint8_t>(tensor_, filenames, width, height, indices, 
-								 mean, type);
+      read_image_tensor<uint8_t>(tensor_, filenames, width, height, indices,
+                                 mean, type);
       break;
     default:
       LOG(FATAL) << "datatype " << type << " not implemented" << std::endl;

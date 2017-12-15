@@ -94,7 +94,7 @@ void run() {
 
   std::string db_paths[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
-    db_paths[i] = path_prefix + name_for_run[i] + ".db";
+    db_paths[i] = path_prefix + name_for_run[i] + '.' + FLAGS_db_type;
   }
 
   std::cout << std::endl;

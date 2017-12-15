@@ -23,6 +23,21 @@ static std::map<int, int> percentage_for_run({
     {kRunTrain, 70},
 });
 
+bool exists_any(const std::string &folder) {
+  struct stat s;
+  return !stat(folder.c_str(), &s);
+}
+
+bool exists_dir(const std::string &folder) {
+  struct stat s;
+  return !stat(folder.c_str(), &s) && (s.st_mode & S_IFDIR);
+}
+
+bool exists_file(const std::string &folder) {
+  struct stat s;
+  return !stat(folder.c_str(), &s) && (s.st_mode & S_IFREG);
+}
+
 std::string filename_to_key(const std::string &filename) {
   // return filename;
   return std::to_string(std::hash<std::string>{}(filename)) + "_" + filename;
@@ -51,7 +66,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
       auto class_name = entry->d_name;
       auto class_path = folder + '/' + class_name;
       if (class_name[0] != '.' && class_name[0] != '_' &&
-          !stat(class_path.c_str(), &s) && (s.st_mode & S_IFDIR)) {
+          exists_dir(class_path)) {
         auto subdir = opendir(class_path.c_str());
         if (subdir) {
           auto class_index =
@@ -63,8 +78,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
           while ((entry = readdir(subdir))) {
             auto image_file = entry->d_name;
             auto image_path = class_path + '/' + image_file;
-            if (image_file[0] != '.' && !stat(image_path.c_str(), &s) &&
-                (s.st_mode & S_IFREG)) {
+            if (image_file[0] != '.' && exists_file(image_path)) {
               image_files.push_back({image_path, class_index});
               if (class_size.size() <= class_index) {
                 class_size.resize(class_index + 1);
@@ -87,22 +101,6 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
       class_file << label << std::endl;
     }
     class_file.close();
-  }
-  auto classes_header_path = path_prefix + "classes.h";
-  std::ofstream labels_file(classes_header_path.c_str());
-  if (labels_file.is_open()) {
-    labels_file << "const char * retrain_classes[] {";
-    bool first = true;
-    for (auto &label : class_labels) {
-      if (first) {
-        first = false;
-      } else {
-        labels_file << ',';
-      }
-      labels_file << std::endl << '"' << label << '"';
-    }
-    labels_file << std::endl << "};" << std::endl;
-    labels_file.close();
   }
 }
 
@@ -169,7 +167,8 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   std::unique_ptr<db::DB> database[kRunNum];
   std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
-    database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
+    auto mode = (exists_dir(db_paths[i]) ? db::WRITE : db::NEW);
+    database[i] = db::CreateDB(db_type, db_paths[i], mode);
     transaction[i] = database[i]->NewTransaction();
   }
   auto image_count = 0, sample_count = 0, transaction_count = 0;
@@ -214,6 +213,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     if (transaction_count > 1000) {
       for (int i = 0; i < kRunNum; i++) {
         transaction[i]->Commit();
+        transaction[i] = NULL;
         transaction[i] = database[i]->NewTransaction();
       }
       transaction_count = 0;
