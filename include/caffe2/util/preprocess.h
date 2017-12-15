@@ -229,6 +229,7 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
     if (transaction_count > 1000) {
       for (int i = 0; i < kRunNum; i++) {
         transaction[i]->Commit();
+        transaction[i] = NULL;
         transaction[i] = database[i]->NewTransaction();
       }
       transaction_count = 0;
