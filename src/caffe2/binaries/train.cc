@@ -19,8 +19,6 @@ CAFFE2_DEFINE_int(iters, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch, 64, "Training batch size.");
 CAFFE2_DEFINE_double(lr, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_bool(skip_preprocess, false,
-                   "Skip going through preprocessed images");
 
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
@@ -58,8 +56,6 @@ void run() {
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "lr: " << FLAGS_lr << std::endl;
-  std::cout << "skip_preprocess: " << (FLAGS_skip_preprocess ? "true" : "false")
-            << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
   std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false") << std::endl;
   std::cout << "matrix: " << (FLAGS_matrix ? "true" : "false") << std::endl;
@@ -148,15 +144,12 @@ void run() {
     second.predict.net = full.predict.net;
   }
 
-  auto count = 0;
-  if (FLAGS_skip_preprocess) {
-    std::cerr << "  counting images.. (skipping preprocess) \r" << std::flush;
-    count = count_samples(db_paths, FLAGS_db_type, image_files.size());
-  } else {
-    std::cerr << "  preprocess images.. \r" << std::flush;
-    count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
-                       FLAGS_size, FLAGS_size);
-  }
+  std::cerr << "  counting cached images.. \r" << std::flush;
+  std::set<std::string> keys;
+  auto count = count_samples(db_paths, FLAGS_db_type, image_files.size(), keys);
+  std::cout << count << " xx" << std::endl;
+  count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
+                     FLAGS_size, FLAGS_size, keys);
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
 
