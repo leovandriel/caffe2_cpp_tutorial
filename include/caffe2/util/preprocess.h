@@ -102,22 +102,6 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
     }
     class_file.close();
   }
-  auto classes_header_path = path_prefix + "classes.h";
-  std::ofstream labels_file(classes_header_path.c_str());
-  if (labels_file.is_open()) {
-    labels_file << "const char * retrain_classes[] {";
-    bool first = true;
-    for (auto &label : class_labels) {
-      if (first) {
-        first = false;
-      } else {
-        labels_file << ',';
-      }
-      labels_file << std::endl << '"' << label << '"';
-    }
-    labels_file << std::endl << "};" << std::endl;
-    labels_file.close();
-  }
 }
 
 int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
