@@ -188,14 +188,15 @@ void run() {
     models[kRunTrain].predict.AddTimePlotOp("accuracy", "iter", "accuracy",
                                             "train", 10);
     models[kRunValidate].predict.AddTimePlotOp("accuracy", "iter", "accuracy",
-                                               "test");
+                                               "validate");
     models[kRunTrain].predict.AddTimePlotOp("loss", "iter", "loss", "train",
                                             10);
-    models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss", "test");
+    models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss",
+                                               "validate");
     PlotUtil::Shared("accuracy").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("accuracy").Get("test").Color(PlotUtil::Pink());
+    PlotUtil::Shared("accuracy").Get("validate").Color(PlotUtil::Pink());
     PlotUtil::Shared("loss").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("loss").Get("test").Color(PlotUtil::Pink());
+    PlotUtil::Shared("loss").Get("validate").Color(PlotUtil::Pink());
   }
 
   if (FLAGS_device != "cpu") {

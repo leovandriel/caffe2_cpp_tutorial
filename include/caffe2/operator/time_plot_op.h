@@ -19,6 +19,7 @@ class TimePlotOp final : public Operator<Context> {
         index_(0),
         step_count_(0),
         value_sum_(0.f),
+        sq_sum_(0.f),
         index_sum_(0.f) {}
   bool RunOnDevice() override;
 
@@ -31,6 +32,7 @@ class TimePlotOp final : public Operator<Context> {
 
   int step_count_;
   float value_sum_;
+  float sq_sum_;
   float index_sum_;
 };
 
