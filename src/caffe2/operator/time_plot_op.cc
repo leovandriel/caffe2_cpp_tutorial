@@ -13,19 +13,27 @@ namespace caffe2 {
 
 void time_plot(const TensorCPU &X, const std::string &label_,
                const std::string &window_, const int &step_, const int &index_,
-               int &step_count_, float &index_sum_, float &value_sum_) {
+               int &step_count_, float &index_sum_, float &value_sum_,
+               float &sq_sum_) {
   step_count_++;
   value_sum_ += X.data<float>()[0];
+  sq_sum_ += X.data<float>()[0] * X.data<float>()[0];
   index_sum_ += index_;
   if (step_count_ >= step_) {
     auto &figure = PlotUtil::Shared(window_);
-    // figure.Get(label_).Set(PlotUtil::Line, PlotUtil::Color(label_));
-    figure.Get(label_).Append(index_sum_ / step_count_,
-                              value_sum_ / step_count_);
-    figure.Show(true);
+    auto index = index_sum_ / step_count_, mean = value_sum_ / step_count_,
+         stdev = sqrtf(sq_sum_ / step_count_ - mean * mean);
     value_sum_ = 0.f;
+    sq_sum_ = 0.f;
     index_sum_ = 0.f;
     step_count_ = 0;
+    auto color = figure.Get(label_).Add(index, mean).Color();
+    figure.Get(label_ + "_range")
+        .Add(index, {mean - stdev, mean + stdev})
+        .Type(PlotUtil::Range)
+        .Color(color.Alpha(64))
+        .Legend(false);
+    figure.Show(true);
   }
 }
 
@@ -36,7 +44,7 @@ bool TimePlotOp<float, CPUContext>::RunOnDevice() {
     index = TensorCPU(Input(1)).data<int64_t>()[0];
   }
   time_plot(Input(0), label_, window_, step_, index, step_count_, index_sum_,
-            value_sum_);
+            value_sum_, sq_sum_);
   return true;
 }
 
@@ -48,7 +56,8 @@ bool TimePlotOp<float, CUDAContext>::RunOnDevice() {
     index = InputBlob(1).Get<TensorCPU>().data<int64_t>()[0];
   }
   time_plot(TensorCPU(Input(0)), label_, window_, step_, index, step_count_,
-            index_sum_, value_sum_);
+            index_sum_, value_sum_, sq_sum_),
+      sq_sum_;
   return true;
 }
 #endif

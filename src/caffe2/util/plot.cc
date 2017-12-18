@@ -6,8 +6,22 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#include <cmath>
 #include <iomanip>
 #include <iostream>
+
+#define EXPECT_EQ(a__, b__)                                                    \
+  do {                                                                         \
+    if ((a__) != (b__)) {                                                      \
+      std::cerr << "Incorrect " << #a__ << " (" << (a__) << "), should equal " \
+                << (b__) << std::endl;                                         \
+      exit(-1);                                                                \
+    }                                                                          \
+  } while (0)
+
+#define EXPECT_DIMS_DEPTH(dims__, depth__) \
+  EXPECT_EQ(dims_, dims__);                \
+  EXPECT_EQ(depth_, depth__);
 
 namespace caffe2 {
 
@@ -72,15 +86,52 @@ PlotUtil::Color PlotUtil::Color::Hue(float hue) {
   return color;
 }
 
+PlotUtil::Color PlotUtil::Color::Cos(float hue) {
+  return Color((cos(hue * 1.047) + 1) * 127.9,
+               (cos((hue - 2) * 1.047) + 1) * 127.9,
+               (cos((hue - 4) * 1.047) + 1) * 127.9);
+}
+
+Series &Series::Dims(int dims) {
+  if (dims_ != dims) {
+    EXPECT_EQ(dims_, 0);
+    dims_ = dims;
+  }
+  return *this;
+}
+Series &Series::Depth(int depth) {
+  if (depth_ != depth) {
+    EXPECT_EQ(depth_, 0);
+    depth_ = depth;
+  }
+  return *this;
+}
+
+void Series::Ensure(int dims, int depth) {
+  if (dims_ == 0) {
+    dims_ = dims;
+  }
+  if (depth_ == 0) {
+    depth_ = depth;
+  }
+  EXPECT_DIMS_DEPTH(dims, depth);
+}
+
 void Series::Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
                     int &n_max, int &p_max) {
-  for (auto &d : data_) {
-    auto x = d.first, y = d.second;
+  for (const auto &e : entries_) {
+    auto xe = e, xd = dims_, ye = e + dims_, yd = (type_ == Range ? 2 : 1);
     if (type_ == Vertical || type_ == Vistogram) {
-      x = d.second;
-      y = d.first;
+      auto s = xe;
+      xe = ye;
+      ye = s;
+      s = xd;
+      xd = yd;
+      yd = s;
     }
     if (type_ != Horizontal) {
+      EXPECT_EQ(xd, 1);
+      const auto &x = data_[xe];
       if (x_min > x) {
         x_min = x;
       }
@@ -89,16 +140,19 @@ void Series::Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
       }
     }
     if (type_ != Vertical) {
-      if (y_min > y) {
-        y_min = y;
-      }
-      if (y_max < y) {
-        y_max = y;
+      for (auto yi = ye, _y = yi + yd; yi != _y; yi++) {
+        const auto &y = data_[yi];
+        if (y_min > y) {
+          y_min = y;
+        }
+        if (y_max < y) {
+          y_max = y;
+        }
       }
     }
   }
-  if (n_max < data_.size()) {
-    n_max = data_.size();
+  if (n_max < entries_.size()) {
+    n_max = entries_.size();
   }
   if (type_ == Histogram || type_ == Vistogram) {
     p_max = std::max(30, p_max);
@@ -113,64 +167,109 @@ void Series::Dot(void *b, int x, int y, int r) {
 void Series::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
                   float xs, float xd, float ys, float yd, float x_axis,
                   float y_axis, int unit, float offset) {
-  auto &buffer = *(cv::Mat *)b;
+  if (dims_ == 0 || depth_ == 0) {
+    return;
+  }
+  auto buffer = (cv::Mat *)b;
+  cv::Mat alpha_buffer;
+  if (color_.a != 255) {
+    buffer->copyTo(alpha_buffer);
+    buffer = &alpha_buffer;
+  }
   auto color = color2scalar(color_);
   switch (type_) {
     case Line:
     case DotLine:
     case Dots: {
-      std::pair<float, float> *last = NULL;
-      for (auto &d : data_) {
-        cv::Point point((int)(d.first * xs + xd), (int)(d.second * ys + yd));
-        if (last) {
+      EXPECT_DIMS_DEPTH(1, 1);
+      bool has_last = false;
+      float last_x, last_y;
+      for (const auto &e : entries_) {
+        auto x = data_[e], y = data_[e + dims_];
+        cv::Point point((int)(x * xs + xd), (int)(y * ys + yd));
+        if (has_last) {
           if (type_ == DotLine || type_ == Line) {
-            cv::line(
-                buffer,
-                {(int)(last->first * xs + xd), (int)(last->second * ys + yd)},
-                point, color, 1, CV_AA);
+            cv::line(*buffer,
+                     {(int)(last_x * xs + xd), (int)(last_y * ys + yd)}, point,
+                     color, 1, CV_AA);
           }
+        } else {
+          has_last = true;
         }
         if (type_ == DotLine || type_ == Dots) {
-          cv::circle(buffer, point, 2, color, 1, CV_AA);
+          cv::circle(*buffer, point, 2, color, 1, CV_AA);
         }
-        last = &d;
+        last_x = x, last_y = y;
       }
     } break;
     case Vistogram:
     case Histogram: {
+      EXPECT_DIMS_DEPTH(1, 1);
       auto u = 2 * unit;
       auto o = (int)(2 * u * offset);
-      for (auto &d : data_) {
+      for (const auto &e : entries_) {
+        auto x = data_[e], y = data_[e + dims_];
         if (type_ == Histogram) {
-          cv::rectangle(
-              buffer,
-              {(int)(d.first * xs + xd) - u + o, (int)(y_axis * ys + yd)},
-              {(int)(d.first * xs + xd) + u + o, (int)(d.second * ys + yd)},
-              color, -1, CV_AA);
+          cv::rectangle(*buffer,
+                        {(int)(x * xs + xd) - u + o, (int)(y_axis * ys + yd)},
+                        {(int)(x * xs + xd) + u + o, (int)(y * ys + yd)}, color,
+                        -1, CV_AA);
         } else if (type_ == Vistogram) {
-          cv::rectangle(
-              buffer,
-              {(int)(x_axis * xs + xd), (int)(d.first * ys + yd) - u + o},
-              {(int)(d.second * xs + xd), (int)(d.first * ys + yd) + u + o},
-              color, -1, CV_AA);
+          cv::rectangle(*buffer,
+                        {(int)(x_axis * xs + xd), (int)(x * ys + yd) - u + o},
+                        {(int)(y * xs + xd), (int)(x * ys + yd) + u + o}, color,
+                        -1, CV_AA);
         }
       }
 
     } break;
     case Horizontal:
     case Vertical: {
-      for (auto &d : data_) {
+      EXPECT_DIMS_DEPTH(1, 1);
+      for (const auto &e : entries_) {
+        auto y = data_[e + dims_];
         if (type_ == Horizontal) {
-          cv::line(buffer, {(int)(x_min * xs + xd), (int)(d.second * ys + yd)},
-                   {(int)(x_max * xs + xd), (int)(d.second * ys + yd)}, color,
-                   1, CV_AA);
+          cv::line(*buffer, {(int)(x_min * xs + xd), (int)(y * ys + yd)},
+                   {(int)(x_max * xs + xd), (int)(y * ys + yd)}, color, 1,
+                   CV_AA);
         } else if (type_ == Vertical) {
-          cv::line(buffer, {(int)(d.second * xs + xd), (int)(y_min * ys + yd)},
-                   {(int)(d.second * xs + xd), (int)(y_max * ys + yd)}, color,
-                   1, CV_AA);
+          cv::line(*buffer, {(int)(y * xs + xd), (int)(y_min * ys + yd)},
+                   {(int)(y * xs + xd), (int)(y_max * ys + yd)}, color, 1,
+                   CV_AA);
         }
       }
     } break;
+    case Range: {
+      EXPECT_DIMS_DEPTH(1, 2);
+      bool has_last = false;
+      cv::Point last_a, last_b;
+      for (const auto &e : entries_) {
+        auto x = data_[e], y_a = data_[e + dims_], y_b = data_[e + dims_ + 1];
+        cv::Point point_a((int)(x * xs + xd), (int)(y_a * ys + yd));
+        cv::Point point_b((int)(x * xs + xd), (int)(y_b * ys + yd));
+        if (has_last) {
+          cv::Point points[4] = {point_a, point_b, last_b, last_a};
+          const cv::Point *p = points;
+          auto count = 4;
+          cv::fillPoly(*buffer, &p, &count, 1, color, CV_AA);
+        } else {
+          has_last = true;
+        }
+        last_a = point_a, last_b = point_b;
+      }
+    } break;
+    case Circle: {
+      EXPECT_DIMS_DEPTH(1, 2);
+      for (const auto &e : entries_) {
+        auto x = data_[e], y = data_[e + dims_], r = data_[e + dims_ + 1];
+        cv::Point point((int)(x * xs + xd), (int)(y * ys + yd));
+        cv::circle(*buffer, point, r, color, -1, CV_AA);
+      }
+    } break;
+  }
+  if (color_.a != 255) {
+    addWeighted(*buffer, color_.a / 255.f, *(cv::Mat *)b, 1 - color_.a / 255.f,
+                0, *(cv::Mat *)b);
   }
 }
 
@@ -293,6 +392,9 @@ void Figure::Draw(void *b, float x_min, float x_max, float y_min, float y_max,
   // draw label names
   index = 0;
   for (auto &s : series_) {
+    if (!s.Legend()) {
+      continue;
+    }
     auto name = s.Label();
     int baseline;
     cv::Size size =

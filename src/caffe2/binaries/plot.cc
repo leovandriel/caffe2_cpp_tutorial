@@ -18,10 +18,14 @@ void run() {
     moveWindow(name, 0, 0);
     resizeWindow(name, 300, 300);
     auto &figure = PlotUtil::Shared(name);
-    figure.Get("line").Set({1.f, 2.f, 3.f, 4.f, 5.f}, PlotUtil::DotLine,
-                           PlotUtil::Blue());
+    figure.Get("line")
+        .SetValue({1.f, 2.f, 3.f, 4.f, 5.f})
+        .Type(PlotUtil::DotLine)
+        .Color(PlotUtil::Blue());
     figure.Get("histogram")
-        .Set({1.f, 2.f, 3.f, 4.f, 5.f}, PlotUtil::Histogram, PlotUtil::Red());
+        .SetValue({1.f, 2.f, 3.f, 4.f, 5.f})
+        .Type(PlotUtil::Histogram)
+        .Color(PlotUtil::Red());
     figure.Show();
   }
 
@@ -35,15 +39,24 @@ void run() {
     for (auto i = 0; i <= 10; i++) {
       values.push_back((i - 4) * (i - 4) - 6);
     }
-    figure.Get("parabola").Set(values, PlotUtil::DotLine, PlotUtil::Green());
+    figure.Get("parabola")
+        .SetValue(values)
+        .Type(PlotUtil::DotLine)
+        .Color(PlotUtil::Green());
     values.clear();
     for (auto i = 0; i <= 10; i++) {
       values.push_back(sin(i / 1.5f) * 5);
     }
-    figure.Get("sine").Set(values, PlotUtil::DotLine, PlotUtil::Blue());
+    figure.Get("sine")
+        .SetValue(values)
+        .Type(PlotUtil::DotLine)
+        .Color(PlotUtil::Blue());
     values.clear();
     values.push_back(15);
-    figure.Get("threshold").Set(values, PlotUtil::Horizontal, PlotUtil::Red());
+    figure.Get("threshold")
+        .SetValue(values)
+        .Type(PlotUtil::Horizontal)
+        .Color(PlotUtil::Red());
     figure.Show();
   }
 
@@ -57,13 +70,19 @@ void run() {
     for (auto i = 0; i <= 100; i++) {
       data.push_back({(rand() % 100) / 10.f, (rand() % 100) / 10.f});
     }
-    figure.Get("uniform").Set(data, PlotUtil::Dots, PlotUtil::Orange());
+    figure.Get("uniform")
+        .Set(data)
+        .Type(PlotUtil::Dots)
+        .Color(PlotUtil::Orange());
     data.clear();
     for (auto i = 0; i <= 100; i++) {
       data.push_back(
           {exp((rand() % 100) / 30.f) - 1, exp((rand() % 100) / 30.f) - 1});
     }
-    figure.Get("exponential").Set(data, PlotUtil::Dots, PlotUtil::Sky());
+    figure.Get("exponential")
+        .Set(data)
+        .Type(PlotUtil::Dots)
+        .Color(PlotUtil::Sky());
     figure.Show();
   }
 
@@ -73,12 +92,18 @@ void run() {
     moveWindow(name, 0, 300);
     resizeWindow(name, 300, 300);
     auto &figure = PlotUtil::Shared(name);
-    figure.Get("1").Set({1.f, 2.f, 3.f, 4.f, 5.f}, PlotUtil::Histogram,
-                        PlotUtil::Blue());
-    figure.Get("2").Set({6.f, 5.f, 4.f, 3.f, 2.f, 1.f}, PlotUtil::Histogram,
-                        PlotUtil::Green());
-    figure.Get("3").Set({3.f, 1.f, -1.f, 1.f, 3.f, 7.f}, PlotUtil::Histogram,
-                        PlotUtil::Red());
+    figure.Get("1")
+        .SetValue({1.f, 2.f, 3.f, 4.f, 5.f})
+        .Type(PlotUtil::Histogram)
+        .Color(PlotUtil::Blue());
+    figure.Get("2")
+        .SetValue({6.f, 5.f, 4.f, 3.f, 2.f, 1.f})
+        .Type(PlotUtil::Histogram)
+        .Color(PlotUtil::Green());
+    figure.Get("3")
+        .SetValue({3.f, 1.f, -1.f, 1.f, 3.f, 7.f})
+        .Type(PlotUtil::Histogram)
+        .Color(PlotUtil::Red());
     figure.Show();
   }
 
@@ -93,12 +118,12 @@ void run() {
     for (auto i = 0; i <= 100; i++) {
       data.push_back({cos(i * .0628f + 4) * 2, sin(i * .0628f + 4) * 2});
     }
-    figure.Get("circle").Append(data);
+    figure.Get("circle").Add(data);
     data.clear();
     for (auto i = 0; i <= 100; i++) {
       data.push_back({cos(i * .2513f + 1), sin(i * .0628f + 4)});
     }
-    figure.Get("lissajous").Append(data);
+    figure.Get("lissajous").Add(data);
     figure.Show();
   }
 
@@ -110,21 +135,88 @@ void run() {
     auto &figure = PlotUtil::Shared(name);
     figure.Origin(false, false);
     figure.Get("histogram")
-        .Set({4.f, 5.f, 7.f, 6.f}, PlotUtil::Vistogram, PlotUtil::Blue());
-    figure.Get("min").Set(4.f, PlotUtil::Vertical, PlotUtil::Pink());
-    figure.Get("max").Set(7.f, PlotUtil::Vertical, PlotUtil::Purple());
+        .SetValue({4.f, 5.f, 7.f, 6.f})
+        .Type(PlotUtil::Vistogram)
+        .Color(PlotUtil::Blue());
+    figure.Get("min")
+        .SetValue(4.f)
+        .Type(PlotUtil::Vertical)
+        .Color(PlotUtil::Pink());
+    figure.Get("max")
+        .SetValue(7.f)
+        .Type(PlotUtil::Vertical)
+        .Color(PlotUtil::Purple());
     figure.Show();
   }
 
-  if (false) {
+  {
     auto name = "colors";
-    setWindowTitle(name, "hidden axis");
+    setWindowTitle(name, "auto color");
     moveWindow(name, 900, 0);
     resizeWindow(name, 300, 300);
     auto &figure = PlotUtil::Shared(name);
     for (auto i = 0; i < 16; i++) {
       figure.Get(std::to_string(i))
-          .Set(2, i + 1, PlotUtil::Vistogram, PlotUtil::Color::Index(i));
+          .Set(2, i + 1)
+          .Type(PlotUtil::Vistogram)
+          .Color(PlotUtil::Color::Index(i));
+    }
+    figure.Show();
+  }
+
+  {
+    auto name = "range";
+    setWindowTitle(name, "range plot");
+    moveWindow(name, 900, 300);
+    resizeWindow(name, 300, 300);
+    auto &figure = PlotUtil::Shared(name);
+    values.clear();
+    figure.Get("apples").Type(PlotUtil::Line).Color(PlotUtil::Orange());
+    figure.Get("pears").Type(PlotUtil::Line).Color(PlotUtil::Sky());
+    figure.Get("apples_range")
+        .Type(PlotUtil::Range)
+        .Color(PlotUtil::Orange().Alpha(128))
+        .Depth(2)
+        .Legend(false);
+    figure.Get("pears_range")
+        .Type(PlotUtil::Range)
+        .Color(PlotUtil::Sky().Alpha(128))
+        .Depth(2)
+        .Legend(false);
+    for (auto i = 0; i <= 10; i++) {
+      float v = (i - 4) * (i - 4) - 6;
+      figure.Get("apples_range")
+          .AddValue(v + 5.f * rand() / RAND_MAX,
+                    v + 20.f + 5.f * rand() / RAND_MAX);
+      figure.Get("apples").AddValue(v + 10.f + 5.f * rand() / RAND_MAX);
+      v = -(i - 6) * (i - 6) + 30;
+      figure.Get("pears_range")
+          .AddValue(v + 5.f * rand() / RAND_MAX,
+                    v + 20.f + 5.f * rand() / RAND_MAX);
+      figure.Get("pears").AddValue(v + 10.f + 5.f * rand() / RAND_MAX);
+    }
+    figure.Show();
+  }
+
+  {
+    auto name = "balls";
+    setWindowTitle(name, "balls");
+    moveWindow(name, 900, 600);
+    resizeWindow(name, 300, 300);
+    auto &figure = PlotUtil::Shared(name);
+    figure.Get("purple")
+        .Type(PlotUtil::Circle)
+        .Color(PlotUtil::Purple().Alpha(128))
+        .Depth(2);
+    figure.Get("yellow")
+        .Type(PlotUtil::Circle)
+        .Color(PlotUtil::Yellow().Alpha(200))
+        .Depth(2);
+    for (auto i = 0; i <= 20; i++) {
+      figure.Get("purple").Add((rand() % 100) / 10.f,
+                               {(rand() % 100) / 10.f, (rand() % 100) / 5.f});
+      figure.Get("yellow").Add((rand() % 100) / 10.f,
+                               {(rand() % 100) / 10.f, (rand() % 100) / 5.f});
     }
     figure.Show();
   }
@@ -145,7 +237,7 @@ void run() {
       dy = (dy - f * dx) / l;
       f = (f + df) * 0.8f;
       df = (df + rand() % 11 / 100.f - .05f) * 0.8f;
-      figure.Get("random").Append(x += dx, y += dy);
+      figure.Get("random").Add(x += dx, y += dy);
       figure.Get("random").Color(PlotUtil::Color::Index(i));
       figure.Show();
       cvWaitKey(10);

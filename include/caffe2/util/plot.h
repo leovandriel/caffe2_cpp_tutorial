@@ -1,7 +1,6 @@
 #ifndef UTIL_PLOT_H
 #define UTIL_PLOT_H
 
-#include <cmath>
 #include <map>
 #include <string>
 #include <vector>
@@ -12,21 +11,34 @@ const int paleness = 32;
 
 class PlotUtil {
  public:
-  enum Type { Line, DotLine, Dots, Histogram, Vistogram, Horizontal, Vertical };
+  enum Type {
+    Line,
+    DotLine,
+    Dots,
+    Histogram,
+    Vistogram,
+    Horizontal,
+    Vertical,
+    Range,
+    Circle,
+  };
 
   struct Color {
-    uint8_t r, g, b;
-    Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
-    Color(const uint8_t *rgb) : Color(rgb[0], rgb[1], rgb[2]) {}
+    uint8_t r, g, b, a;
+    Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
+        : r(r), g(g), b(b), a(a) {}
+    Color(const uint8_t *rgb, uint8_t a = 255)
+        : Color(rgb[0], rgb[1], rgb[2], a) {}
     Color() : Color(0, 0, 0) {}
+
+    Color &Alpha(uint8_t alpha) {
+      a = alpha;
+      return *this;
+    }
 
     static Color Gray(uint8_t v) { return Color(v, v, v); }
     static Color Hue(float hue);
-    static Color Cos(float hue) {
-      return Color((cos(hue * 1.047) + 1) * 127.9,
-                   (cos((hue - 2) * 1.047) + 1) * 127.9,
-                   (cos((hue - 4) * 1.047) + 1) * 127.9);
-    }
+    static Color Cos(float hue);
     static Color Index(uint32_t index, uint32_t density = 16, float avoid = 2.f,
                        float range = 2.f) {  // avoid greens by default
       if (avoid > 0) {
@@ -61,58 +73,144 @@ class PlotUtil {
   static Color Light() { return Color::Gray(256 - paleness * 2); }
   static Color White() { return Color::Gray(256 - paleness); }
 
+  struct Point2 {
+    float x, y;
+  };
+
   struct Series {
-    Series() {}
     Series(const std::string &label, enum Type type, Color color)
-        : label_(label), type_(type), color_(color) {}
+        : label_(label),
+          type_(type),
+          color_(color),
+          dims_(0),
+          depth_(0),
+          legend_(true) {}
 
-    void Clear() { data_.clear(); }
-    void Type(enum Type type) { type_ = type; }
-    void Color(Color color) { color_ = color; }
-
-    void Append(const std::vector<std::pair<float, float>> &data) {
-      data_.insert(data_.end(), data.begin(), data.end());
+    void Clear() {
+      entries_.clear();
+      data_.clear();
+    }
+    Series &Type(enum Type type) {
+      type_ = type;
+      return *this;
+    }
+    Series &Color(Color color) {
+      color_ = color;
+      return *this;
+    }
+    Series &Dims(int dims);
+    Series &Depth(int depth);
+    Series &Legend(bool legend) {
+      legend_ = legend;
+      return *this;
     }
 
-    void Append(const std::vector<float> &values) {
+    void Ensure(int dims, int depth);
+
+    Series &Add(const std::vector<std::pair<float, float>> &data) {
+      Ensure(1, 1);
+      for (const auto &d : data) {
+        entries_.push_back(data_.size());
+        data_.push_back(d.first);
+        data_.push_back(d.second);
+      }
+      return *this;
+    }
+
+    Series &Add(const std::vector<std::pair<float, Point2>> &data) {
+      Ensure(1, 2);
+      for (const auto &d : data) {
+        entries_.push_back(data_.size());
+        data_.push_back(d.first);
+        data_.push_back(d.second.x);
+        data_.push_back(d.second.y);
+      }
+      return *this;
+    }
+
+    Series &AddValue(const std::vector<float> &values) {
       std::vector<std::pair<float, float>> data(values.size());
       auto i = 0;
       for (auto &d : data) {
-        d.first = i + data_.size();
+        d.first = i + entries_.size();
         d.second = values[i++];
       }
-      Append(data);
+      return Add(data);
     }
-    void Append(float key, float value) {
-      Append(std::vector<std::pair<float, float>>({{key, value}}));
-    }
-    void Append(float value) { Append(std::vector<float>({value})); }
-    void Set(const std::vector<std::pair<float, float>> &data, enum Type type,
-             struct Color color) {
-      Clear();
-      Type(type);
-      Color(color);
-      Append(data);
+    Series &AddValue(const std::vector<Point2> &values) {
+      std::vector<std::pair<float, Point2>> data(values.size());
+      auto i = 0;
+      for (auto &d : data) {
+        d.first = i + entries_.size();
+        d.second = values[i++];
+      }
+      return Add(data);
     }
 
-    void Set(const std::vector<float> &values, enum Type type,
-             struct Color color) {
+    Series &Add(float key, float value) {
+      return Add(std::vector<std::pair<float, float>>({{key, value}}));
+    }
+    Series &Add(float key, Point2 value) {
+      return Add(std::vector<std::pair<float, Point2>>({{key, value}}));
+    }
+
+    Series &AddValue(float value) {
+      return AddValue(std::vector<float>({value}));
+    }
+    Series &AddValue(float value_a, float value_b) {
+      return AddValue(std::vector<Point2>({{value_a, value_b}}));
+    }
+
+    Series &Set(const std::vector<std::pair<float, float>> &data) {
+      Dims(1).Depth(1);
+      Clear();
+      return Add(data);
+    }
+    Series &Set(const std::vector<std::pair<float, Point2>> &data) {
+      Dims(1).Depth(2);
+      Clear();
+      return Add(data);
+    }
+
+    Series &SetValue(const std::vector<float> &values) {
       std::vector<std::pair<float, float>> data(values.size());
       auto i = 0;
       for (auto &d : data) {
         d.first = i;
         d.second = values[i++];
       }
-      Set(data, type, color);
+      return Set(data);
     }
-    void Set(float key, float value, enum Type type, struct Color color) {
-      Set(std::vector<std::pair<float, float>>({{key, value}}), type, color);
+    Series &SetValue(const std::vector<Point2> &values) {
+      std::vector<std::pair<float, Point2>> data(values.size());
+      auto i = 0;
+      for (auto &d : data) {
+        d.first = i;
+        d.second = values[i++];
+      }
+      return Set(data);
     }
-    void Set(float value, enum Type type, struct Color color) {
-      Set(std::vector<float>({value}), type, color);
+
+    Series &Set(float key, float value) {
+      return Set(std::vector<std::pair<float, float>>({{key, value}}));
+    }
+    Series &Set(float key, float value_a, float value_b) {
+      return Set(
+          std::vector<std::pair<float, Point2>>({{key, {value_a, value_b}}}));
+    }
+
+    Series &SetValue(float value) {
+      return SetValue(std::vector<float>({value}));
+    }
+    Series &SetValue(float value_a, float value_b) {
+      return SetValue(std::vector<Point2>({{value_a, value_b}}));
     }
 
     std::string &Label() { return label_; }
+    bool Legend() { return legend_; }
+    struct Color Color() {
+      return color_;
+    }
     bool Collides() { return type_ == Histogram || type_ == Vistogram; }
 
     void Bounds(float &x_min, float &x_max, float &y_min, float &y_max,
@@ -123,10 +221,14 @@ class PlotUtil {
               float y_axis, int unit, float offset);
 
    protected:
-    std::vector<std::pair<float, float>> data_;
+    std::vector<int> entries_;
+    std::vector<float> data_;
     enum Type type_;
     struct Color color_;
     std::string label_;
+    int dims_;
+    int depth_;
+    bool legend_;
   };
 
   class Figure {
@@ -144,10 +246,22 @@ class PlotUtil {
           grid_padding_(20) {}
 
     void Clear() { series_.clear(); }
-    void Origin(bool x, bool y) { include_zero_x_ = x, include_zero_y_ = y; }
-    void Square(bool square) { aspect_square_ = square; }
-    void Border(int size) { border_size_ = size; }
-    void Window(const std::string &window) { window_ = window; }
+    Figure &Origin(bool x, bool y) {
+      include_zero_x_ = x, include_zero_y_ = y;
+      return *this;
+    }
+    Figure &Square(bool square) {
+      aspect_square_ = square;
+      return *this;
+    }
+    Figure &Border(int size) {
+      border_size_ = size;
+      return *this;
+    }
+    Figure &Window(const std::string &window) {
+      window_ = window;
+      return *this;
+    }
 
     void Draw(void *b, float x_min, float x_max, float y_min, float y_max,
               int n_max, int p_max);

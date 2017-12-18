@@ -205,8 +205,7 @@ void run() {
     TensorUtil(image).ShowImages("dream");
 
     auto &figure = PlotUtil::Shared("loss");
-    figure.Get("rescale").Set(std::vector<float>(), PlotUtil::Vertical,
-                              PlotUtil::Gray());
+    figure.Get("rescale").Type(PlotUtil::Vertical).Color(PlotUtil::Gray());
     figure.Show();
   }
 
@@ -257,7 +256,7 @@ void run() {
     }
     if (FLAGS_display) {
       auto &figure = PlotUtil::Shared("loss");
-      figure.Get("rescale").Append(step);
+      figure.Get("rescale").AddValue(step);
       figure.Show();
     }
   }
