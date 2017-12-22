@@ -1,7 +1,7 @@
 #include "caffe2/operator/show_worst_op.h"
 
 #include "caffe2/util/tensor.h"
-#include "caffe2/util/window.h"
+#include "cvplot/cvplot.h"
 
 #ifdef WITH_CUDA
 #include <caffe2/core/common_cudnn.h>
@@ -67,7 +67,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
   if (pos_i >= 0) {
     auto title =
         "uncertain but correct (" + std::to_string(labelData[pos_i]) + ")";
-    setWindowTitle(under_name.c_str(), title.c_str());
+    cvplot::title(under_name.c_str(), title.c_str());
     TensorUtil(t).ShowImage(under_name, pos_i, scale, mean);
   }
   if (neg_i >= 0) {
@@ -75,7 +75,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
     auto pred = std::distance(d, std::max_element(d, d + D));
     auto title = "certain (" + std::to_string(pred) + ") but incorrect (" +
                  std::to_string(labelData[neg_i]) + ")";
-    setWindowTitle(over_name.c_str(), title.c_str());
+    cvplot::title(over_name.c_str(), title.c_str());
     TensorUtil(t).ShowImage(over_name, neg_i, scale, mean);
   }
 }

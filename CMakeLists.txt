@@ -45,7 +45,7 @@ macro(link_whole_archive lib)
   endif()
 endmacro()
 
-file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc")
+file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc" "${PROJECT_SOURCE_DIR}/src/cvplot/*.cc")
 add_library(caffe2_cpp ${LIB_SOURCES})
 link_whole_archive(caffe2_cpp)
 

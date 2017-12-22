@@ -2,10 +2,9 @@
 #include <caffe2/core/net.h>
 #include <caffe2/utils/proto_utils.h>
 #include "caffe2/util/blob.h"
-#include "caffe2/util/plot.h"
 #include "caffe2/util/tensor.h"
-#include "caffe2/util/window.h"
 #include "caffe2/zoo/keeper.h"
+#include "cvplot/cvplot.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -113,16 +112,16 @@ void run() {
   if (FLAGS_display) {
     auto size =
         std::min(std::max(400, FLAGS_size), (int)sqrt(800000 / FLAGS_batch));
-    superWindow("Deep Dream Example");
-    moveWindow("loss", 0, 0);
-    resizeWindow("loss", size, size);
-    setWindowTitle("loss", "loss");
+    cvplot::window("Deep Dream Example");
+    cvplot::move("loss", 0, 0);
+    cvplot::resize("loss", size, size);
+    cvplot::title("loss", "loss");
     int x_offset = 1, y_offset = 0;
     for (int i = 0; i < FLAGS_batch; i++) {
       auto name = ("dream-" + std::to_string(i)).c_str();
-      moveWindow(name, x_offset * size, y_offset * size);
-      resizeWindow(name, size, size);
-      setWindowTitle(
+      cvplot::move(name, x_offset * size, y_offset * size);
+      cvplot::resize(name, size, size);
+      cvplot::title(
           name,
           (FLAGS_layer + " " +
            (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel + i) : "all"))
@@ -204,9 +203,9 @@ void run() {
     auto image = BlobUtil(*workspace.GetBlob("image")).Get();
     TensorUtil(image).ShowImages("dream");
 
-    auto &figure = PlotUtil::Shared("loss");
-    figure.Get("rescale").Type(PlotUtil::Vertical).Color(PlotUtil::Gray());
-    figure.Show();
+    auto &figure = cvplot::figure("loss");
+    figure.series("rescale").type(cvplot::Plot::Vertical).color(cvplot::Gray);
+    figure.show();
   }
 
   // run predictor
@@ -255,9 +254,9 @@ void run() {
       }
     }
     if (FLAGS_display) {
-      auto &figure = PlotUtil::Shared("loss");
-      figure.Get("rescale").AddValue(step);
-      figure.Show();
+      auto &figure = cvplot::figure("loss");
+      figure.series("rescale").addValue(step);
+      figure.show();
     }
   }
 
