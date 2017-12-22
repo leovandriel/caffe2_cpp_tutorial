@@ -2,7 +2,7 @@
 #define CVPLOT_H
 
 #include "color.h"
-#include "plot.h"
+#include "figure.h"
 #include "window.h"
 
 #endif  // CVPLOT_H

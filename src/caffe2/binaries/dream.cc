@@ -204,7 +204,7 @@ void run() {
     TensorUtil(image).ShowImages("dream");
 
     auto &figure = cvplot::figure("loss");
-    figure.series("rescale").type(cvplot::Plot::Vertical).color(cvplot::Gray);
+    figure.series("rescale").type(cvplot::Vertical).color(cvplot::Gray);
     figure.show();
   }
 

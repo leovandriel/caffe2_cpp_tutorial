@@ -9,7 +9,7 @@ CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb",
                      "The given path to the init protobuffer.");
 CAFFE2_DEFINE_string(predict_net, "res/squeezenet_predict_net.pb",
                      "The given path to the predict protobuffer.");
-CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_string(file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_string(classes, "res/imagenet_classes.txt", "The classes file.");
 CAFFE2_DEFINE_int(size, 227, "The image file.");
 
