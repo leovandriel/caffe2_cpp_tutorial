@@ -14,16 +14,16 @@ struct Color {
   Color() : Color(0, 0, 0) {}
 
   Color alpha(uint8_t alpha) const;
+  Color gamma(float gamma) const;
+  float hue() const;
 
   static Color gray(uint8_t v);
   static Color hue(float hue);
   static Color cos(float hue);
-  static Color index(uint32_t index, uint32_t density = 16, float avoid = 2.f,
+  static Color index(uint8_t index, uint8_t density = 16, float avoid = 2.f,
                      float range = 2.f);
   static Color hash(const std::string &seed);
 };
-
-static const int paleness = 32;
 
 static const Color Red = Color::hue(0.f);
 static const Color Orange = Color::hue(.5f);
@@ -37,11 +37,11 @@ static const Color Blue = Color::hue(4.f);
 static const Color Purple = Color::hue(4.5f);
 static const Color Magenta = Color::hue(5.f);
 static const Color Pink = Color::hue(5.5f);
-static const Color Black = Color::gray(paleness);
-static const Color Dark = Color::gray(paleness * 2);
+static const Color Black = Color::gray(0);
+static const Color Dark = Color::gray(32);
 static const Color Gray = Color::gray(128);
-static const Color Light = Color::gray(256 - paleness * 2);
-static const Color White = Color::gray(256 - paleness);
+static const Color Light = Color::gray(223);
+static const Color White = Color::gray(255);
 
 }  // namespace cvplot
 

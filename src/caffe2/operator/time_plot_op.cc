@@ -30,7 +30,7 @@ void time_plot(const TensorCPU &X, const std::string &label_,
     auto color = figure.series(label_).add(index, mean).color();
     figure.series(label_ + "_range")
         .add(index, {mean - stdev, mean + stdev})
-        .type(cvplot::Plot::Range)
+        .type(cvplot::Range)
         .color(color.alpha(64))
         .legend(false);
     figure.show(true);

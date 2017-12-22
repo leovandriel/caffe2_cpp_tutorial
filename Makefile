@@ -35,8 +35,15 @@ output: all
 
 format:
 	@find . -iname "*.h" -o -iname "*.cc" -o -iname "*.cu" | xargs clang-format --style=Google -i
+  # for i in "LLVM" "Google" "Chromium" "Mozilla" "WebKit"; do; git reset --hard; echo $i; find . -iname "*.h" -o -iname "*.cc" | xargs clang-format --style=$i -i; git diff --shortstat | cat; done
 
-# for i in "LLVM" "Google" "Chromium" "Mozilla" "WebKit"; do; git reset --hard; echo $i; find . -iname "*.h" -o -iname "*.cc" | xargs clang-format --style=$i -i; git diff --shortstat | cat; done
+cvplot:
+	rm -rf include/cvplot src/cvplot
+	@curl -OL https://github.com/leonardvandriel/cvplot/archive/master.zip; \
+  unzip master.zip; \
+  cp -r cvplot-master/include/cvplot include; \
+  cp -r cvplot-master/src/cvplot src; \
+  rm -rf cvplot-master master.zip;
 
 %:
 	cd build && make $@

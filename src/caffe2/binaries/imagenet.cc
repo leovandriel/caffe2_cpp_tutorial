@@ -8,7 +8,7 @@
 #include "caffe2/util/cmd.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
-CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_string(file, "res/image_file.jpg", "The image file.");
 CAFFE2_DEFINE_string(classes, "res/imagenet_classes.txt", "The classes file.");
 CAFFE2_DEFINE_int(size, 224, "The image file.");
 
