@@ -274,13 +274,9 @@ See also:
 
 ## Plots
 
-Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. This windows and plots mini framework is defined in [window.h](include/caffe2/util/window.h) and [plot.h](include/caffe2/util/plot.h). To see a short demo, run:
-
-    ./bin/plot
+Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. These graphs are drawn using the [cvplot](https://github.com/leonardvandriel/cvplot) framwork.
 
 <img src="script/plot.jpg" alt="Plot Examples" width="450"/>
-
-The style of windows and colors are intentionally pale and pixelated to give a dated feel to the whole thing.
 
 ## Troubleshooting
 

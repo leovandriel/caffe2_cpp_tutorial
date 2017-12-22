@@ -1,7 +1,7 @@
 #include "caffe2/operator/time_plot_op.h"
 
-#include "caffe2/util/plot.h"
 #include "caffe2/util/tensor.h"
+#include "cvplot/cvplot.h"
 
 #ifdef WITH_CUDA
 #include <caffe2/core/common_cudnn.h>
@@ -20,20 +20,20 @@ void time_plot(const TensorCPU &X, const std::string &label_,
   sq_sum_ += X.data<float>()[0] * X.data<float>()[0];
   index_sum_ += index_;
   if (step_count_ >= step_) {
-    auto &figure = PlotUtil::Shared(window_);
+    auto &figure = cvplot::figure(window_);
     auto index = index_sum_ / step_count_, mean = value_sum_ / step_count_,
          stdev = sqrtf(sq_sum_ / step_count_ - mean * mean);
     value_sum_ = 0.f;
     sq_sum_ = 0.f;
     index_sum_ = 0.f;
     step_count_ = 0;
-    auto color = figure.Get(label_).Add(index, mean).Color();
-    figure.Get(label_ + "_range")
-        .Add(index, {mean - stdev, mean + stdev})
-        .Type(PlotUtil::Range)
-        .Color(color.Alpha(64))
-        .Legend(false);
-    figure.Show(true);
+    auto color = figure.series(label_).add(index, mean).color();
+    figure.series(label_ + "_range")
+        .add(index, {mean - stdev, mean + stdev})
+        .type(cvplot::Plot::Range)
+        .color(color.alpha(64))
+        .legend(false);
+    figure.show(true);
   }
 }
 

@@ -4,7 +4,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "caffe2/util/window.h"
+#include "cvplot/cvplot.h"
 
 namespace caffe2 {
 
@@ -52,7 +52,7 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
 void TensorUtil::ShowImage(const std::string &title, int index, float scale,
                            float mean, bool flush) {
   auto image = to_image(tensor_, index, scale, mean);
-  imshow(title.c_str(), image, flush);
+  cvplot::imshow(title.c_str(), &image, flush);
 }
 
 void TensorUtil::ShowImages(const std::string &name, float scale, float mean,

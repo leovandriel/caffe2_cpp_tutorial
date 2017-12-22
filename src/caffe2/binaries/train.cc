@@ -3,10 +3,10 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/operator_gradient.h>
 #include <caffe2/utils/proto_utils.h>
-#include "caffe2/util/plot.h"
+#include <opencv2/opencv.hpp>
 #include "caffe2/util/preprocess.h"
-#include "caffe2/util/window.h"
 #include "caffe2/zoo/keeper.h"
+#include "cvplot/cvplot.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
@@ -73,17 +73,17 @@ void run() {
   auto path_prefix = FLAGS_folder + '/' + '_' + layer_prefix;
 
   if (FLAGS_display) {
-    superWindow("Full Train Example");
+    cvplot::window("Full Train Example");
     if (!has_split) {
-      moveWindow("undercertain", 0, 0);
-      resizeWindow("undercertain", 300, 300);
-      moveWindow("overcertain", 0, 300);
-      resizeWindow("overcertain", 300, 300);
+      cvplot::move("undercertain", 0, 0);
+      cvplot::resize("undercertain", 300, 300);
+      cvplot::move("overcertain", 0, 300);
+      cvplot::resize("overcertain", 300, 300);
     }
-    moveWindow("accuracy", has_split ? 0 : 300, 0);
-    resizeWindow("accuracy", 500, 300);
-    moveWindow("loss", has_split ? 0 : 300, 300);
-    resizeWindow("loss", 500, 300);
+    cvplot::move("accuracy", has_split ? 0 : 300, 0);
+    cvplot::resize("accuracy", 500, 300);
+    cvplot::move("loss", has_split ? 0 : 300, 300);
+    cvplot::resize("loss", 500, 300);
   }
 
   std::string db_paths[kRunNum];
@@ -193,10 +193,10 @@ void run() {
                                             10);
     models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss",
                                                "validate");
-    PlotUtil::Shared("accuracy").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("accuracy").Get("validate").Color(PlotUtil::Pink());
-    PlotUtil::Shared("loss").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("loss").Get("validate").Color(PlotUtil::Pink());
+    cvplot::figure("accuracy").series("train").color(cvplot::Purple);
+    cvplot::figure("accuracy").series("validate").color(cvplot::Pink);
+    cvplot::figure("loss").series("train").color(cvplot::Purple);
+    cvplot::figure("loss").series("validate").color(cvplot::Pink);
   }
 
   if (FLAGS_device != "cpu") {
