@@ -409,7 +409,7 @@ OperatorDef* NetUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & in
 	return op;
 }
 
-OperatorDef* AddL1DistanceOp(const std::vector<std::string> & inputs,
+OperatorDef* NetUtil::AddL1DistanceOp(const std::vector<std::string> & inputs,
                         const std::string& output) {
     auto op = AddOp("L1Distance",inputs,{output});
     return op;

@@ -17,12 +17,14 @@ endif()
 if(CUDA_LIBRARIES)
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
+include_directories(/home/xieyi/opt/caffe2/include)
 
 find_library(CAFFE2_LIB caffe2)
 find_library(CAFFE2_GPU_LIB caffe2_gpu)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
-find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
+find_library(GTEST_LIB gtest)
+#find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC ")
 
@@ -34,10 +36,6 @@ set(ALL_LIBRARIES)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
-  file(DOWNLOAD "https://raw.githubusercontent.com/bwasti/AICamera/master/app/src/main/cpp/classes.h" "${PROJECT_SOURCE_DIR}/include/res/imagenet_classes.h")
-endif()
-
 macro(link_whole_archive lib)
   if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     list(APPEND ALL_LIBRARIES -Wl,-force_load,$<TARGET_FILE_NAME:${lib}> ${lib})
@@ -48,7 +46,7 @@ macro(link_whole_archive lib)
   endif()
 endmacro()
 
-file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc")
+file(GLOB LIB_SOURCES "${PROJECT_SOURCE_DIR}/src/caffe2/util/*.cc" "${PROJECT_SOURCE_DIR}/src/caffe2/operator/*.cc" "${PROJECT_SOURCE_DIR}/src/cvplot/*.cc")
 add_library(caffe2_cpp ${LIB_SOURCES})
 link_whole_archive(caffe2_cpp)
 
@@ -77,7 +75,7 @@ if(OpenCV_LIBS)
 endif()
 
 if(CUDA_LIBRARIES)
-  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${CUDA_curand_LIBRARY} ${NCCL_LIB})
+  list(APPEND ALL_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDART_LIBRARY} ${CUDA_curand_LIBRARY})
   add_definitions(-DWITH_CUDA)
 endif()
 
@@ -92,5 +90,12 @@ if (NOT DEFINED CAFFE2_CPP_TUTORIAL_LIB_ONLY)
     get_filename_component(name ${filename} NAME_WE)
     add_executable(${name} ${filename})
     target_link_libraries(${name} ${ALL_LIBRARIES})
+  endforeach()
+
+  file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/caffe2/util/*_test.cc")
+  foreach(filename ${TEST_SOURCES})
+    get_filename_component(name ${filename} NAME_WE)
+    add_executable(${name} ${filename})
+    target_link_libraries(${name} ${ALL_LIBRARIES} ${GTEST_LIB})
   endforeach()
 endif()

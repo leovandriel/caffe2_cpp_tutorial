@@ -327,6 +327,11 @@ void ModelUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 	predict.AddSquaredL2DistanceOp(inputs,output);
 }
 
+void ModelUtil::AddL1DistanceOp(const std::vector<std::string> & inputs,
+                        const std::string& output) {
+	predict.AddL1DistanceOp(inputs,output);
+}
+
 void ModelUtil::AddReduceBackMeanOp(const std::string& input, const std::string& mean) {
     predict.AddReduceBackMeanOp(input,mean);
 }
