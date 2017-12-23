@@ -105,6 +105,8 @@ class NetUtil {
                         int axis = 1);
   OperatorDef* AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output);
+  OperatorDef* AddL1DistanceOp(const std::vector<std::string> & inputs,
+                        const std::string& output);
   OperatorDef* AddPowOp(const std::string & input, const std::string & output, float exponent);
   OperatorDef* AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
 
@@ -137,6 +139,7 @@ class NetUtil {
   OperatorDef* AddBackMeanOp(const std::string& input, const std::string& mean,
                              int count = 1);
   OperatorDef* AddReduceBackMeanOp(const std::string& input, const std::string& mean);
+  OperatorDef* AddReduceBackSumOp(const std::string& input, const std::string& sum);
   OperatorDef* AddMeanStdevOp(const std::string& input, const std::string& mean,
                               const std::string& scale);
   OperatorDef* AddAffineScaleOp(const std::string& input,

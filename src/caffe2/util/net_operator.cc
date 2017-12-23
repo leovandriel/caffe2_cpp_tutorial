@@ -409,6 +409,12 @@ OperatorDef* NetUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & in
 	return op;
 }
 
+OperatorDef* AddL1DistanceOp(const std::vector<std::string> & inputs,
+                        const std::string& output) {
+    auto op = AddOp("L1Distance",inputs,{output});
+    return op;
+}
+
 OperatorDef* NetUtil::AddPowOp(const std::string & input, const std::string & output, float exponent) {
 	auto op = AddOp("Pow",{input},{output});
 	net_add_arg(*op, "exponent", exponent);
@@ -476,6 +482,11 @@ OperatorDef* NetUtil::AddBackMeanOp(const std::string& input,
 
 OperatorDef* NetUtil::AddReduceBackMeanOp(const std::string& input, const std::string& mean) {
   auto op = AddOp("ReduceBackMean",{input},{mean});
+  return op;
+}
+
+OperatorDef* NetUtil::AddReduceBackSumOp(const std::string& input, const std::string& sum) {
+  auto op = AddOp("ReduceBackSum",{input},{sum});
   return op;
 }
 
