@@ -3,12 +3,10 @@
 #include <caffe2/core/init.h>
 #include <caffe2/core/operator_gradient.h>
 #include <caffe2/utils/proto_utils.h>
-#include "caffe2/util/plot.h"
+#include <opencv2/opencv.hpp>
 #include "caffe2/util/preprocess.h"
-#include "caffe2/util/window.h"
 #include "caffe2/zoo/keeper.h"
-
-#include "res/imagenet_classes.h"
+#include "cvplot/cvplot.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(layer, "",
@@ -21,8 +19,6 @@ CAFFE2_DEFINE_int(iters, 1000, "The of training runs.");
 CAFFE2_DEFINE_int(test_runs, 50, "The of training runs.");
 CAFFE2_DEFINE_int(batch, 64, "Training batch size.");
 CAFFE2_DEFINE_double(lr, 1e-4, "Learning rate.");
-CAFFE2_DEFINE_bool(skip_preprocess, false,
-                   "Skip going through preprocessed images");
 
 CAFFE2_DEFINE_bool(display, false,
                    "Show worst correct and incorrect classification.");
@@ -60,8 +56,6 @@ void run() {
   std::cout << "test-runs: " << FLAGS_test_runs << std::endl;
   std::cout << "batch: " << FLAGS_batch << std::endl;
   std::cout << "lr: " << FLAGS_lr << std::endl;
-  std::cout << "skip_preprocess: " << (FLAGS_skip_preprocess ? "true" : "false")
-            << std::endl;
   std::cout << "display: " << (FLAGS_display ? "true" : "false") << std::endl;
   std::cout << "reshape: " << (FLAGS_reshape ? "true" : "false") << std::endl;
   std::cout << "matrix: " << (FLAGS_matrix ? "true" : "false") << std::endl;
@@ -79,17 +73,17 @@ void run() {
   auto path_prefix = FLAGS_folder + '/' + '_' + layer_prefix;
 
   if (FLAGS_display) {
-    superWindow("Full Train Example");
+    cvplot::window("Full Train Example");
     if (!has_split) {
-      moveWindow("undercertain", 0, 0);
-      resizeWindow("undercertain", 300, 300);
-      moveWindow("overcertain", 0, 300);
-      resizeWindow("overcertain", 300, 300);
+      cvplot::move("undercertain", 0, 0);
+      cvplot::resize("undercertain", 300, 300);
+      cvplot::move("overcertain", 0, 300);
+      cvplot::resize("overcertain", 300, 300);
     }
-    moveWindow("accuracy", has_split ? 0 : 300, 0);
-    resizeWindow("accuracy", 500, 300);
-    moveWindow("loss", has_split ? 0 : 300, 300);
-    resizeWindow("loss", 500, 300);
+    cvplot::move("accuracy", has_split ? 0 : 300, 0);
+    cvplot::resize("accuracy", 500, 300);
+    cvplot::move("loss", has_split ? 0 : 300, 300);
+    cvplot::resize("loss", 500, 300);
   }
 
   std::string db_paths[kRunNum];
@@ -150,15 +144,12 @@ void run() {
     second.predict.net = full.predict.net;
   }
 
-  auto count = 0;
-  if (FLAGS_skip_preprocess) {
-    std::cerr << "  counting images.. (skipping preprocess) \r" << std::flush;
-    count = count_samples(db_paths, FLAGS_db_type, image_files.size());
-  } else {
-    std::cerr << "  preprocess images.. \r" << std::flush;
-    count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
-                       FLAGS_size, FLAGS_size);
-  }
+  std::cerr << "  counting cached images.. \r" << std::flush;
+  std::set<std::string> keys;
+  auto count = count_samples(db_paths, FLAGS_db_type, image_files.size(), keys);
+  std::cerr << "  preprocessing images.. \r" << std::flush;
+  count = preprocess(image_files, db_paths, first, FLAGS_db_type, FLAGS_batch,
+                     FLAGS_size, FLAGS_size, keys);
   std::cout << count << " images cached" << std::endl;
   load_time += clock();
 
@@ -197,14 +188,15 @@ void run() {
     models[kRunTrain].predict.AddTimePlotOp("accuracy", "iter", "accuracy",
                                             "train", 10);
     models[kRunValidate].predict.AddTimePlotOp("accuracy", "iter", "accuracy",
-                                               "test");
+                                               "validate");
     models[kRunTrain].predict.AddTimePlotOp("loss", "iter", "loss", "train",
                                             10);
-    models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss", "test");
-    PlotUtil::Shared("accuracy").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("accuracy").Get("test").Color(PlotUtil::Pink());
-    PlotUtil::Shared("loss").Get("train").Color(PlotUtil::Purple());
-    PlotUtil::Shared("loss").Get("test").Color(PlotUtil::Pink());
+    models[kRunValidate].predict.AddTimePlotOp("loss", "iter", "loss",
+                                               "validate");
+    cvplot::figure("accuracy").series("train").color(cvplot::Purple);
+    cvplot::figure("accuracy").series("validate").color(cvplot::Pink);
+    cvplot::figure("loss").series("train").color(cvplot::Purple);
+    cvplot::figure("loss").series("validate").color(cvplot::Pink);
   }
 
   if (FLAGS_device != "cpu") {
@@ -241,7 +233,8 @@ void run() {
 
   std::cout << std::endl;
 
-  std::cout << "saving model.. (" << (path_prefix + model_safe) << "_%_net.pb)" << std::endl;
+  std::cout << "saving model.. (" << (path_prefix + model_safe) << "_%_net.pb)"
+            << std::endl;
   size_t model_size = deploy.Write(path_prefix + model_safe);
 
   std::cout << std::setprecision(3)

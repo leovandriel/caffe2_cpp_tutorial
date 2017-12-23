@@ -1,6 +1,3 @@
-#include <functional>
-#include <set>
-#include <string>
 #include "caffe2/util/net.h"
 
 #ifdef WITH_CUDA

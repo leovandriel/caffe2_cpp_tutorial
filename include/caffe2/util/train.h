@@ -8,6 +8,8 @@
 #include "caffe2/util/blob.h"
 #include "caffe2/util/model.h"
 #include "caffe2/util/net.h"
+#include "caffe2/util/progress.h"
+#include "caffe2/util/table.h"
 #include "caffe2/util/tensor.h"
 
 namespace caffe2 {
@@ -15,25 +17,34 @@ namespace caffe2 {
 enum { kRunTrain = 0, kRunValidate = 1, kRunTest = 2, kRunNum = 3 };
 
 static std::map<int, std::string> name_for_run({
-    {kRunTrain, "train"}, 
-	{kRunValidate, "validate"}, 
-	{kRunTest, "test"},
+    {kRunTrain, "train"},
+    {kRunValidate, "validate"},
+    {kRunTest, "test"},
 });
 
 void run_trainer(int iters, ModelUtil &train, ModelUtil &validate,
                  Workspace &workspace, clock_t &train_time,
-                 clock_t &validate_time) {
+                 clock_t &validate_time, bool verbose = true) {
   CAFFE_ENFORCE(workspace.RunNetOnce(train.init.net));
   CAFFE_ENFORCE(workspace.RunNetOnce(validate.init.net));
 
   CAFFE_ENFORCE(workspace.CreateNet(train.predict.net));
   CAFFE_ENFORCE(workspace.CreateNet(validate.predict.net));
 
-  auto last_time = clock();
-  auto last_i = 0;
+  auto train_step = 10;
   auto sum_accuracy = 0.f, sum_loss = 0.f;
+  Progress progress(iters);
+  Table table;
+  if (verbose) {
+    table.AddFixed("step", 6, 0);
+    table.AddScientific("rate", 10, 2);
+    table.AddFixed("loss", 9, 3);
+    table.AddFixed("acc-trn", 9, 3);
+    table.AddFixed("acc-val", 9, 3);
+    table.WriteHeader(std::cout);
+  }
 
-  for (auto i = 1; i <= iters; i++) {
+  for (auto i = 1; i <= iters; i++, progress.update()) {
     train_time -= clock();
     CAFFE_ENFORCE(workspace.RunNet(train.predict.net.name()));
     train_time += clock();
@@ -42,32 +53,31 @@ void run_trainer(int iters, ModelUtil &train, ModelUtil &validate,
         BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
     sum_loss += BlobUtil(*workspace.GetBlob("loss")).Get().data<float>()[0];
 
-    auto steps_time = (float)(clock() - last_time) / CLOCKS_PER_SEC;
-    if (steps_time > 5 || i >= iters) {
+    if (verbose && i % train_step == 0) {
       auto iter = BlobUtil(*workspace.GetBlob("iter")).Get().data<int64_t>()[0];
       auto lr = BlobUtil(*workspace.GetBlob("lr")).Get().data<float>()[0];
-      auto train_loss = sum_loss / (i - last_i),
-           train_accuracy = sum_accuracy / (i - last_i);
-      sum_loss = 0;
-      sum_accuracy = 0;
       validate_time -= clock();
       CAFFE_ENFORCE(workspace.RunNet(validate.predict.net.name()));
       validate_time += clock();
       auto validate_accuracy =
           BlobUtil(*workspace.GetBlob("accuracy")).Get().data<float>()[0];
-      std::cout << "step: " << iter << "  rate: " << lr
-                << "  loss: " << train_loss << "  accuracy: " << train_accuracy
-                << " | " << validate_accuracy
-                << "  step_time: " << std::setprecision(3)
-                << steps_time / (i - last_i) << "s" << std::endl;
-      last_i = i;
-      last_time = clock();
+      table.Set("step", iter);
+      table.Set("rate", -lr);
+      table.Set("loss", sum_loss / train_step);
+      table.Set("acc-trn", sum_accuracy / train_step);
+      table.Set("acc-val", validate_accuracy);
+      sum_loss = 0;
+      sum_accuracy = 0;
+      progress.wipe();
+      std::cout << table << std::endl;
     }
   }
+  progress.wipe();
 }
 
 void run_tester(int iters, ModelUtil &test, Workspace &workspace,
-                clock_t &test_time, bool show_matrix = false) {
+                clock_t &test_time, bool show_matrix = false,
+                bool verbose = true) {
   CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
   CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
@@ -76,7 +86,16 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
   auto sum_accuracy = 0.f, sum_loss = 0.f;
   auto test_step = 10, batch_length = 0;
   std::map<std::pair<int, int>, int> counts;
-  for (auto i = 1; i <= iters; i++) {
+  Progress progress(iters);
+  Table table;
+  if (verbose) {
+    table.AddFixed("step", 6, 0);
+    table.AddFixed("loss", 9, 3);
+    table.AddFixed("accuracy", 9, 3);
+    table.WriteHeader(std::cout);
+  }
+
+  for (auto i = 1; i <= iters; i++, progress.update()) {
     test_time -= clock();
     CAFFE_ENFORCE(workspace.RunNet(test.predict.net.name()));
     test_time += clock();
@@ -97,14 +116,17 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
       counts[{label[i], max}]++;
     }
 
-    if (i % test_step == 0) {
-      auto loss = sum_loss / test_step, accuracy = sum_accuracy / test_step;
+    if (verbose && i % test_step == 0) {
+      table.Set("step", i);
+      table.Set("loss", sum_loss / test_step);
+      table.Set("accuracy", sum_accuracy / test_step);
       sum_loss = 0;
       sum_accuracy = 0;
-      std::cout << "step: " << i << " loss: " << loss
-                << " accuracy: " << accuracy << std::endl;
+      progress.wipe();
+      std::cout << table << std::endl;
     }
   }
+  progress.wipe();
 
   if (show_matrix) {
     std::cout << "  %  ";

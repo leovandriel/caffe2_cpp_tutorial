@@ -6,17 +6,20 @@
 #include "caffe2/zoo/keeper.h"
 
 #include "caffe2/util/cmd.h"
-#include "res/imagenet_classes.h"
 
 CAFFE2_DEFINE_string(model, "", "Name of one of the pre-trained models.");
 CAFFE2_DEFINE_string(file, "res/file.jpg", "The image file.");
+CAFFE2_DEFINE_string(classes, "res/imagenet_classes.txt", "The classes file.");
 CAFFE2_DEFINE_int(size, 224, "The image file.");
 
 namespace caffe2 {
 
 template <typename C>
-void printBest(const Tensor<C> &tensor, const char **classes,
+void printBest(const Tensor<C> &tensor, const std::vector<std::string> &classes,
                const std::string &name = "") {
+  CAFFE_ENFORCE_EQ(classes.size(), tensor.size(),
+                   "output size does not match number of classes");
+
   // sort top results
   const auto &probs = tensor.template data<float>();
   std::vector<std::pair<int, int>> pairs;
@@ -51,6 +54,12 @@ void run() {
 
   if (!std::ifstream(FLAGS_file).good()) {
     std::cerr << "error: Image file missing: " << FLAGS_file << std::endl;
+    return;
+  }
+
+  // detect classes if specified
+  if (!std::ifstream(FLAGS_classes).good()) {
+    std::cerr << "error: Class file invalid: " << FLAGS_classes << std::endl;
     return;
   }
 
@@ -108,8 +117,15 @@ void run() {
 
   std::cout << std::endl;
 
-  // show prediction result
-  printBest(output, imagenet_classes);
+  // show prediction result using classes
+  std::ifstream file(FLAGS_classes);
+  std::string temp;
+  std::vector<std::string> classes;
+  while (std::getline(file, temp)) {
+    classes.push_back(temp);
+  }
+
+  printBest(output, classes);
 
   std::cout << std::endl;
 

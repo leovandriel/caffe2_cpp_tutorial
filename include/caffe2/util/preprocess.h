@@ -48,7 +48,7 @@ void load_labels(const std::string &folder, const std::string &path_prefix,
                  std::vector<std::pair<std::string, int>> &image_files,
                  std::vector<int> &class_size) {
   auto classes_text_path = path_prefix + "classes.txt";
-  ;
+
   std::ifstream infile(classes_text_path);
   std::string line;
   while (std::getline(infile, line)) {
@@ -163,7 +163,7 @@ int write_batch(Workspace &workspace, ModelUtil &model, std::string &input_name,
 int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                const std::string *db_paths, ModelUtil &model,
                const std::string &db_type, int batch_size, int width,
-               int height) {
+               int height, const std::set<std::string> &already) {
   std::unique_ptr<db::DB> database[kRunNum];
   std::unique_ptr<db::Transaction> transaction[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
@@ -185,20 +185,13 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                          : "";
   std::vector<std::pair<std::string, int>> batch_files;
   Progress progress(image_files.size());
-  progress.wipe();
   for (auto &pair : image_files) {
     progress.update();
     auto &filename = pair.first;
     auto class_index = pair.second;
     image_count++;
-    auto in_db = false;
     auto key = filename_to_key(filename);
-    for (int i = 0; i < kRunNum && !in_db; i++) {
-      auto cursor = database[i]->NewCursor();
-      cursor->Seek(key);
-      in_db |= (cursor->Valid() && cursor->key() == key);
-    }
-    if (in_db) {
+    if (already.find(key) != already.end()) {
       sample_count++;
     } else {
       batch_files.push_back({filename, class_index});
@@ -239,23 +232,27 @@ void preprocess(const std::vector<std::pair<std::string, int>> &image_files,
                 int width, int height) {
   NetDef n;
   ModelUtil none(n, n);
-  preprocess(image_files, db_paths, none, db_type, 64, width, height);
+  std::set<std::string> keys;
+  preprocess(image_files, db_paths, none, db_type, 64, width, height, keys);
 }
 
 int count_samples(const std::string *db_paths, const std::string &db_type,
-                  int est_size) {
+                  int est_size, std::set<std::string> &keys) {
   std::unique_ptr<db::DB> database[kRunNum];
   for (int i = 0; i < kRunNum; i++) {
-    database[i] = db::CreateDB(db_type, db_paths[i], db::WRITE);
+    database[i] = exists_dir(db_paths[i])
+                      ? db::CreateDB(db_type, db_paths[i], db::READ)
+                      : NULL;
   }
   auto sample_count = 0;
   Progress progress(est_size);
-  progress.wipe();
-  for (int i = 0; i < kRunNum; i++, progress.update()) {
-    auto cursor = database[i]->NewCursor();
-    while (cursor->Valid()) {
-      sample_count++;
-      cursor->Next();
+  for (int i = 0; i < kRunNum; i++) {
+    if (database[i] != NULL) {
+      for (auto cursor = database[i]->NewCursor(); cursor->Valid();
+           cursor->Next(), progress.update()) {
+        keys.insert(cursor->key());
+        sample_count++;
+      }
     }
   }
   progress.wipe();
