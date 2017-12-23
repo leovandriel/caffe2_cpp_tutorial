@@ -474,6 +474,11 @@ OperatorDef* NetUtil::AddBackMeanOp(const std::string& input,
   return op;
 }
 
+OperatorDef* NetUtil::AddReduceBackMeanOp(const std::string& input, const std::string& mean) {
+  auto op = AddOp("ReduceBackMean",{input},{mean});
+  return op;
+}
+
 OperatorDef* NetUtil::AddSquaredL2Op(const std::string& input,
                                      const std::string& l2) {
   return AddOp("SquaredL2", {input}, {l2});
