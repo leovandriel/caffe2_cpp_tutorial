@@ -256,6 +256,11 @@ void ModelUtil::AddSigmoidOp(const std::string& input,
 	predict.AddSigmoidOp(input,output);
 }
 
+void ModelUtil::AddTanhOp(const std::string& input,
+                                const std::string& output) {
+    predict.AddTanhOp(input,output);
+}
+
 void ModelUtil::AddLrnOp(const std::string& input, const std::string& output,
                         int size, float alpha, float beta, float bias,
                         const std::string& order) {

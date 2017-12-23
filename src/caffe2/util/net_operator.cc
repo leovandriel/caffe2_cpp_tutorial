@@ -288,6 +288,12 @@ OperatorDef * NetUtil::AddSigmoidOp(const std::string& input,
 	return op;
 }
 
+OperatorDef * NetUtil::AddTanhOp(const std::string& input,
+                                const std::string& output) {
+    auto op = AddOp("Tanh",{input},{output});
+    return op;
+}
+
 OperatorDef* NetUtil::AddLrnOp(const std::string& input,
                                const std::string& output, int size, float alpha,
                                float beta, float bias,

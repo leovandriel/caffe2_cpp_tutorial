@@ -70,6 +70,8 @@ class NetUtil {
 								const std::string& output, float alpha);
   OperatorDef * AddSigmoidOp(const std::string& input,
 								const std::string& output);
+  OperatorDef * AddTanhOp(const std::string& input,
+                                const std::string& output);
   OperatorDef* AddLrnOp(const std::string& input, const std::string& output,
                         int size, float alpha, float beta, float bias,
                         const std::string& order = "NCHW");

@@ -67,6 +67,8 @@ class ModelUtil {
                             const std::vector<int>& shape);
   void AddSigmoidOp(const std::string& input,
 								const std::string& output);
+  void AddTanhOp(const std::string& input,
+                                const std::string& output);
   void AddLrnOp(const std::string& input, const std::string& output,
                         int size, float alpha, float beta, float bias,
                         const std::string& order = "NCHW");
