@@ -490,6 +490,11 @@ OperatorDef* NetUtil::AddReduceBackSumOp(const std::string& input, const std::st
   return op;
 }
 
+OperatorDef* NetUtil::AddReduceTailSumOp(const std::string& input, const std::string& sum) {
+  auto op = AddOp("ReduceTailSum",{input},{sum});
+  return op;
+}
+
 OperatorDef* NetUtil::AddSquaredL2Op(const std::string& input,
                                      const std::string& l2) {
   return AddOp("SquaredL2", {input}, {l2});

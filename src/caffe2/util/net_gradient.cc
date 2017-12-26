@@ -11,6 +11,7 @@ const std::set<std::string> trainable_ops({
 	"Cast",
     "Concat",
     "Conv",
+	"Copy",
     "Diagonal",
     "Dropout",
     "EnsureCPUOutput",
@@ -21,8 +22,12 @@ const std::set<std::string> trainable_ops({
     "Mul",
 	"Pow",
     "RecurrentNetwork",
+	"ReduceBackMean",
+	"ReduceBackSum",
+	"ReduceTailSum",
     "Relu",
 	"LeakyRelu",
+	"L1Distance",
     "Reshape",
 	"Scale", 
 	"Sigmoid",
@@ -36,6 +41,7 @@ const std::set<std::string> trainable_ops({
 	"Sub",
 	"StopGradient",
     "Sum",
+	"Tanh",
 });
 
 const std::set<std::string> non_trainable_ops({

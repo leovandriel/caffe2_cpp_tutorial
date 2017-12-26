@@ -329,11 +329,19 @@ void ModelUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 
 void ModelUtil::AddL1DistanceOp(const std::vector<std::string> & inputs,
                         const std::string& output) {
-	predict.AddL1DistanceOp(inputs,output);
+    predict.AddL1DistanceOp(inputs,output);
 }
 
 void ModelUtil::AddReduceBackMeanOp(const std::string& input, const std::string& mean) {
     predict.AddReduceBackMeanOp(input,mean);
+}
+
+void ModelUtil::AddReduceBackSumOp(const std::string& input, const std::string& sum) {
+    predict.AddReduceBackSumOp(input,sum);
+}
+
+void ModelUtil::AddReduceTailSumOp(const std::string& input, const std::string& sum) {
+    predict.AddReduceTailSumOp(input,sum);
 }
 
 void ModelUtil::AddPowOp(const std::string & input, const std::string & output, float exponent) {

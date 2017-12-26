@@ -140,6 +140,7 @@ class NetUtil {
                              int count = 1);
   OperatorDef* AddReduceBackMeanOp(const std::string& input, const std::string& mean);
   OperatorDef* AddReduceBackSumOp(const std::string& input, const std::string& sum);
+  OperatorDef* AddReduceTailSumOp(const std::string& input, const std::string& sum);
   OperatorDef* AddMeanStdevOp(const std::string& input, const std::string& mean,
                               const std::string& scale);
   OperatorDef* AddAffineScaleOp(const std::string& input,
