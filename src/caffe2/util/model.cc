@@ -69,6 +69,17 @@ void ModelUtil::AddSgdOps() {
   }
 }
 
+void ModelUtil::AddSgdOps(ModelUtil & model) {
+  model.init.AddConstantFillOp({1}, 1.f, one_name);
+  model.predict.AddInput(one_name);
+  for (auto &param : predict.CollectParams()) {
+    model.predict.AddWeightedSumOp(
+        {param, one_name, param + gradient_suffix, lr_name}, param);
+	model.predict.AddInput(param + gradient_suffix);
+	model.predict.AddInput(param);
+  }
+}
+
 void ModelUtil::AddMomentumOps() {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
@@ -80,6 +91,19 @@ void ModelUtil::AddMomentumOps() {
   }
 }
 
+void ModelUtil::AddMomentumOps(ModelUtil & model) {
+  auto sizes = init.CollectParamSizes();
+  for (auto &param : predict.CollectParams()) {
+    auto size = sizes[param];
+    model.init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    model.predict.AddInput(param + moment_suffix);
+    model.predict.AddMomentumSgdOp(param, param + moment_suffix,
+                             param + gradient_suffix, lr_name);
+	model.predict.AddInput(param + gradient_suffix);
+	model.predict.AddInput(param);
+  }
+}
+
 void ModelUtil::AddAdagradOps() {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
@@ -88,6 +112,19 @@ void ModelUtil::AddAdagradOps() {
     predict.AddInput(param + moment_suffix);
     predict.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix,
                          lr_name);
+  }
+}
+
+void ModelUtil::AddAdagradOps(ModelUtil & model) {
+  auto sizes = init.CollectParamSizes();
+  for (auto &param : predict.CollectParams()) {
+    auto size = sizes[param];
+    init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    model.predict.AddInput(param + moment_suffix);
+    model.predict.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix,
+                         lr_name);
+	model.predict.AddInput(param + gradient_suffix);
+	model.predict.AddInput(param);
   }
 }
 
@@ -107,6 +144,24 @@ void ModelUtil::AddAdamOps() {
   }
 }
 
+void ModelUtil::AddAdamOps(ModelUtil & model) {
+	auto sizes = init.CollectParamSizes();
+	for(auto &param: predict.CollectParams()) {
+		auto size = sizes[param];
+		std::vector<std::string> moments(2);
+		auto i = 0;
+		for (auto &moment : moments) {
+			moment = param + moment_suffix + "_" + std::to_string(++i);
+			model.init.AddConstantFillOp({size}, 0.f, moment);
+			model.predict.AddInput(moment);
+		}
+		model.predict.AddAdamOp(param, moments, param + gradient_suffix, lr_name,
+                      iter_name);
+		model.predict.AddInput(param + gradient_suffix);
+		model.predict.AddInput(param);
+	}
+}
+
 void ModelUtil::AddRmsPropOps() {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
@@ -123,6 +178,24 @@ void ModelUtil::AddRmsPropOps() {
   }
 }
 
+void ModelUtil::AddRmsPropOps(ModelUtil & model) {
+  auto sizes = init.CollectParamSizes();
+  for (auto &param : predict.CollectParams()) {
+    auto size = sizes[param];
+    auto moment_name = param + moment_suffix;
+    auto meansq_name = param + meansq_suffix;
+    init.AddConstantFillOp({size}, 0.f, moment_name);
+    init.AddConstantFillOp({size}, 0.f, meansq_name);
+    model.predict.AddInput(moment_name);
+    model.predict.AddInput(meansq_name);
+    model.predict.AddRmsPropOp(param + gradient_suffix, meansq_name, moment_name,
+                         lr_name);
+    model.predict.AddSumOp({param, param + gradient_suffix}, param);
+	model.predict.AddInput(param + gradient_suffix);
+	model.predict.AddInput(param);
+  }
+}
+
 void ModelUtil::AddOptimizerOps(std::string &optimizer) {
   if (optimizer == "sgd") {
     AddSgdOps();
@@ -134,6 +207,22 @@ void ModelUtil::AddOptimizerOps(std::string &optimizer) {
     AddAdamOps();
   } else if (optimizer == "rmsprop") {
     AddRmsPropOps();
+  } else {
+    LOG(FATAL) << "~ optimizer type not supported: " << optimizer;
+  }
+}
+
+void ModelUtil::AddOptimizerOps(std::string &optimizer,ModelUtil & model) {
+  if (optimizer == "sgd") {
+    AddSgdOps(model);
+  } else if (optimizer == "momentum") {
+    AddMomentumOps(model);
+  } else if (optimizer == "adagrad") {
+    AddAdagradOps(model);
+  } else if (optimizer == "adam") {
+    AddAdamOps(model);
+  } else if (optimizer == "rmsprop") {
+    AddRmsPropOps(model);
   } else {
     LOG(FATAL) << "~ optimizer type not supported: " << optimizer;
   }

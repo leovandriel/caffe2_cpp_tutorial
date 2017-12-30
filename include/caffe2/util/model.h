@@ -23,11 +23,17 @@ class ModelUtil {
   void AddIterOps();
 
   void AddSgdOps();
+  void AddSgdOps(ModelUtil & model);
   void AddMomentumOps();
+  void AddMomentumOps(ModelUtil & model);
   void AddAdagradOps();
+  void AddAdagradOps(ModelUtil & model);
   void AddAdamOps();
+  void AddAdamOps(ModelUtil & model);
   void AddRmsPropOps();
+  void AddRmsPropOps(ModelUtil & model);
   void AddOptimizerOps(std::string &optimizer);
+  void AddOptimizerOps(std::string &optimizer,ModelUtil & model);
 
   void AddTestOps(const std::string &output);
   void AddTrainOps(const std::string &output, float base_rate,
