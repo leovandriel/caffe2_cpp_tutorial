@@ -253,6 +253,16 @@ OperatorDef* NetUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
   return op;
 }
 
+OperatorDef* NetUtil::AddTransposeOp(const std::string& input, const std::string& output,
+							  const std::vector<int>& axes) {
+	auto op = AddOp("Transpose",{input},{output});
+	auto arg = net_add_arg(*op, "axes");
+	for(auto i : axes) {
+		arg->add_ints(i);
+	}
+	return op;
+}
+
 // Prediction
 
 OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,

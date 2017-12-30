@@ -60,6 +60,8 @@ class NetUtil {
                                const std::string& name);
   OperatorDef* AddGivenTensorFillOp(const TensorCPU& tensor,
                                     const std::string& name);
+  OperatorDef* AddTransposeOp(const std::string& input, const std::string& output,
+							  const std::vector<int>& axes);
 
   OperatorDef* AddConvOp(const std::string& input, const std::string& w,
                          const std::string& b, const std::string& output,

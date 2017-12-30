@@ -42,6 +42,7 @@ const std::set<std::string> trainable_ops({
 	"StopGradient",
     "Sum",
 	"Tanh",
+	"Transpose",
 });
 
 const std::set<std::string> non_trainable_ops({

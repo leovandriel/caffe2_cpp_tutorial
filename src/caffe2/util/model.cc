@@ -41,6 +41,13 @@ void ModelUtil::AddTrainOps(const std::string &output, float base_rate,
   AddOptimizerOps(optimizer);
 }
 
+void ModelUtil::AddTensorProtosDbInputOp(const std::string& reader,
+                                        const std::string& data,
+                                        const std::string& label,
+                                        int batch_size) {
+	predict.AddTensorProtosDbInputOp(reader,data,label,batch_size);
+}
+
 void ModelUtil::AddTestOps(const std::string &output) {
   AddXentOps(output);
   predict.AddInput(iter_name);
@@ -329,6 +336,11 @@ void ModelUtil::AddVectorFillOp(const std::vector<int>& values,
 void ModelUtil::AddGivenTensorFillOp(const TensorCPU& tensor,
                                     const std::string& name) {
 	predict.AddGivenTensorFillOp(tensor,name);
+}
+
+void ModelUtil::AddTransposeOp(const std::string& input, const std::string& output,
+							  const std::vector<int>& axes) {
+	predict.AddTransposeOp(input,output,axes);
 }
 
 void ModelUtil::AddReluOp(const std::string& input, const std::string& output) {

@@ -38,6 +38,10 @@ class ModelUtil {
   void AddTestOps(const std::string &output);
   void AddTrainOps(const std::string &output, float base_rate,
                    std::string &optimizer);
+  void AddTensorProtosDbInputOp(const std::string& reader,
+                                        const std::string& data,
+                                        const std::string& label,
+                                        int batch_size);
 	//operators with initializable parameters
   void AddFcOps(const std::string &input, const std::string &output,
                 int in_size, int out_size, bool test = false);
@@ -67,6 +71,8 @@ class ModelUtil {
                                const std::string& name);
   void AddGivenTensorFillOp(const TensorCPU& tensor,
                                     const std::string& name);
+  void AddTransposeOp(const std::string& input, const std::string& output,
+							  const std::vector<int>& axes);
   void AddReluOp(const std::string& input, const std::string& output);
   void AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha);
