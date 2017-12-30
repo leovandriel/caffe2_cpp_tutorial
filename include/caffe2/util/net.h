@@ -210,6 +210,7 @@ class NetUtil {
     return AddGradientOp(op, split_inputs, pass_replace,stop_inputs);
   }
   void AddGradientOps();
+  void AddGradientOps(NetUtil & net2);
 
   std::map<std::string, int> CollectParamSizes();
   std::vector<std::string> CollectParams();
