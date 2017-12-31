@@ -98,7 +98,7 @@ class NetUtil {
   OperatorDef* AddConcatOp(const std::vector<std::string>& inputs,
                            const std::string& output,
                            const std::string& order = "NCHW");
-    OperatorDef* AddConcatOp(const std::vector<std::string>& inputs,
+  OperatorDef* AddConcatOp(const std::vector<std::string>& inputs,
                            const std::string& output, int axis);
   OperatorDef* AddSpatialBNOp(const std::vector<std::string>& inputs,
                               const std::vector<std::string>& outputs,

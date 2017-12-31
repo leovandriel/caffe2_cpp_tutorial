@@ -263,7 +263,7 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
                   int in_size, int out_size, int stride, int padding,
                   int kernel, bool test) {
   if (!test) {
-    init.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
+    init.AddXavierFillOp({in_size, out_size, kernel, kernel}, output + "_w");
     init.AddConstantFillOp({out_size}, output + "_b");
   }
   predict.AddInput(output + "_w");
