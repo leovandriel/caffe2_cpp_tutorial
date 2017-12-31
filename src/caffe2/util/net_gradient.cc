@@ -11,6 +11,7 @@ const std::set<std::string> trainable_ops({
 	"Cast",
     "Concat",
     "Conv",
+	"ConvTranspose",
 	"Copy",
     "Diagonal",
     "Dropout",

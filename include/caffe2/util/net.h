@@ -67,6 +67,10 @@ class NetUtil {
                          const std::string& b, const std::string& output,
                          int stride, int padding, int kernel,
                          const std::string& order = "NCHW");
+  OperatorDef* AddConvTransposeOp(const std::string& input, const std::string& w,
+                         const std::string& b, const std::string& output,
+                         int stride, int padding, int kernel,
+                         const std::string& order = "NCHW");
   OperatorDef* AddReluOp(const std::string& input, const std::string& output);
   OperatorDef * AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha);

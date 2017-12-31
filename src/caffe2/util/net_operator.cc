@@ -280,6 +280,21 @@ OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
   return op;
 }
 
+OperatorDef* NetUtil::AddConvTransposeOp(const std::string& input, const std::string& w,
+                         const std::string& b, const std::string& output,
+                         int stride, int padding, int kernel,
+                         const std::string& order) {
+  auto op = AddOp("ConvTranspose",
+                  b.size() ? std::vector<std::string>({input, w, b})
+                           : std::vector<std::string>({input, w}),
+                  {output});
+  net_add_arg(*op, "stride", stride);
+  net_add_arg(*op, "pad", padding);
+  net_add_arg(*op, "kernel", kernel);
+  net_add_arg(*op, "order", order);
+  return op;
+}
+
 OperatorDef* NetUtil::AddReluOp(const std::string& input,
                                 const std::string& output) {
   return AddOp("Relu", {input}, {output});
