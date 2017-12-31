@@ -102,6 +102,8 @@ class ModelUtil {
   void AddConcatOp(const std::vector<std::string>& inputs,
                            const std::string& output,
                            const std::string& order = "NCHW");
+  void AddConcatOp(const std::vector<std::string>& inputs,
+                           const std::string& output, int axis);
   void AddMulOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);

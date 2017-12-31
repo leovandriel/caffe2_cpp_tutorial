@@ -393,6 +393,13 @@ OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs,
   return op;
 }
 
+OperatorDef* NetUtil::AddConcatOp(const std::vector<std::string>& inputs,
+                                  const std::string& output, int axis) {
+  auto op = AddOp("Concat", inputs, {output, "_" + output + "_dims"});
+  net_add_arg(*op, "axis", axis);
+  return op;
+}
+
 OperatorDef* NetUtil::AddSpatialBNOp(const std::vector<std::string>& inputs,
                                      const std::vector<std::string>& outputs,
                                      float epsilon, float momentum, bool test,

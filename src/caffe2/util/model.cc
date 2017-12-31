@@ -412,7 +412,12 @@ void ModelUtil::AddSoftmaxOp(const std::string& input, const std::string& output
 void ModelUtil::AddConcatOp(const std::vector<std::string>& inputs,
                            const std::string& output,
                            const std::string& order) {
-	predict.AddConcatOp(inputs,output,order);
+	predict.AddConcatOp(inputs,output, order);
+}
+
+void ModelUtil::AddConcatOp(const std::vector<std::string>& inputs,
+                           const std::string& output, int axis) {
+	predict.AddConcatOp(inputs,output,axis);
 }
 
 void ModelUtil::AddMulOp(const std::vector<std::string>& inputs,
