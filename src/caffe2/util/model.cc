@@ -296,7 +296,12 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
 			{output},
 			epsilon,momentum,test
 		);
- }
+}
+ 
+void ModelUtil::AddSumOp(const std::vector<std::string>& inputs,
+                               const std::string& sum) {
+  predict.AddOp("Sum", inputs, {sum});
+}
  
 void ModelUtil::AddGradientOps(const std::string & loss) {
 	predict.AddConstantFillWithOp(1.0, loss, loss + "_grad");

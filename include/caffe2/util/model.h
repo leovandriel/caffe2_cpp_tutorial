@@ -53,6 +53,8 @@ class ModelUtil {
                   int kernel, bool test = false);
   void AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon = 1e-5f, float momentum = 0.9, bool test = false);
+  void AddSumOp(const std::vector<std::string>& inputs,
+                               const std::string& sum);
   void AddGradientOps(const std::string & loss);
   void AddGradientOps(const std::string & loss, ModelUtil & model);
   //operators without initializable parameters
