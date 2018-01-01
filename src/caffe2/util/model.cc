@@ -304,7 +304,6 @@ void ModelUtil::AddGradientOps(const std::string & loss) {
 }
 
 void ModelUtil::AddGradientOps(const std::string & loss, ModelUtil & model) {
-	model.predict.AddInput(loss + "_grad");
 	predict.AddGradientOps(model.predict);
 }
  

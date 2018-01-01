@@ -98,11 +98,11 @@ void NetUtil::AddGradientOps(NetUtil & net2) {
   }
   //将所有当前网络自己生成的输出保存到一个set
   std::set<std::string> outputs;
-  for (auto op : CollectGradientOps(split_inputs))
+  for (auto op : net2.net.op())
 	  for(auto output : op.output())
 		  outputs.insert(output);
   //所有不是当前网络输出的blob，如果作为输入就添加external_input
-  for (auto op : CollectGradientOps(split_inputs))
+  for (auto op : net2.net.op())
 	  for(auto input : op.input())
 		  if(outputs.end() == outputs.find(input))
 			  net2.AddInput(input);
