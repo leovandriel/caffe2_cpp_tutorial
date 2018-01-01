@@ -79,6 +79,9 @@ class ModelUtil {
   void AddReluOp(const std::string& input, const std::string& output);
   void AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha);
+  void AddSliceOp(
+    const std::string& input, const std::string& output,
+    const std::vector<std::pair<int, int>>& ranges);
   void AddReshapeOp(const std::string& input, const std::string& output,
                             const std::vector<int>& shape);
   void AddSigmoidOp(const std::string& input,

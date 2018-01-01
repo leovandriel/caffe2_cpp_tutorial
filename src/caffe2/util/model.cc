@@ -282,6 +282,8 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
 	}
 	predict.AddInput(output + "_scale");
 	predict.AddInput(output + "_bias");
+	predict.AddInput(output + "_mean");
+	predict.AddInput(output + "_var");
 	if(!test)
 		predict.AddSpatialBNOp(
 			{input, output + "_scale", output + "_bias", output + "_mean", output+ "_var"},
@@ -363,6 +365,12 @@ void ModelUtil::AddReluOp(const std::string& input, const std::string& output) {
 void ModelUtil::AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha) {
 	predict.AddLeakyReluOp(input,output,alpha);
+}
+
+void ModelUtil::AddSliceOp(
+    const std::string& input, const std::string& output,
+    const std::vector<std::pair<int, int>>& ranges) {
+	predict.AddSliceOp(input,output,ranges);
 }
 
 void ModelUtil::AddReshapeOp(const std::string& input, const std::string& output,
