@@ -141,6 +141,8 @@ class ModelUtil {
                                 const std::string& output,
                                 TensorProto::DataType type);
   void AddStopGradientOp(const std::string& param);
+  void AddSaveOp(const std::vector<std::string>& inputs,const std::string& type,
+						const std::string & path);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }
 

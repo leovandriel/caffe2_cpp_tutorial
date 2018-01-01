@@ -516,6 +516,14 @@ void ModelUtil::AddStopGradientOp(const std::string& param)
 	predict.AddStopGradientOp(param);
 }
 
+void ModelUtil::AddSaveOp(const std::vector<std::string>& inputs,const std::string& type,
+						const std::string & path) {
+	for(auto & input: inputs) {
+		predict.AddInput(input);
+	}
+	predict.AddSaveOp(inputs,type,path);
+}
+
 void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
                       ModelUtil &secondModel, bool force_cpu, bool inclusive) {
   std::set<std::string> static_inputs = predict.CollectLayers(layer);

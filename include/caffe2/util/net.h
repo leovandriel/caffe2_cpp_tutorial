@@ -185,6 +185,8 @@ class NetUtil {
   OperatorDef* AddCastOp(const std::string& input, const std::string& output,
                          TensorProto::DataType type);
   OperatorDef* AddStopGradientOp(const std::string& param);
+  OperatorDef* AddSaveOp(const std::vector<std::string>& inputs,const std::string& type,
+						const std::string & path);
   OperatorDef* AddIterOp(const std::string& iter);
   OperatorDef* AddAtomicIterOp(const std::string& mutex,
                                const std::string& iter);

@@ -664,6 +664,14 @@ OperatorDef* NetUtil::AddStopGradientOp(const std::string& param) {
   return AddOp("StopGradient", {param}, {param});
 }
 
+OperatorDef* NetUtil::AddSaveOp(const std::vector<std::string>& inputs,const std::string& type,
+						const std::string & path) {
+	auto op = AddOp("Save",inputs,{});
+	net_add_arg(*op, "db_type", type);
+	net_add_arg(*op, "db", path);
+	return op;
+}
+
 OperatorDef* NetUtil::AddIterOp(const std::string& iter) {
   return AddOp("Iter", {iter}, {iter});
 }
