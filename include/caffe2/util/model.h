@@ -137,6 +137,9 @@ class ModelUtil {
                                  const std::string& rate, float base_rate,
                                  float gamma = 0.999f,  int stepsize = 1.0);
   //TODO:
+  void AddCastOp(const std::string& input,
+                                const std::string& output,
+                                TensorProto::DataType type);
   void AddStopGradientOp(const std::string& param);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }

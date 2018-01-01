@@ -498,13 +498,19 @@ void ModelUtil::AddAveragedLossOp(const std::string& input,
 	predict.AddAveragedLossOp(input,loss);
 }
 
- void ModelUtil::AddLearningRateOp(const std::string& iter,
+void ModelUtil::AddLearningRateOp(const std::string& iter,
                                  const std::string& rate, float base_rate,
                                  float gamma,  int stepsize) {
-	 predict.AddInput(iter);
-	 predict.AddLearningRateOp(iter,rate,base_rate,gamma,stepsize);
- }
+	predict.AddInput(iter);
+	predict.AddLearningRateOp(iter,rate,base_rate,gamma,stepsize);
+}
 
+void ModelUtil::AddCastOp(const std::string& input,
+                                const std::string& output,
+                                TensorProto::DataType type) {
+	predict.AddCastOp(input,output,type);
+}
+ 
 void ModelUtil::AddStopGradientOp(const std::string& param)
 {
 	predict.AddStopGradientOp(param);
