@@ -55,6 +55,7 @@ const std::set<std::string> non_trainable_ops({
     "TensorProtosDBInput", 
 	"TimePlot", 
 	"ShowWorst",
+	"Save",
 });
 
 const std::map<std::string, std::string> custom_gradient({
