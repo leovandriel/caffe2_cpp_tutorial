@@ -38,8 +38,10 @@ void Series::verifyParams() const {
   if (dynamic_color_) {
     depth += 1;
   }
-  EXPECT_EQ(dims_, dims);
-  EXPECT_EQ(depth_, depth);
+  if (entries_.size() > 0) {
+    EXPECT_EQ(dims_, dims);
+    EXPECT_EQ(depth_, depth);
+  }
 }
 
 void Series::ensureDimsDepth(int dims, int depth) {
