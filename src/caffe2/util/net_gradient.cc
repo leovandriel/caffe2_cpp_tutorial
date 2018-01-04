@@ -13,6 +13,8 @@ const std::set<std::string> trainable_ops({
     "Conv",
 	"ConvTranspose",
 	"Copy",
+	"CopyCPUToGPU",
+	"CopyGPUToCPU",
     "Diagonal",
     "Dropout",
     "EnsureCPUOutput",
@@ -54,6 +56,7 @@ const std::set<std::string> non_trainable_ops({
 	"Iter", 
     "TensorProtosDBInput", 
 	"TimePlot", 
+	"Print",
 	"ShowWorst",
 	"Save",
 });

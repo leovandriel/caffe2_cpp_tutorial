@@ -458,6 +458,18 @@ void ModelUtil::AddCopyOp(const std::string& input, const std::string& output) {
 	predict.AddCopyOp(input,output);
 }
 
+void ModelUtil::AddCopyGPUToCPUOp(const std::string& input,const std::string& output) {
+	predict.AddCopyGPUToCPUOp(input,output);
+}
+
+void ModelUtil::AddCopyCPUToGPUOp(const std::string& input,const std::string& output) {
+	predict.AddCopyCPUToGPUOp(input,output);
+}
+
+void ModelUtil::AddPrintOp(const std::string& param, bool to_file) {
+	predict.AddPrintOp(param,to_file);
+}
+
 void ModelUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output) {
 	predict.AddSquaredL2DistanceOp(inputs,output);

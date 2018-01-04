@@ -120,6 +120,9 @@ class ModelUtil {
   void AddWeightedSumOp(const std::vector<std::string>& inputs,
                                 const std::string& sum);
   void AddCopyOp(const std::string& input, const std::string& output);
+  void AddCopyGPUToCPUOp(const std::string& input,const std::string& output);
+  void AddCopyCPUToGPUOp(const std::string& input,const std::string& output);
+  void AddPrintOp(const std::string& param, bool to_file);
   void AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output);
   void AddL1DistanceOp(const std::vector<std::string> & inputs,

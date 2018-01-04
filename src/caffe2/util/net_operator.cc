@@ -152,6 +152,16 @@ OperatorDef* NetUtil::AddCopyOp(const std::string& input,
   return AddOp("Copy", {input}, {output});
 }
 
+OperatorDef* NetUtil::AddCopyGPUToCPUOp(const std::string& input,
+								const std::string& output) {
+  return AddOp("CopyGPUToCPU",{input},{output});
+}
+
+OperatorDef* NetUtil::AddCopyCPUToGPUOp(const std::string& input, 
+							 const std::string& output) {
+  return AddOp("CopyCPUToGPU",{input},{output});
+}
+
 OperatorDef* NetUtil::AddCreateMutexOp(const std::string& param) {
   return AddOp("CreateMutex", {}, {param});
 }

@@ -38,6 +38,8 @@ class NetUtil {
   OperatorDef* AddCopyFromCpuInputOp(const std::string& input,
                                      const std::string& output);
   OperatorDef* AddCopyOp(const std::string& input, const std::string& output);
+  OperatorDef* AddCopyGPUToCPUOp(const std::string& input, const std::string& output);
+  OperatorDef* AddCopyCPUToGPUOp(const std::string& input, const std::string& output);
   OperatorDef* AddCreateMutexOp(const std::string& param);
   OperatorDef* AddPrintOp(const std::string& param, bool to_file = false);
   OperatorDef* AddSummarizeOp(const std::string& param, bool to_file = false);
