@@ -582,7 +582,7 @@ OperatorDef* NetUtil::AddSliceOp(
 OperatorDef* NetUtil::AddReshapeOp(const std::string& input,
                                    const std::string& output,
                                    const std::vector<int>& shape) {
-  auto op = AddOp("Reshape", {input}, {output, "_"});
+  auto op = AddOp("Reshape", {input}, {output, output + "_shape"});
   net_add_arg(*op, "shape", shape);
   return op;
 }
