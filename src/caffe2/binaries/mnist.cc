@@ -181,15 +181,15 @@ void run() {
 #endif
 
   if (FLAGS_display) {
-    cvplot::window("Caffe2 MNIST Tutorial");
-    cvplot::move("undercertain", 0, 0);
-    cvplot::resize("undercertain", 300, 300);
-    cvplot::move("overcertain", 0, 300);
-    cvplot::resize("overcertain", 300, 300);
-    cvplot::move("accuracy", 300, 0);
-    cvplot::resize("accuracy", 300, 300);
-    cvplot::move("loss", 300, 300);
-    cvplot::resize("loss", 300, 300);
+    cvplot::Window::current("Caffe2 MNIST Tutorial");
+    cvplot::moveWindow("undercertain", 0, 0);
+    cvplot::resizeWindow("undercertain", 300, 300);
+    cvplot::moveWindow("overcertain", 0, 300);
+    cvplot::resizeWindow("overcertain", 300, 300);
+    cvplot::moveWindow("accuracy", 300, 0);
+    cvplot::resizeWindow("accuracy", 300, 300);
+    cvplot::moveWindow("loss", 300, 300);
+    cvplot::resizeWindow("loss", 300, 300);
   }
 
   // >>> from caffe2.python import core, cnn, net_drawer, workspace, visualize,

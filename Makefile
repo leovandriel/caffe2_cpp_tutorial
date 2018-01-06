@@ -39,11 +39,11 @@ format:
 
 cvplot:
 	rm -rf include/cvplot src/cvplot
-	@curl -OL https://github.com/leonardvandriel/cvplot/archive/master.zip; \
-  unzip master.zip; \
-  cp -r cvplot-master/include/cvplot include; \
-  cp -r cvplot-master/src/cvplot src; \
-  rm -rf cvplot-master master.zip;
+	@curl -OL https://github.com/leonardvandriel/cvplot/archive/dev.zip; \
+  unzip dev.zip; \
+  cp -r cvplot-dev/include/cvplot include; \
+  cp -r cvplot-dev/src/cvplot src; \
+  rm -rf cvplot-dev dev.zip;
 
 %:
 	cd build && make $@

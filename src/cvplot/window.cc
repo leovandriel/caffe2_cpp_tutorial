@@ -4,33 +4,41 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <ctime>
+
 namespace cvplot {
 
 namespace {
-Window shared_window;
+Window *shared_window = NULL;
 int shared_index = 0;
+clock_t shared_time = clock();
 }  // namespace
 
-Window::Window(const std::string &title)
-    : offset_(0, 0),
-      buffer_(NULL),
-      title_(title),
-      name_("cvplot_" + std::to_string(shared_index++)) {}
+float runtime() { return (float)(clock() - shared_time) / CLOCKS_PER_SEC; }
+
+void mouse_callback(int event, int x, int y, int flags, void *window) {
+  ((Window *)window)->onmouse(event, x, y, flags);
+}
+
+// View
 
 View &View::resize(Rect rect) {
   rect_ = rect;
+  window_.dirty();
   return *this;
 }
 
 View &View::size(Size size) {
   rect_.width = size.width;
   rect_.height = size.height;
+  window_.dirty();
   return *this;
 }
 
 View &View::offset(Offset offset) {
   rect_.x = offset.x;
   rect_.y = offset.y;
+  window_.dirty();
   return *this;
 }
 
@@ -41,6 +49,7 @@ View &View::autosize() {
 
 View &View::title(const std::string &title) {
   title_ = title;
+  window_.dirty();
   return *this;
 }
 
@@ -48,21 +57,31 @@ View &View::alpha(int alpha) {
   background_color_ = background_color_.alpha(alpha);
   frame_color_ = frame_color_.alpha(alpha);
   text_color_ = text_color_.alpha(alpha);
+  window_.dirty();
   return *this;
 }
 
 View &View::backgroundColor(Color color) {
   background_color_ = color;
+  window_.dirty();
   return *this;
 }
 
 View &View::frameColor(Color color) {
   frame_color_ = color;
+  window_.dirty();
   return *this;
 }
 
 View &View::textColor(Color color) {
   text_color_ = color;
+  window_.dirty();
+  return *this;
+}
+
+View &View::mouse(MouseCallback callback, void *param) {
+  mouse_callback_ = callback;
+  mouse_param_ = (param == NULL ? this : param);
   return *this;
 }
 
@@ -71,6 +90,15 @@ Color View::backgroundColor() { return background_color_; }
 Color View::frameColor() { return frame_color_; }
 
 Color View::textColor() { return text_color_; }
+std::string &View::title() { return title_; }
+
+void View::drawRect(Rect rect, Color color) {
+  Trans trans(window_.buffer());
+  cv::rectangle(trans.with(color), {rect_.x + rect.x, rect_.y + rect.y},
+                {rect_.x + rect.x + rect.width, rect_.y + rect.y + rect.height},
+                color2scalar(color), -1);
+  window_.dirty();
+}
 
 void View::drawText(const std::string &text, Offset offset, Color color) const {
   auto face = cv::FONT_HERSHEY_SIMPLEX;
@@ -82,6 +110,7 @@ void View::drawText(const std::string &text, Offset offset, Color color) const {
   Trans trans(window_.buffer());
   cv::putText(trans.with(color), text.c_str(), org, face, scale,
               color2scalar(color), thickness);
+  window_.dirty();
 }
 
 void View::drawFrame(const std::string &title) const {
@@ -101,6 +130,7 @@ void View::drawFrame(const std::string &title) const {
   cv::putText(trans.with(text_color_), title.c_str(),
               {rect_.x + 2 + (rect_.width - size.width) / 2, rect_.y + 14},
               cv::FONT_HERSHEY_PLAIN, 1.f, color2scalar(text_color_), 1.f);
+  window_.dirty();
 }
 
 void View::drawImage(const void *image, int alpha) {
@@ -109,7 +139,7 @@ void View::drawImage(const void *image, int alpha) {
     rect_.width = img.cols;
     rect_.height = img.rows;
   }
-  window_.ensure(rect_, false);
+  window_.ensure(rect_);
   Trans trans(window_.buffer());
   if (img.cols != rect_.width || img.rows != rect_.height) {
     cv::Mat resized;
@@ -120,6 +150,7 @@ void View::drawImage(const void *image, int alpha) {
     img.copyTo(
         trans.with(alpha)({rect_.x, rect_.y, rect_.width, rect_.height}));
   }
+  window_.dirty();
 }
 
 void View::drawFill(Color color) {
@@ -127,30 +158,65 @@ void View::drawFill(Color color) {
   cv::rectangle(trans.with(color), {rect_.x, rect_.y},
                 {rect_.x + rect_.width - 1, rect_.y + rect_.height - 1},
                 color2scalar(color), -1);
+  window_.dirty();
 }
 
 void *View::buffer(Rect &rect) {
-  window_.ensure(rect_, false);
+  window_.ensure(rect_);
   rect = rect_;
   return window_.buffer();
 }
 
-void View::show(bool flush) const {
+void View::finish() {
   if (!frameless_) {
     drawFrame(title_);
   }
-  window_.show(flush);
+  window_.dirty();
 }
+
+void View::flush() { window_.flush(); }
+
+bool View::has(Offset offset) {
+  return offset.x >= rect_.x && offset.y >= rect_.y &&
+         offset.x < rect_.x + rect_.width && offset.y < rect_.y + rect_.height;
+}
+
+void View::onmouse(int event, int x, int y, int flags) {
+  if (mouse_callback_ != NULL) {
+    mouse_callback_(event, x, y, flags, mouse_param_);
+  }
+}
+
+void View::hide(bool hidden) {
+  if (hidden_ != hidden) {
+    hidden_ = hidden;
+    drawFill();
+  }
+}
+
+// Window
+
+Window::Window(const std::string &title)
+    : offset_(0, 0),
+      buffer_(NULL),
+      title_(title),
+      dirty_(false),
+      flush_time_(0),
+      fps_(1),
+      hidden_(false),
+      show_cursor_(false),
+      cursor_(-10, -10),
+      name_("cvplot_" + std::to_string(shared_index++)) {}
 
 void *Window::buffer() { return buffer_; }
 
-Window &Window::resize(Rect rect, bool flush) {
+Window &Window::resize(Rect rect) {
   offset({rect.x, rect.y});
-  size({rect.width, rect.height}, flush);
+  size({rect.width, rect.height});
   return *this;
 }
 
-Window &Window::size(Size size, bool flush) {
+Window &Window::size(Size size) {
   auto &buffer = *(new cv::Mat(cv::Size(size.width, size.height), CV_8UC3,
                                color2scalar(Gray)));
   if (buffer_ != NULL) {
@@ -164,7 +230,7 @@ Window &Window::size(Size size, bool flush) {
     delete &current;
   }
   buffer_ = &buffer;
-  show(flush);
+  dirty();
   return *this;
 }
 
@@ -180,32 +246,72 @@ Window &Window::title(const std::string &title) {
   return *this;
 }
 
-Window &Window::ensure(Rect rect, bool flush) {
+Window &Window::fps(float fps) {
+  fps_ = fps;
+  return *this;
+}
+
+Window &Window::cursor(bool cursor) {
+  show_cursor_ = cursor;
+  return *this;
+}
+
+Window &Window::ensure(Rect rect) {
   if (buffer_ == NULL) {
-    size({rect.x + rect.width, rect.y + rect.height}, flush);
+    size({rect.x + rect.width, rect.y + rect.height});
   } else {
     auto &b = *(cv::Mat *)buffer_;
     if (rect.x + rect.width > b.cols || rect.y + rect.height > b.rows) {
       size({std::max(b.cols, rect.x + rect.width),
-            std::max(b.rows, rect.y + rect.height)},
-           flush);
+            std::max(b.rows, rect.y + rect.height)});
     }
   }
   return *this;
 }
 
-void Window::show(bool flush) const {
-  if (buffer_ != NULL) {
-    auto &b = *(cv::Mat *)buffer_;
-    if (flush && b.cols > 0 && b.rows > 0) {
+void Window::onmouse(int event, int x, int y, int flags) {
+  for (auto &pair : views_) {
+    auto &view = pair.second;
+    if (view.has({x, y})) {
+      view.onmouse(event, x, y, flags);
+      break;
+    }
+  }
+  cursor_ = {x, y};
+  if (show_cursor_) {
+    dirty();
+    flush();
+  }
+}
+
+void Window::flush() {
+  if (dirty_ && buffer_ != NULL) {
+    auto b = (cv::Mat *)buffer_;
+    if (b->cols > 0 && b->rows > 0) {
+      cv::Mat mat;
+      if (show_cursor_) {
+        b->copyTo(mat);
+        cv::line(mat, {cursor_.x - 4, cursor_.y + 1},
+                 {cursor_.x + 6, cursor_.y + 1}, color2scalar(White), 1);
+        cv::line(mat, {cursor_.x + 1, cursor_.y - 4},
+                 {cursor_.x + 1, cursor_.y + 6}, color2scalar(White), 1);
+        cv::line(mat, {cursor_.x - 5, cursor_.y}, {cursor_.x + 5, cursor_.y},
+                 color2scalar(Black), 1);
+        cv::line(mat, {cursor_.x, cursor_.y - 5}, {cursor_.x, cursor_.y + 5},
+                 color2scalar(Black), 1);
+        b = &mat;
+      }
       cv::namedWindow(name_, cv::WINDOW_AUTOSIZE);
 #if CV_MAJOR_VERSION > 2
       cv::setWindowTitle(name_, title_);
 #endif
-      cv::imshow(name_.c_str(), b);
-      cvWaitKey(1);
+      cv::imshow(name_.c_str(), *b);
+      cv::setMouseCallback(name_.c_str(), mouse_callback, this);
+      Util::sleep();
     }
   }
+  dirty_ = false;
+  flush_time_ = runtime();
 }
 
 View &Window::view(const std::string &name, Size size) {
@@ -216,54 +322,72 @@ View &Window::view(const std::string &name, Size size) {
   return views_.at(name);
 }
 
-void window(const char *title, int width, int height, bool flush) {
-  shared_window = Window(title);
-  shared_window.size({width, height}, flush);
+void Window::tick() {
+  if (fps_ > 0 && (runtime() - flush_time_) > 1.f / fps_) {
+    flush();
+  }
 }
 
-View &view(const char *name) { return shared_window.view(name); }
-void move(int x, int y) { shared_window.offset({x, y}); }
+void Window::dirty() { dirty_ = true; }
 
-void move(const char *name, int x, int y) {
-  shared_window.view(name).offset({x, y});
+void Window::hide(bool hidden) {
+  if (hidden_ != hidden) {
+    hidden_ = hidden;
+    if (hidden) {
+      cv::destroyWindow(name_.c_str());
+    } else {
+      dirty();
+      flush();
+    }
+  }
 }
 
-void resize(const char *name, int width, int height) {
-  shared_window.view(name).size({width, height});
+Window &Window::current() {
+  if (shared_window == NULL) {
+    shared_window = new Window("");
+  }
+  return *(Window *)shared_window;
 }
 
-void autosize(const char *name) { shared_window.view(name).autosize(); }
-
-void title(const char *name, const char *title) {
-  shared_window.view(name).title(title);
+Window &Window::current(const std::string &title) {
+  shared_window = new Window(title);
+  return *(Window *)shared_window;
 }
 
-void imshow(const char *name, const void *image, bool flush) {
-  shared_window.view(name).drawImage(image);
-  shared_window.view(name).show(flush);
+void Window::current(Window &window) { shared_window = &window; }
+
+// Util
+
+void Util::sleep(float seconds) {
+  cvWaitKey(std::max(1, (int)(seconds * 1000)));
 }
 
-void *buffer(const char *name, int &x, int &y, int &width, int &height) {
-  Rect rect(0, 0, 0, 0);
-  auto buffer = shared_window.view(name).buffer(rect);
-  x = rect.x;
-  y = rect.y;
-  width = rect.width;
-  height = rect.height;
-  return buffer;
+char Util::key(float timeout) {
+  return cvWaitKey(std::max(0, (int)(timeout * 1000)));
 }
 
-void show(const char *name, bool flush) {
-  shared_window.view(name).show(flush);
+std::string Util::line(float timeout) {
+  std::stringstream stream;
+  auto ms = (timeout > 0 ? std::max(1, (int)(timeout * 1000)) : -1);
+  while (ms != 0) {
+    auto key = cvWaitKey(1);
+    if (key == -1) {
+      ms--;
+      continue;
+    }
+    if (key == '\r' || key <= '\n') {
+      break;
+    } else if (key == '\b' || key == 127) {
+      auto s = stream.str();
+      stream = std::stringstream();
+      if (s.length() > 0) {
+        stream << s.substr(0, s.length() - 1);
+      }
+    } else {
+      stream << (char)key;
+    }
+  }
+  return stream.str();
 }
-
-void clear(const char *name, bool flush) {
-  shared_window.view(name).drawFill();
-  shared_window.view(name).show(flush);
-}
-
-void show(bool flush) { shared_window.show(true); }
-
-Window &window() { return shared_window; }
 
 }  // namespace cvplot
