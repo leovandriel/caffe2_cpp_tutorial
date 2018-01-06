@@ -73,17 +73,17 @@ void run() {
   auto path_prefix = FLAGS_folder + '/' + '_' + layer_prefix;
 
   if (FLAGS_display) {
-    cvplot::window("Full Train Example");
+    cvplot::Window::current("Full Train Example");
     if (!has_split) {
-      cvplot::move("undercertain", 0, 0);
-      cvplot::resize("undercertain", 300, 300);
-      cvplot::move("overcertain", 0, 300);
-      cvplot::resize("overcertain", 300, 300);
+      cvplot::moveWindow("undercertain", 0, 0);
+      cvplot::resizeWindow("undercertain", 300, 300);
+      cvplot::moveWindow("overcertain", 0, 300);
+      cvplot::resizeWindow("overcertain", 300, 300);
     }
-    cvplot::move("accuracy", has_split ? 0 : 300, 0);
-    cvplot::resize("accuracy", 500, 300);
-    cvplot::move("loss", has_split ? 0 : 300, 300);
-    cvplot::resize("loss", 500, 300);
+    cvplot::moveWindow("accuracy", has_split ? 0 : 300, 0);
+    cvplot::resizeWindow("accuracy", 500, 300);
+    cvplot::moveWindow("loss", has_split ? 0 : 300, 300);
+    cvplot::resizeWindow("loss", 500, 300);
   }
 
   std::string db_paths[kRunNum];

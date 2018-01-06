@@ -4,6 +4,7 @@
 #include "color.h"
 
 #include <map>
+#include <string>
 
 namespace cvplot {
 
@@ -23,6 +24,9 @@ struct Offset {
   Offset(int x, int y) : x(x), y(y) {}
 };
 
+typedef void (*MouseCallback)(int event, int x, int y, int flags, void *param);
+typedef void (*TrackbarCallback)(int pos, void *param);
+
 class Window;
 
 class View {
@@ -34,7 +38,9 @@ class View {
         frameless_(false),
         background_color_(Black),
         frame_color_(Green),
-        text_color_(Black) {}
+        text_color_(Black),
+        mouse_callback_(NULL),
+        mouse_param_(NULL) {}
   View &resize(Rect rect);
   View &size(Size size);
   View &offset(Offset offset);
@@ -44,16 +50,26 @@ class View {
   View &backgroundColor(Color color);
   View &frameColor(Color color);
   View &textColor(Color color);
+  View &mouse(MouseCallback callback, void *param = NULL);
+  void onmouse(int event, int x, int y, int flags);
+
   Color backgroundColor();
   Color frameColor();
   Color textColor();
+  std::string &title();
+  bool has(Offset offset);
 
+  void drawRect(Rect rect, Color color);
   void drawFill(Color background = White);
   void drawImage(const void *image, int alpha = 255);
   void drawText(const std::string &text, Offset offset, Color color) const;
   void drawFrame(const std::string &title) const;
   void *buffer(Rect &rect);
-  void show(bool flush = true) const;
+  void finish();
+  void flush();
+  void hide(bool hidden = true);
+
+  View &operator=(const View &) = delete;
 
  protected:
   Rect rect_;
@@ -63,19 +79,34 @@ class View {
   Color background_color_;
   Color frame_color_;
   Color text_color_;
+  MouseCallback mouse_callback_;
+  void *mouse_param_;
+  bool hidden_;
 };
 
 class Window {
  public:
   Window(const std::string &title = "");
-  Window &resize(Rect rect, bool flush = true);
-  Window &size(Size size, bool flush = true);
+  Window &resize(Rect rect);
+  Window &size(Size size);
   Window &offset(Offset offset);
   Window &title(const std::string &title);
-  Window &ensure(Rect rect, bool flush = true);
-  void show(bool flush = true) const;
+  Window &fps(float fps);
+  Window &ensure(Rect rect);
+  Window &cursor(bool cursor);
   void *buffer();
+  void flush();
   View &view(const std::string &name, Size size = {300, 300});
+  void dirty();
+  void tick();
+  void hide(bool hidden = true);
+  void onmouse(int event, int x, int y, int flags);
+
+  Window &operator=(const Window &) = delete;
+
+  static Window &current();
+  static void current(Window &window);
+  static Window &current(const std::string &title);
 
  protected:
   Offset offset_;
@@ -83,22 +114,20 @@ class Window {
   std::string title_;
   std::string name_;
   std::map<std::string, View> views_;
+  bool dirty_;
+  float flush_time_;
+  float fps_;
+  bool hidden_;
+  bool show_cursor_;
+  Offset cursor_;
 };
 
-void window(const char *title, int width = 0, int height = 0,
-            bool flush = false);
-View &view(const char *name);
-void move(int x, int y);
-void move(const char *name, int x, int y);
-void resize(const char *name, int width, int height);
-void clear(const char *name, bool flush = false);
-void autosize(const char *name);
-void title(const char *name, const char *title);
-void imshow(const char *name, const void *image, bool flush = true);
-void *buffer(const char *name, int &x, int &y, int &width, int &height);
-void show(const char *name, bool flush = true);
-void show(bool flush = true);
-Window &window();
+class Util {
+ public:
+  static void sleep(float seconds = 0);
+  static char key(float timeout = 0);
+  static std::string line(float timeout = 0);
+};
 
 }  // namespace cvplot
 

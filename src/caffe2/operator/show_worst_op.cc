@@ -67,7 +67,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
   if (pos_i >= 0) {
     auto title =
         "uncertain but correct (" + std::to_string(labelData[pos_i]) + ")";
-    cvplot::title(under_name.c_str(), title.c_str());
+    cvplot::Window::current().view(under_name).title(title);
     TensorUtil(t).ShowImage(under_name, pos_i, scale, mean);
   }
   if (neg_i >= 0) {
@@ -75,7 +75,7 @@ void show_worst(const TensorCPU &X, const TensorCPU &label,
     auto pred = std::distance(d, std::max_element(d, d + D));
     auto title = "certain (" + std::to_string(pred) + ") but incorrect (" +
                  std::to_string(labelData[neg_i]) + ")";
-    cvplot::title(over_name.c_str(), title.c_str());
+    cvplot::Window::current().view(over_name).title(title);
     TensorUtil(t).ShowImage(over_name, neg_i, scale, mean);
   }
 }
