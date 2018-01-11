@@ -290,6 +290,18 @@ OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
   return op;
 }
 
+OperatorDef* NetUtil::AddConv3DOp(const std::string& input, const std::string& w,
+						const std::string& b, const std::string& output,
+						int stride, int padding, int kernel) {
+	auto op = AddOp("Conv3D",
+					b.size() ? std::vector<std::string>({input,w,b})
+							: std::vector<std::string>({input,w}),
+					{output});
+	net_add_arg(*op, "stride", stride);
+	net_add_arg(*op, "pad", padding);
+	net_add_arg(*op, "kernel", kernel);
+}
+
 OperatorDef* NetUtil::AddConvTransposeOp(const std::string& input, const std::string& w,
                          const std::string& b, const std::string& output,
                          int stride, int padding, int kernel,

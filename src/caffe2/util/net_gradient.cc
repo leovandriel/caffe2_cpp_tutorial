@@ -11,6 +11,7 @@ const std::set<std::string> trainable_ops({
 	"Cast",
     "Concat",
     "Conv",
+	"Conv3D",
 	"ConvTranspose",
 	"Copy",
 	"CopyCPUToGPU",

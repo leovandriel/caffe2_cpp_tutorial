@@ -69,6 +69,9 @@ class NetUtil {
                          const std::string& b, const std::string& output,
                          int stride, int padding, int kernel,
                          const std::string& order = "NCHW");
+  OperatorDef* AddConv3DOp(const std::string& input, const std::string& w,
+						const std::string& b, const std::string& output,
+						int stride, int padding, int kernel);
   OperatorDef* AddConvTransposeOp(const std::string& input, const std::string& w,
                          const std::string& b, const std::string& output,
                          int stride, int padding, int kernel,

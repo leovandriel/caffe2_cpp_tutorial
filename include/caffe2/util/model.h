@@ -48,6 +48,9 @@ class ModelUtil {
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, bool test = false);
+  void AddConv3DOps(const std::string& input, const std::string& output, 
+					int in_size, int out_size, int stride, int padding, 
+					int kernel, bool test = false);
   void AddConvTransposeOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, bool test = false);
