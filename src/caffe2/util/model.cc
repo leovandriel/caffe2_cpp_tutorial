@@ -287,7 +287,7 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
 
  void ModelUtil::AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon, float momentum, bool test) {
-	 if(!test) {
+	if(!test) {
 		init.AddConstantFillOp({size},1.0f, output + "_scale");
 		init.AddConstantFillOp({size},0.0f, output + "_bias");
 		init.AddConstantFillOp({size},0.0f, output + "_mean");
@@ -299,13 +299,13 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
 	predict.AddInput(output + "_var");
 	if(!test)
 		predict.AddSpatialBNOp(
-			{input, output + "_scale", output + "_bias", output + "_mean", output+ "_var"},
+			{input, output + "_scale", output + "_bias", output + "_mean", output + "_var"},
 			{output, output + "_mean", output+ "_var", output + "_saved_mean", output + "_saved_var"},
 			epsilon,momentum,test
 		);
 	else
 		predict.AddSpatialBNOp(
-			{input, output + "_scale", output + "_bias"},
+			{input, output + "_scale", output + "_bias", output + "_mean", output + "_var"},
 			{output},
 			epsilon,momentum,test
 		);
