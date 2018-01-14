@@ -5,13 +5,15 @@
 
 namespace caffe2 {
 
-void Progress::update(int step, float interval) {
+bool Progress::update(int step, float interval) {
   inc(step);
-  if (mark_has() && mark_lapse() > interval) {
-    std::cerr << "\\|/-"[print_count++ % 4] << " " << string() << "  \r"
-              << std::flush;
-    mark();
+  if (!mark_has() || mark_lapse() < interval) {
+    return false;
   }
+  std::cerr << "\\|/-"[print_count++ % 4] << " " << string() << "  \r"
+            << std::flush;
+  mark();
+  return true;
 }
 
 void Progress::wipe() {
