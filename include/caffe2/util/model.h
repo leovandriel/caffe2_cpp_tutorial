@@ -136,7 +136,7 @@ class ModelUtil {
   void AddPowOp(const std::string & input, const std::string & output, float exponent);
   void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
   void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
-								const std::vector<std::string>& outputs);
+								const std::vector<std::string>& outputs,int axis = 1);
   void AddAveragedLossOp(const std::string& input,
                                  const std::string& loss);
   void AddLearningRateOp(const std::string& iter,

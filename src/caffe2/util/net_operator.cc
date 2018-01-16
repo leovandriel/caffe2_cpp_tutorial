@@ -515,8 +515,12 @@ OperatorDef* NetUtil::AddAveragedLossOp(const std::string& input,
 }
 
 OperatorDef* NetUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
-								const std::vector<std::string>& outputs) {
-	return AddOp("SoftmaxWithLoss", inputs, outputs);
+								const std::vector<std::string>& outputs, int axis) {
+	auto op = AddOp("SoftmaxWithLoss", inputs, outputs);
+	if (axis != 1) {
+		net_add_arg(*op, "axis", axis);
+	}
+	return op;
 }
 
 OperatorDef* NetUtil::AddDiagonalOp(const std::string& input,

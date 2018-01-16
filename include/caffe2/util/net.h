@@ -142,7 +142,7 @@ class NetUtil {
   OperatorDef* AddAveragedLossOp(const std::string& input,
                                  const std::string& loss);
   OperatorDef* AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
-								const std::vector<std::string>& outputs);
+								const std::vector<std::string>& outputs, int axis = 1);
   OperatorDef* AddDiagonalOp(const std::string& input,
                              const std::string& diagonal,
                              const std::vector<int>& offset);
