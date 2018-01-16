@@ -1,8 +1,13 @@
 #include "cvplot/color.h"
 
 #include <cmath>
+#include <map>
 
 namespace cvplot {
+
+namespace {
+std::map<std::string, int> color_counter;
+}
 
 Color Color::alpha(uint8_t alpha) const { return Color(r, g, b, alpha); }
 
@@ -27,6 +32,13 @@ Color Color::index(uint8_t index, uint8_t density, float avoid,
 
 Color Color::hash(const std::string &seed) {
   return Color::index(std::hash<std::string>{}(seed));
+}
+
+Color Color::uniq(const std::string &name) {
+  if (color_counter.count(name) == 0) {
+    color_counter[name] = color_counter.size();
+  }
+  return Color::index(color_counter[name]);
 }
 
 Color Color::hue(float hue) {
