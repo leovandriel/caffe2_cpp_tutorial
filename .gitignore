@@ -8,3 +8,5 @@ tmp
 
 data
 output
+
+src/caffe2/util/model.pb.*
