@@ -4,8 +4,8 @@
 #include "caffe2/util/model.h"
 
 #include <fcntl.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 namespace caffe2 {
 
@@ -316,8 +316,7 @@ void ModelUtil::CopyTrain(const std::string &layer, int out_size,
   for (const auto &op : init.net.op()) {
     auto &output = op.output(0);
     auto init_op = train.init.net.add_op();
-    bool uniform = (output.find("_b") != std::string::npos);
-    init_op->set_type(uniform ? "ConstantFill" : "XavierFill");
+    init_op->set_type(op.type());
     for (const auto &arg : op.arg()) {
       if (arg.name() == "shape") {
         auto init_arg = init_op->add_arg();
@@ -330,10 +329,15 @@ void ModelUtil::CopyTrain(const std::string &layer, int out_size,
         } else {
           init_arg->CopyFrom(arg);
         }
+      } else if (arg.name() == "value") {
+        auto init_arg = init_op->add_arg();
+        init_arg->set_name("value");
+        init_arg->CopyFrom(arg);
       }
     }
     init_op->add_output(output);
   }
+  train.init.SetFillToTrain();
   std::set<std::string> existing_inputs;
   existing_inputs.insert(train.predict.net.external_input().begin(),
                          train.predict.net.external_input().end());
@@ -507,6 +511,7 @@ void ModelUtil::SetDeviceCUDA() {
 }
 
 std::string ModelUtil::Short() { return predict.Short() + init.Short(); }
+std::string ModelUtil::Proto() { return predict.Proto() + init.Proto(); }
 
 void ModelUtil::input_dims(const std::vector<int> &dims) {
   auto input = meta->mutable_input();

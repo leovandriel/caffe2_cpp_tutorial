@@ -59,6 +59,7 @@ class ModelUtil {
   void SetName(const std::string &name);
   void SetDeviceCUDA();
   std::string Short();
+  std::string Proto();
 
   void input_dims(const std::vector<int> &dims);
   std::vector<int> input_dims();
