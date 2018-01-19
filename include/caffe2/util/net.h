@@ -46,6 +46,8 @@ class NetUtil {
                                  const std::string& param);
   OperatorDef* AddXavierFillOp(const std::vector<int>& shape,
                                const std::string& param);
+  OperatorDef* AddMSRAFillOp(const std::vector<int>& shape,
+                             const std::string& param);
   OperatorDef* AddUniformFillOp(const std::vector<int>& shape, float min,
                                 float max, const std::string& param);
   OperatorDef* AddGausianFillOp(const std::vector<int>& shape, float mean,
@@ -186,16 +188,11 @@ class NetUtil {
   void SetRenameInplace();
   void SetEngineOps(const std::string engine);
 
-  OperatorDef* AddGradientOp(
+  OperatorDef* AddGradientOp(OperatorDef& op);
+  OperatorDef* AddGradientOps(
       OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs,
       std::map<std::string, std::string>& pass_replace,
       std::set<std::string>& stop_inputs);
-  OperatorDef* AddGradientOp(OperatorDef& op) {
-    std::map<std::string, std::pair<int, int>> split_inputs;
-    std::map<std::string, std::string> pass_replace;
-    std::set<std::string> stop_inputs;
-    return AddGradientOp(op, split_inputs, pass_replace, stop_inputs);
-  }
   void AddGradientOps();
 
   std::map<std::string, int> CollectParamSizes();

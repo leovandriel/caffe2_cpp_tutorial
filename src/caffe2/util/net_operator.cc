@@ -188,6 +188,13 @@ OperatorDef* NetUtil::AddXavierFillOp(const std::vector<int>& shape,
   return op;
 }
 
+OperatorDef* NetUtil::AddMSRAFillOp(const std::vector<int>& shape,
+                                    const std::string& param) {
+  auto op = AddOp("MSRAFill", {}, {param});
+  net_add_arg(*op, "shape", shape);
+  return op;
+}
+
 OperatorDef* NetUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
                                        float max, const std::string& param) {
   auto op = AddOp("UniformFill", {}, {param});

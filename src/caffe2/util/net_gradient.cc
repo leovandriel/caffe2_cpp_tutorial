@@ -69,8 +69,9 @@ void NetUtil::AddGradientOps() {
   std::map<std::string, std::pair<int, int>> split_inputs;
   std::map<std::string, std::string> pass_replace;
   std::set<std::string> stop_inputs;
-  for (auto op : CollectGradientOps(split_inputs)) {
-    AddGradientOp(op, split_inputs, pass_replace, stop_inputs);
+  auto ops = CollectGradientOps(split_inputs);
+  for (auto op : ops) {
+    AddGradientOps(op, split_inputs, pass_replace, stop_inputs);
   }
 }
 
@@ -84,7 +85,29 @@ bool net_util_op_has_output(const OperatorDef& op,
   return false;
 }
 
-OperatorDef* NetUtil::AddGradientOp(
+OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
+  auto grad = net.add_op();
+  vector<GradientWrapper> output(op.output_size());
+  for (auto i = 0; i < output.size(); i++) {
+    output[i].dense_ = op.output(i) + gradient_suffix;
+  }
+  GradientOpsMeta meta = GetGradientForOp(op, output);
+  if (meta.ops_.size()) {
+    if (meta.ops_.size() > 1) {
+      std::cerr << "multiple gradients for operator (" << op.type();
+      for (auto& o : meta.ops_) {
+        std::cerr << " " << o.type();
+      }
+      std::cerr << ")" << std::endl;
+    }
+    grad->CopyFrom(meta.ops_[0]);
+  } else {
+    std::cerr << "no gradient for operator " << op.type() << std::endl;
+  }
+  return grad;
+}
+
+OperatorDef* NetUtil::AddGradientOps(
     OperatorDef& op, std::map<std::string, std::pair<int, int>>& split_inputs,
     std::map<std::string, std::string>& pass_replace,
     std::set<std::string>& stop_inputs) {
@@ -104,7 +127,12 @@ OperatorDef* NetUtil::AddGradientOp(
     }
   } else if (pass_gradient.find(op.type()) != pass_gradient.end()) {
     for (auto input : op.input()) {
-      pass_replace[input + gradient_suffix] = op.output(0) + gradient_suffix;
+      auto in = input + gradient_suffix;
+      if (split_inputs.count(in) && split_inputs[in].first > 0) {
+        split_inputs[in].first--;
+        in += "_sum_" + std::to_string(split_inputs[in].first);
+      }
+      pass_replace[in] = op.output(0) + gradient_suffix;
     }
   } else if (op.type() == "StopGradient" ||
              net_util_op_has_output(op, stop_inputs)) {
@@ -112,40 +140,16 @@ OperatorDef* NetUtil::AddGradientOp(
       stop_inputs.insert(input);
     }
   } else {
-    grad = net.add_op();
-    vector<GradientWrapper> output(op.output_size());
-    for (auto i = 0; i < output.size(); i++) {
-      output[i].dense_ = op.output(i) + gradient_suffix;
-    }
-    GradientOpsMeta meta = GetGradientForOp(op, output);
-    if (meta.ops_.size()) {
-      if (meta.ops_.size() > 1) {
-        std::cerr << "multiple gradients for operator (" << op.type();
-        for (auto& o : meta.ops_) {
-          std::cerr << " " << o.type();
-        }
-        std::cerr << ")" << std::endl;
-      }
-      grad->CopyFrom(meta.ops_[0]);
-    } else {
-      std::cerr << "no gradient for operator " << op.type() << std::endl;
-    }
+    grad = AddGradientOp(op);
   }
   if (grad != NULL) {
     grad->set_is_gradient_op(true);
     for (auto i = 0; i < grad->output_size(); i++) {
       auto output = grad->output(i);
-      if (split_inputs.count(output)) {
+      if (split_inputs.count(output) && split_inputs[output].first > 0) {
         split_inputs[output].first--;
         grad->set_output(
             i, output + "_sum_" + std::to_string(split_inputs[output].first));
-        if (split_inputs[output].first == 0) {
-          std::vector<std::string> inputs;
-          for (int i = 0; i < split_inputs[output].second; i++) {
-            inputs.push_back(output + "_sum_" + std::to_string(i));
-          }
-          AddSumOp(inputs, output);
-        }
       }
     }
     for (auto i = 0; i < grad->input_size(); i++) {
@@ -160,6 +164,23 @@ OperatorDef* NetUtil::AddGradientOp(
         grad->input(2) == grad->output(0)) {
       pass_replace[grad->output(0)] = grad->output(0) + "_fix";
       grad->set_output(0, grad->output(0) + "_fix");
+    }
+  }
+  // merge split gradients with sum
+  for (auto& p : split_inputs) {
+    if (p.second.first == 0) {
+      std::vector<std::string> inputs;
+      for (int i = 0; i < p.second.second; i++) {
+        auto input = p.first + "_sum_" + std::to_string(i);
+        if (pass_replace.count(input)) {
+          auto in = pass_replace[input];
+          pass_replace.erase(input);
+          input = in;
+        }
+        inputs.push_back(input);
+      }
+      AddSumOp(inputs, p.first);
+      p.second.first--;
     }
   }
   return grad;
@@ -179,8 +200,8 @@ std::vector<OperatorDef> NetUtil::CollectGradientOps(
         if (std::find(output.begin(), output.end(), input) == output.end()) {
           input_count[input]++;
           if (input_count[input] > 1) {
-            split_inputs[input + "_grad"] = {input_count[input],
-                                             input_count[input]};
+            split_inputs[input + gradient_suffix] = {input_count[input],
+                                                     input_count[input]};
           }
         }
       }
