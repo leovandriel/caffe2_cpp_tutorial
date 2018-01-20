@@ -1,24 +1,27 @@
-#ifndef ZOO_RESNET_H
-#define ZOO_RESNET_H
+#ifndef ZOO_MOBILENET_H
+#define ZOO_MOBILENET_H
 
 #include "caffe2/util/model.h"
 
 namespace caffe2 {
 
-std::string tos(int i) { return std::to_string(i); }
+std::string tos2(int i) { return std::to_string(i); }
 
-class ResNetModel : public ModelUtil {
+class MobileNetModel : public ModelUtil {
  public:
-  ResNetModel(NetDef &initnet, NetDef &predictnet)
+  MobileNetModel(NetDef &initnet, NetDef &predictnet)
       : ModelUtil(initnet, predictnet) {}
 
   OperatorDef *AddConvOps(const std::string &input, const std::string &output,
                           const std::string &infix, int in_size, int out_size,
-                          int stride, int padding, int kernel, bool train) {
+                          int stride, int padding, int kernel, bool group,
+                          bool train) {
     auto b = output + (infix.size() ? "_conv_" + infix : "");
-    init.AddMSRAFillOp({out_size, in_size, kernel, kernel}, b + "_w");
+    init.AddMSRAFillOp({out_size, (group ? 1 : in_size), kernel, kernel},
+                       b + "_w");
     predict.AddInput(b + "_w");
-    predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel);
+    auto op = predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel,
+                                (group ? in_size : 0));
     auto p = output + "_spatbn" + (infix.size() ? "_" + infix : "");
     init.AddConstantFillOp({out_size}, 1.f, p + "_s");
     predict.AddInput(p + "_s");
@@ -33,7 +36,7 @@ class ResNetModel : public ModelUtil {
         train ? std::vector<std::string>(
                     {p, p + "_rm", p + "_riv", p + "_sm", p + "_siv"})
               : std::vector<std::string>({p}),
-        0.001, 0.1, !train);
+        0.001, 0.9, !train);
   }
 
   OperatorDef *AddFcOps(const std::string &input, const std::string &output,
@@ -46,38 +49,28 @@ class ResNetModel : public ModelUtil {
   }
 
   OperatorDef *AddFirst(const std::string &prefix, const std::string &input,
-                        int out_size, int stride, bool train) {
+                        int out_size, int stride, float alpha, bool train) {
     auto output = "conv" + prefix;
     std::string layer = input;
-    layer = AddConvOps(layer, output, "relu", 3, out_size, stride, 3, 7, train)
+    layer = AddConvOps(layer, output, "", 3, out_size * alpha, stride, 1, 3,
+                       false, train)
                 ->output(0);
-    layer = predict.AddReluOp(layer, layer)->output(0);
-    return predict.AddMaxPoolOp(layer, "pool" + prefix, 2, 0, 3);
+    return predict.AddReluOp(layer, layer);
   }
 
-  OperatorDef *AddRes(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size, int stride, bool train) {
+  OperatorDef *AddFilter(const std::string &prefix, const std::string &input,
+                         int in_size, int out_size, int stride, float alpha,
+                         bool train) {
     auto output = "comp_" + prefix;
     std::string layer = input;
-    layer =
-        AddConvOps(layer, output, "1", in_size, out_size / 4, 1, 0, 1, train)
-            ->output(0);
-    predict.AddReluOp(layer, layer);
-    layer = AddConvOps(layer, output, "2", out_size / 4, out_size / 4, stride,
-                       1, 3, train)
+    layer = AddConvOps(layer, output, "1", in_size * alpha, in_size * alpha,
+                       stride, 1, 3, true, train)
                 ->output(0);
     predict.AddReluOp(layer, layer);
-    layer =
-        AddConvOps(layer, output, "3", out_size / 4, out_size, 1, 0, 1, train)
-            ->output(0);
-    auto in = input, out = output + "_sum_3";
-    if (in_size != out_size) {
-      in = AddConvOps(input, "shortcut_projection_" + prefix, "", in_size,
-                      out_size, stride, 0, 1, train)
-               ->output(0);
-    }
-    predict.AddSumOp({in, layer}, out);
-    return predict.AddReluOp(out, out);
+    layer = AddConvOps(layer, output, "2", in_size * alpha, out_size * alpha, 1,
+                       0, 1, false, train)
+                ->output(0);
+    return predict.AddReluOp(layer, layer);
   }
 
   OperatorDef *AddTrain(const std::string &input) {
@@ -90,38 +83,34 @@ class ResNetModel : public ModelUtil {
   }
 
   OperatorDef *AddEnd(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size, int stride) {
+                      int in_size, int out_size, int stride, float alpha) {
     std::string layer = input;
     layer =
         predict.AddAveragePoolOp(layer, "final_avg", stride, 0, 7)->output(0);
-    return AddFcOps(layer, "last_out_L1000", in_size, out_size);
+    return AddFcOps(layer, "last_out", in_size * alpha, out_size);
   }
 
-  OperatorDef *AddBlock(int &n, const std::string &layer, int in_size,
-                        int out_size, int stride, int depth, bool train) {
-    auto op = AddRes(tos(n++), layer, in_size, out_size, stride, train);
-    for (int i = 1; i < depth; i++) {
-      op = AddRes(tos(n++), op->output(0), out_size, out_size, 1, train);
-    }
-    return op;
-  }
-
-  void Add(int type, int out_size, bool train = false) {
-    predict.SetName("ResNet" + std::to_string(type));
+  void Add(float alpha, int out_size, bool train = false) {
+    predict.SetName("MobileNet");
     auto input = "data";
     auto n = 0;
 
     std::string layer = input;
     predict.AddInput(layer);
 
-    layer = AddFirst("1", layer, 64, 2, train)->output(0);
-    layer = AddBlock(n, layer, 64, 256, 1, 3, train)->output(0);
-    auto depth_3 = std::max(1, type / 50 - 1) * 4;
-    layer = AddBlock(n, layer, 256, 512, 2, depth_3, train)->output(0);
-    auto depth_4 = (type - 20) / 3 - depth_3;
-    layer = AddBlock(n, layer, 512, 1024, 2, depth_4, train)->output(0);
-    layer = AddBlock(n, layer, 1024, 2048, 2, 3, train)->output(0);
-    layer = AddEnd(tos(n++), layer, 2048, out_size, 1)->output(0);
+    layer = AddFirst("1", layer, 32, 2, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 32, 64, 1, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 64, 128, 2, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 128, 128, 1, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 128, 256, 2, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 256, 256, 1, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 256, 512, 2, alpha, train)->output(0);
+    for (auto i = 0; i < 5; i++) {  // 6 - 10
+      layer = AddFilter(tos2(n++), layer, 512, 512, 1, alpha, train)->output(0);
+    }
+    layer = AddFilter(tos2(n++), layer, 512, 1024, 2, alpha, train)->output(0);
+    layer = AddFilter(tos2(n++), layer, 1024, 1024, 1, alpha, train)->output(0);
+    layer = AddEnd("", layer, 1024, out_size, 1, alpha)->output(0);
 
     if (train) {
       layer = AddTrain(layer)->output(0);
@@ -135,4 +124,4 @@ class ResNetModel : public ModelUtil {
 
 }  // namespace caffe2
 
-#endif  // ZOO_RESNET_H
+#endif  // ZOO_MOBILENET_H
