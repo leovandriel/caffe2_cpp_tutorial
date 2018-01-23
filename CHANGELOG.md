@@ -3,6 +3,9 @@ Change Log
 
 ### master (untagged)
 
+* Add MobileNet
+* Fix sum gradient
+
 ### 0.0.5 (2017-10-05)
 
 * Add image dream
