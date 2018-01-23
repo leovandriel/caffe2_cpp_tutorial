@@ -65,13 +65,15 @@ const std::string gradient_suffix("_grad");
 
 // Gradient
 
-void NetUtil::AddGradientOps() {
+void NetUtil::AddGradientOps() { AddGradientOps(*this); }
+
+void NetUtil::AddGradientOps(NetUtil& target) const {
   std::map<std::string, std::pair<int, int>> split_inputs;
   std::map<std::string, std::string> pass_replace;
   std::set<std::string> stop_inputs;
   auto ops = CollectGradientOps(split_inputs);
   for (auto op : ops) {
-    AddGradientOps(op, split_inputs, pass_replace, stop_inputs);
+    target.AddGradientOps(op, split_inputs, pass_replace, stop_inputs);
   }
 }
 
@@ -187,7 +189,7 @@ OperatorDef* NetUtil::AddGradientOps(
 }
 
 std::vector<OperatorDef> NetUtil::CollectGradientOps(
-    std::map<std::string, std::pair<int, int>>& split_inputs) {
+    std::map<std::string, std::pair<int, int>>& split_inputs) const {
   std::set<std::string> external_inputs(net.external_input().begin(),
                                         net.external_input().end());
   std::vector<OperatorDef> gradient_ops;
