@@ -152,7 +152,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model googlenet --file res/image_file.jpg
+    ./bin/imagenet --model resnet101 --file res/image_file.jpg
 
 Where the model name is one of the following:
 
@@ -161,6 +161,7 @@ Where the model name is one of the following:
 * `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
 * `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 * `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
+* `mobilenet`, `mobilenet50`, `mobilenet25`: [MobileNet](https://research.googleblog.com/2017/06/mobilenets-open-source-models-for.html)
 
 <img src="script/imagenet.jpg" alt="ImageNet Classifiers" width="313"/>
 
@@ -172,7 +173,7 @@ Additional models can be made available on request!
 
 To classify an image using a model that you trained yourself, specify the location of the init and predict `.pb` file including a `%` character. For example:
 
-    ./bin/imagenet --model res/googlenet_%_net.pb --file res/image_file.jpg
+    ./bin/imagenet --model res/mobilenet_%_net.pb --file res/image_file.jpg
 
 
 See also:
@@ -224,7 +225,7 @@ See also:
 
 To fully train an existing image classification model from scratch, run without the `--layer` option:
 
-    ./bin/train --model googlenet --folder res/images
+    ./bin/train --model resnet50 --folder res/images
 
 The models currently available for training are the ones listed in the [ImageNet](#imagenet-classifiers) section. This will take a lot of time even when runnning on the GPU.
 
