@@ -194,11 +194,12 @@ class NetUtil {
       std::map<std::string, std::string>& pass_replace,
       std::set<std::string>& stop_inputs);
   void AddGradientOps();
+  void AddGradientOps(NetUtil& target) const;
 
   std::map<std::string, int> CollectParamSizes();
   std::vector<std::string> CollectParams();
   std::vector<OperatorDef> CollectGradientOps(
-      std::map<std::string, std::pair<int, int>>& split_inputs);
+      std::map<std::string, std::pair<int, int>>& split_inputs) const;
   std::set<std::string> CollectLayers(const std::string& layer,
                                       bool forward = false);
 
