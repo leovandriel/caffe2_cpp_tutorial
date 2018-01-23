@@ -102,6 +102,14 @@ To classify `giraffe.jpg`:
 
 This tutorial is also a good test to see if OpenCV is working properly.
 
+To export a model from Python:
+
+    model = model_helper.ModelHelper(..)
+    with open("init_net.pb", 'wb') as f:
+      f.write(model.param_init_net._net.SerializeToString())
+    with open("predict_net.pb", 'wb') as f:
+      f.write(model.net._net.SerializeToString())
+
 See also:
 
 - [Image Pre-Processing](https://caffe2.ai/docs/tutorial-image-pre-processing.html)
@@ -275,7 +283,7 @@ See also:
 
 ## Plots
 
-Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. These graphs are drawn using the [cvplot](https://github.com/leonardvandriel/cvplot) framwork.
+Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. These graphs are drawn using the [cvplot](https://github.com/leonardvandriel/cvplot) framework.
 
 <img src="script/plot.jpg" alt="Plot Examples" width="450"/>
 

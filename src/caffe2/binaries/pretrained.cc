@@ -1,9 +1,11 @@
 #include <caffe2/core/init.h>
-#include <caffe2/core/predictor.h>
+#include <caffe2/core/net.h>
 #include <caffe2/utils/proto_utils.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+
+#include <fstream>
 
 CAFFE2_DEFINE_string(init_net, "res/squeezenet_init_net.pb",
                      "The given path to the init protobuffer.");
@@ -88,7 +90,7 @@ void run() {
     data.insert(data.end(), (float *)c.datastart, (float *)c.dataend);
   }
   std::vector<TIndex> dims({1, image.channels(), image.rows, image.cols});
-  TensorCPU input(dims, data, NULL);
+  TensorCPU tensor(dims, data, NULL);
 
   // Load Squeezenet model
   NetDef init_net, predict_net;
@@ -100,12 +102,15 @@ void run() {
   CAFFE_ENFORCE(ReadProtoFromFile(FLAGS_predict_net, &predict_net));
 
   // >>> p = workspace.Predictor(init_net, predict_net)
-  Predictor predictor(init_net, predict_net);
+  Workspace workspace("tmp");
+  CAFFE_ENFORCE(workspace.RunNetOnce(init_net));
+  auto input = workspace.CreateBlob("data")->GetMutable<TensorCPU>();
+  input->ResizeLike(tensor);
+  input->ShareData(tensor);
+  CAFFE_ENFORCE(workspace.RunNetOnce(predict_net));
 
   // >>> results = p.run([img])
-  Predictor::TensorVector inputVec({&input}), outputVec;
-  predictor.run(inputVec, &outputVec);
-  auto &output = *(outputVec[0]);
+  auto output = workspace.GetBlob("softmaxout")->Get<TensorCPU>();
 
   // sort top results
   const auto &probs = output.data<float>();
