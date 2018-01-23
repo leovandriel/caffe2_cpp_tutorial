@@ -204,7 +204,8 @@ void ModelUtil::AddSpatialBNOp(const std::string &input,
                             output + "_saved_mean", output + "_saved_var"},
                            epsilon, momentum, test);
   else
-    predict.AddSpatialBNOp({input, output + "_scale", output + "_bias"},
+    predict.AddSpatialBNOp({input, output + "_scale", output + "_bias",
+                            output + "_mean", output + "_var"},
                            {output}, epsilon, momentum, test);
 }
 
