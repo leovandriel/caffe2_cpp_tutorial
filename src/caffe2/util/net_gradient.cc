@@ -88,23 +88,20 @@ bool net_util_op_has_output(const OperatorDef& op,
 }
 
 OperatorDef* NetUtil::AddGradientOp(OperatorDef& op) {
-  auto grad = net.add_op();
+  OperatorDef* grad = NULL;
   vector<GradientWrapper> output(op.output_size());
   for (auto i = 0; i < output.size(); i++) {
     output[i].dense_ = op.output(i) + gradient_suffix;
   }
   GradientOpsMeta meta = GetGradientForOp(op, output);
   if (meta.ops_.size()) {
-    if (meta.ops_.size() > 1) {
-      std::cerr << "multiple gradients for operator (" << op.type();
-      for (auto& o : meta.ops_) {
-        std::cerr << " " << o.type();
+    for (auto& m : meta.ops_) {
+      auto op = net.add_op();
+      op->CopyFrom(m);
+      if (grad == NULL) {
+        grad = op;
       }
-      std::cerr << ")" << std::endl;
     }
-    grad->CopyFrom(meta.ops_[0]);
-  } else {
-    std::cerr << "no gradient for operator " << op.type() << std::endl;
   }
   return grad;
 }
@@ -143,6 +140,9 @@ OperatorDef* NetUtil::AddGradientOps(
     }
   } else {
     grad = AddGradientOp(op);
+    if (grad == NULL) {
+      std::cerr << "no gradient for operator " << op.type() << std::endl;
+    }
   }
   if (grad != NULL) {
     grad->set_is_gradient_op(true);
