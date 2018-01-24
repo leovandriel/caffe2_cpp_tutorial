@@ -20,8 +20,7 @@ void BlobUtil::Set(const TensorCPU &value, bool force_cuda) {
 #ifdef WITH_CUDA
   if (force_cuda || blob_.IsType<TensorCUDA>()) {
     auto tensor = blob_.GetMutable<TensorCUDA>();
-    tensor->ResizeLike(value);
-    tensor->ShareData(value);
+    tensor->CopyFrom(value);
     return;
   }
 #endif
