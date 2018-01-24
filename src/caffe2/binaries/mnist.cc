@@ -418,8 +418,7 @@ void predict_example() {
   auto data = workspace.CreateBlob("data")->GetMutable<TensorCPU>();
 #endif
   TensorCPU input({1, 1, 28, 28}, data_for_2, NULL);
-  data->ResizeLike(input);
-  data->ShareData(input);
+  data->CopyFrom(input);
 
   // run predictor
   CAFFE_ENFORCE(workspace.RunNetOnce(predict_model));
