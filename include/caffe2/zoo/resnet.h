@@ -55,8 +55,28 @@ class ResNetModel : public ModelUtil {
     return predict.AddMaxPoolOp(layer, "pool" + prefix, 2, 0, 3);
   }
 
-  OperatorDef *AddRes(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size, int stride, bool train) {
+  OperatorDef *AddRes2(const std::string &prefix, const std::string &input,
+                       int in_size, int out_size, int stride, bool train) {
+    auto output = "comp_" + prefix;
+    std::string layer = input;
+    layer = AddConvOps(layer, output, "1", in_size, out_size, 1, 1, 3, train)
+                ->output(0);
+    predict.AddReluOp(layer, layer);
+    layer =
+        AddConvOps(layer, output, "2", out_size, out_size, stride, 1, 3, train)
+            ->output(0);
+    auto in = input, out = output + "_sum_3";
+    if (in_size != out_size) {
+      in = AddConvOps(input, "shortcut_projection_" + prefix, "", in_size,
+                      out_size, stride, 0, 1, train)
+               ->output(0);
+    }
+    predict.AddSumOp({in, layer}, out);
+    return predict.AddReluOp(out, out);
+  }
+
+  OperatorDef *AddRes3(const std::string &prefix, const std::string &input,
+                       int in_size, int out_size, int stride, bool train) {
     auto output = "comp_" + prefix;
     std::string layer = input;
     layer =
@@ -97,11 +117,20 @@ class ResNetModel : public ModelUtil {
     return AddFcOps(layer, "last_out_L1000", in_size, out_size);
   }
 
-  OperatorDef *AddBlock(int &n, const std::string &layer, int in_size,
-                        int out_size, int stride, int depth, bool train) {
-    auto op = AddRes(tos(n++), layer, in_size, out_size, stride, train);
+  OperatorDef *AddBlock2(int &n, const std::string &layer, int in_size,
+                         int out_size, int stride, int depth, bool train) {
+    auto op = AddRes2(tos(n++), layer, in_size, out_size, stride, train);
     for (int i = 1; i < depth; i++) {
-      op = AddRes(tos(n++), op->output(0), out_size, out_size, 1, train);
+      op = AddRes2(tos(n++), op->output(0), out_size, out_size, 1, train);
+    }
+    return op;
+  }
+
+  OperatorDef *AddBlock3(int &n, const std::string &layer, int in_size,
+                         int out_size, int stride, int depth, bool train) {
+    auto op = AddRes3(tos(n++), layer, in_size, out_size, stride, train);
+    for (int i = 1; i < depth; i++) {
+      op = AddRes3(tos(n++), op->output(0), out_size, out_size, 1, train);
     }
     return op;
   }
@@ -114,14 +143,28 @@ class ResNetModel : public ModelUtil {
     std::string layer = input;
     predict.AddInput(layer);
 
-    layer = AddFirst("1", layer, 64, 2, train)->output(0);
-    layer = AddBlock(n, layer, 64, 256, 1, 3, train)->output(0);
-    auto depth_3 = std::max(1, type / 50 - 1) * 4;
-    layer = AddBlock(n, layer, 256, 512, 2, depth_3, train)->output(0);
-    auto depth_4 = (type - 20) / 3 - depth_3;
-    layer = AddBlock(n, layer, 512, 1024, 2, depth_4, train)->output(0);
-    layer = AddBlock(n, layer, 1024, 2048, 2, 3, train)->output(0);
-    layer = AddEnd(tos(n++), layer, 2048, out_size, 1)->output(0);
+    // <silly>
+    auto depth_2 = std::min(3, type / 16 + 1);
+    auto depth_3 = 1 << ((type + 170) / 100);
+    auto depth_4 = (type - 2) / (type < 50 ? 2 : 3) - (2 * depth_2 + depth_3);
+    auto depth_5 = depth_2;
+    // </silly>
+
+    if (type < 50) {
+      layer = AddFirst("1", layer, 64, 2, train)->output(0);
+      layer = AddBlock2(n, layer, 64, 64, 1, depth_2, train)->output(0);
+      layer = AddBlock2(n, layer, 64, 128, 2, depth_3, train)->output(0);
+      layer = AddBlock2(n, layer, 128, 256, 2, depth_4, train)->output(0);
+      layer = AddBlock2(n, layer, 256, 512, 2, depth_5, train)->output(0);
+      layer = AddEnd(tos(n++), layer, 512, out_size, 1)->output(0);
+    } else {
+      layer = AddFirst("1", layer, 64, 2, train)->output(0);
+      layer = AddBlock3(n, layer, 64, 256, 1, depth_2, train)->output(0);
+      layer = AddBlock3(n, layer, 256, 512, 2, depth_3, train)->output(0);
+      layer = AddBlock3(n, layer, 512, 1024, 2, depth_4, train)->output(0);
+      layer = AddBlock3(n, layer, 1024, 2048, 2, depth_5, train)->output(0);
+      layer = AddEnd(tos(n++), layer, 2048, out_size, 1)->output(0);
+    }
 
     if (train) {
       layer = AddTrain(layer)->output(0);
