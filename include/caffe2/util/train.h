@@ -139,14 +139,12 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
       for (int j = 0; j < batch_length; j++) {
         sum += counts[{i, j}];
       }
-      if (sum > 0) {
-        std::cout << std::setw(4) << i << ":";
-        for (int j = 0; j < batch_length; j++) {
-          std::cout << std::fixed << std::setw(6) << std::setprecision(1)
-                    << (100.0 * counts[{i, j}] / sum);
-        }
-        std::cout << " (" << sum << ")" << std::endl;
+      std::cout << std::setw(4) << i << ":";
+      for (int j = 0; j < batch_length; j++) {
+        std::cout << std::fixed << std::setw(6) << std::setprecision(1)
+                  << (100.0 * counts[{i, j}] / std::max(1, sum));
       }
+      std::cout << " (" << sum << ")" << std::endl;
     }
   }
 }
