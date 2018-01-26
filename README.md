@@ -275,6 +275,10 @@ You can also provide your own pre-trained model. Specify the location of the ini
 
     ./bin/dream --model res/squeezenet_%_net.pb --layer fire9/concat --channel 100 --display
 
+We can also do some dreaming on MNIST. First train the [MNIST model](#mnist---create-a-cnn-from-scratch). Then run:
+
+    ./bin/dream --model tmp/mnist_%_net.pb --layer conv2 --size 28 --channel 0 --batch 50 --display
+
 See also:
 
 - [Pre-rendered Inception](http://storage.googleapis.com/deepdream/visualz/tensorflow_inception/index.html)

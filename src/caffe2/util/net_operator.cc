@@ -319,7 +319,6 @@ OperatorDef* NetUtil::AddMaxPoolOp(const std::string& input,
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
   net_add_arg(*op, "order", order);
-  net_add_arg(*op, "legacy_pad", 3);
   return op;
 }
 
@@ -332,7 +331,6 @@ OperatorDef* NetUtil::AddAveragePoolOp(const std::string& input,
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
   net_add_arg(*op, "order", order);
-  net_add_arg(*op, "legacy_pad", 3);
   return op;
 }
 
