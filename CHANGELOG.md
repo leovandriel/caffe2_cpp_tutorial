@@ -3,6 +3,8 @@ Change Log
 
 ### master (untagged)
 
+### 0.0.6 (2018-01-25)
+
 * Add MobileNet
 * Fix sum gradient
 
