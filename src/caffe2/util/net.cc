@@ -23,7 +23,6 @@ void NetUtil::SetType(const std::string type) { net.set_type(type); }
 void NetUtil::SetFillToTrain() {
   for (auto& op : *net.mutable_op()) {
     if (op.type() == "GivenTensorFill") {
-      op.mutable_arg()->RemoveLast();
       if (op.output(0).find("_w") != std::string::npos) {
         op.set_type("XavierFill");
       }
