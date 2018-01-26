@@ -282,8 +282,8 @@ std::set<std::string> NetUtil::CollectLayers(const std::string& layer,
 
 void NetUtil::CheckLayerAvailable(const std::string& layer) {
   std::vector<std::pair<std::string, std::string>> available_layers(
-      {{net.external_input(0), "Input"}});
-  auto layer_found = (net.external_input(0) == layer);
+      {{Input(0), "Input"}});
+  auto layer_found = (Input(0) == layer);
   for (const auto& op : net.op()) {
     if (op.input(0) != op.output(0)) {
       available_layers.push_back({op.output(0), op.type()});

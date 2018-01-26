@@ -81,7 +81,7 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
   CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
   CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
-  auto &output_name = test.predict.net.external_output(0);
+  auto &output_name = test.predict.Output(0);
 
   auto sum_accuracy = 0.f, sum_loss = 0.f;
   auto test_step = 10, batch_length = 0;

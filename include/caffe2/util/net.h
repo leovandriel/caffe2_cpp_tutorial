@@ -178,8 +178,8 @@ class NetUtil {
 
   void AddInput(const std::string input);
   void AddOutput(const std::string output);
-  const std::string& Input(int i) { return net.external_input(i); }
-  const std::string& Output(int i) { return net.external_output(i); }
+  const std::string& Input(int i);
+  const std::string& Output(int i);
 
   void SetName(const std::string name);
   void SetType(const std::string type);
