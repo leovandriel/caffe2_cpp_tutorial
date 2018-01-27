@@ -97,7 +97,7 @@ if (NOT DEFINED CAFFE2_CPP_TUTORIAL_LIB_ONLY)
   endforeach()
 
   if(GTEST_LIB)
-    file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/caffe2/util/*_test.cc")
+    file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/caffe2/util/*_test.cc" "${PROJECT_SOURCE_DIR}/test/caffe2/core/*_test.cc")
     foreach(filename ${TEST_SOURCES})
       get_filename_component(name ${filename} NAME_WE)
       add_executable(${name} ${filename})
