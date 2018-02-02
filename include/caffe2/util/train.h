@@ -81,7 +81,7 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
   CAFFE_ENFORCE(workspace.RunNetOnce(test.init.net));
   CAFFE_ENFORCE(workspace.CreateNet(test.predict.net));
 
-  auto &output_name = test.predict.net.external_output(0);
+  auto &output_name = test.predict.Output(0);
 
   auto sum_accuracy = 0.f, sum_loss = 0.f;
   auto test_step = 10, batch_length = 0;
@@ -139,14 +139,12 @@ void run_tester(int iters, ModelUtil &test, Workspace &workspace,
       for (int j = 0; j < batch_length; j++) {
         sum += counts[{i, j}];
       }
-      if (sum > 0) {
-        std::cout << std::setw(4) << i << ":";
-        for (int j = 0; j < batch_length; j++) {
-          std::cout << std::fixed << std::setw(6) << std::setprecision(1)
-                    << (100.0 * counts[{i, j}] / sum);
-        }
-        std::cout << " (" << sum << ")" << std::endl;
+      std::cout << std::setw(4) << i << ":";
+      for (int j = 0; j < batch_length; j++) {
+        std::cout << std::fixed << std::setw(6) << std::setprecision(1)
+                  << (100.0 * counts[{i, j}] / std::max(1, sum));
       }
+      std::cout << " (" << sum << ")" << std::endl;
     }
   }
 }

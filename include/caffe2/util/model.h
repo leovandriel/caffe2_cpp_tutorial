@@ -4,17 +4,16 @@
 #include <caffe2/core/net.h>
 #include "caffe2/util/net.h"
 
+class ModelMeta;
+
 namespace caffe2 {
 
 class ModelUtil {
  public:
-  ModelUtil(NetDef &init_net, NetDef &predict_net, const std::string &name = "")
-      : init(init_net), predict(predict_net) {
-    if (name.size()) {
-      SetName(name);
-    }
-  }
-  ModelUtil(NetUtil &init, NetUtil &predict) : init(init), predict(predict) {}
+  ModelUtil(NetDef &init_net, NetDef &predict_net,
+            const std::string &name = "");
+  ModelUtil(NetUtil &init, NetUtil &predict);
+  ~ModelUtil();
 
   void AddDatabaseOps(const std::string &name, const std::string &data,
                       const std::string &db, const std::string &db_type,
@@ -47,7 +46,7 @@ class ModelUtil {
                 int in_size, int out_size, bool test = false);
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
-                  int kernel, bool test = false);
+                  int kernel, int group = 0, bool test = false);
   void AddConv3DOps(const std::string& input, const std::string& output, 
 					int in_size, int out_size, 
 					std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels, 
@@ -162,13 +161,24 @@ class ModelUtil {
 
   size_t Write(const std::string &path_prefix) const;
   size_t Read(const std::string &path_prefix);
+  size_t WriteBundle(const std::string &filename) const;
+  size_t ReadBundle(const std::string &filename);
+  size_t WriteMeta(const std::string &filename) const;
+  size_t ReadMeta(const std::string &filename);
   void SetName(const std::string &name);
   void SetDeviceCUDA();
   std::string Short();
+  std::string Proto();
+
+  void input_dims(const std::vector<int> &dims);
+  std::vector<int> input_dims();
+  void output_labels(const std::vector<std::string> &labels);
+  std::vector<std::string> output_labels();
 
  public:
   NetUtil init;
   NetUtil predict;
+  ModelMeta *meta;
 };
 
 }  // namespace caffe2

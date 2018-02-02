@@ -177,12 +177,10 @@ int preprocess(const std::vector<std::pair<std::string, int>> &image_files,
   if (model.predict.net.external_input_size()) {
     CAFFE_ENFORCE(workspace.CreateNet(model.predict.net));
   }
-  auto input_name = model.predict.net.external_input_size()
-                        ? model.predict.net.external_input(0)
-                        : "";
-  auto output_name = model.predict.net.external_output_size()
-                         ? model.predict.net.external_output(0)
-                         : "";
+  auto input_name =
+      model.predict.net.external_input_size() ? model.predict.Input(0) : "";
+  auto output_name =
+      model.predict.net.external_output_size() ? model.predict.Output(0) : "";
   std::vector<std::pair<std::string, int>> batch_files;
   Progress progress(image_files.size());
   for (auto &pair : image_files) {

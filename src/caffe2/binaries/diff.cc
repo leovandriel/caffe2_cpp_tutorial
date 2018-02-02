@@ -35,11 +35,31 @@ void run() {
   }
 }
 
+void run_bundle() {
+  NetDef init_model, predict_model;
+  ModelUtil model(init_model, predict_model);
+
+  Keeper(FLAGS_model).AddModel(model, true);
+  model.input_dims({3, 4, 5});
+  model.output_labels({"A", "B", "C", "D"});
+
+  model.WriteBundle("testbundle.pb");
+
+  NetDef init_model2, predict_model2;
+  ModelUtil model2(init_model2, predict_model2);
+  model2.ReadBundle("testbundle.pb");
+
+  std::cout << model2.input_dims() << std::endl;
+  std::cout << model2.output_labels() << std::endl;
+  std::cout << model2.Short();
+}
+
 }  // namespace caffe2
 
 int main(int argc, char **argv) {
   caffe2::GlobalInit(&argc, &argv);
   caffe2::run();
+  // caffe2::run_bundle();
   google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }

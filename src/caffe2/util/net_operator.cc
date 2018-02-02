@@ -198,6 +198,13 @@ OperatorDef* NetUtil::AddXavierFillOp(const std::vector<int>& shape,
   return op;
 }
 
+OperatorDef* NetUtil::AddMSRAFillOp(const std::vector<int>& shape,
+                                    const std::string& param) {
+  auto op = AddOp("MSRAFill", {}, {param});
+  net_add_arg(*op, "shape", shape);
+  return op;
+}
+
 OperatorDef* NetUtil::AddUniformFillOp(const std::vector<int>& shape, float min,
                                        float max, const std::string& param) {
   auto op = AddOp("UniformFill", {}, {param});
@@ -277,7 +284,7 @@ OperatorDef* NetUtil::AddTransposeOp(const std::string& input, const std::string
 
 OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
                                 const std::string& b, const std::string& output,
-                                int stride, int padding, int kernel,
+                                int stride, int padding, int kernel, int group,
                                 const std::string& order) {
   auto op = AddOp("Conv",
                   b.size() ? std::vector<std::string>({input, w, b})
@@ -286,6 +293,7 @@ OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
   net_add_arg(*op, "stride", stride);
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
+  if(group != 0) net_add_arg(*op, "group", group);
   net_add_arg(*op, "order", order);
   return op;
 }
@@ -370,7 +378,6 @@ OperatorDef* NetUtil::AddMaxPoolOp(const std::string& input,
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
   net_add_arg(*op, "order", order);
-  net_add_arg(*op, "legacy_pad", 3);
   return op;
 }
 
@@ -383,7 +390,6 @@ OperatorDef* NetUtil::AddAveragePoolOp(const std::string& input,
   net_add_arg(*op, "pad", padding);
   net_add_arg(*op, "kernel", kernel);
   net_add_arg(*op, "order", order);
-  net_add_arg(*op, "legacy_pad", 3);
   return op;
 }
 

@@ -35,7 +35,7 @@ Check out the original Caffe2 Python tutorials at [https://caffe2.ai/docs/tutori
 
     On Ubuntu:
 
-        apt-get install cmake libgoogle-glog-dev libprotobuf-dev libleveldb-dev libopencv-dev libeigen3-dev
+        apt-get install cmake libgoogle-glog-dev libprotobuf-dev libleveldb-dev libopencv-dev libeigen3-dev curl
 
     In case you're using CUDA an run into CMake issues with `NCCL`, try adding this to your `.bashrc` (assuming Caffe2 at `$HOME/caffe2`):
 
@@ -102,6 +102,14 @@ To classify `giraffe.jpg`:
 
 This tutorial is also a good test to see if OpenCV is working properly.
 
+To export a model from Python:
+
+    model = model_helper.ModelHelper(..)
+    with open("init_net.pb", 'wb') as f:
+      f.write(model.param_init_net._net.SerializeToString())
+    with open("predict_net.pb", 'wb') as f:
+      f.write(model.net._net.SerializeToString())
+
 See also:
 
 - [Image Pre-Processing](https://caffe2.ai/docs/tutorial-image-pre-processing.html)
@@ -152,7 +160,7 @@ Much of the progress in image recognition is published after the yearly [ImageNe
 
 To classify the content of an image, run:
 
-    ./bin/imagenet --model googlenet --file res/file.jpg
+    ./bin/imagenet --model resnet101 --file res/image_file.jpg
 
 Where the model name is one of the following:
 
@@ -161,6 +169,7 @@ Where the model name is one of the following:
 * `squeezenet`: [SqueezeNet](https://github.com/DeepScale/SqueezeNet)
 * `vgg16` and `vgg19`: [VGG Team](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
 * `resnet50`, `resnet101`, `resnet152`: [MSRA](https://github.com/KaimingHe/deep-residual-networks)
+* `mobilenet`, `mobilenet50`, `mobilenet25`: [MobileNet](https://research.googleblog.com/2017/06/mobilenets-open-source-models-for.html)
 
 <img src="script/imagenet.jpg" alt="ImageNet Classifiers" width="313"/>
 
@@ -172,7 +181,7 @@ Additional models can be made available on request!
 
 To classify an image using a model that you trained yourself, specify the location of the init and predict `.pb` file including a `%` character. For example:
 
-    ./bin/imagenet --model res/images/googlenet_%_net.pb --file res/file.jpg
+    ./bin/imagenet --model res/mobilenet_%_net.pb --file res/image_file.jpg
 
 
 See also:
@@ -209,11 +218,11 @@ You can also provide your own pre-trained model. Specify the location of the ini
 
     ./bin/train --model res/googlenet_%_net.pb --folder res/images --layer pool5/7x7_s1
 
-After the test runs, the model is saved in the `--folder` under the name `_<layer>_<model>_<init/predict>_net.pb`. You can now use this model like any other, for example in the `imagenet` example:
+After the test runs, the model is saved in the `--folder` under the name `_<layer>_<model>_<init/predict>_net.pb`. Please note that you'll need to specify the generated class .txt file by using the `--classes` flag. You can now use this model like any other, for example in the `imagenet` example:
 
-    ./bin/imagenet --model res/images/_pool5_7x7_s1_googlenet_%_net.pb --file res/images/dog/Tjoise.jpg
+    ./bin/imagenet --model res/images/_pool5_7x7_s1_googlenet_%_net.pb --file res/images/dog/Tjoise.jpg --classes res/images/_pool5_7x7_s1_classes.txt
 
-Note that the label names are probably incorrent (goldfish instead of dog), but the index should refer to the correct label. Another example implementation of a classifier can be found in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321), see `predict_example()`.
+Another example implementation of a classifier can be found in [mnist.cc](https://github.com/leonardvandriel/caffe2_cpp_tutorial/blob/master/src/caffe2/binaries/mnist.cc#L321), see `predict_example()`.
 
 See also:
 
@@ -224,7 +233,7 @@ See also:
 
 To fully train an existing image classification model from scratch, run without the `--layer` option:
 
-    ./bin/train --model googlenet --folder res/images
+    ./bin/train --model resnet50 --folder res/images
 
 The models currently available for training are the ones listed in the [ImageNet](#imagenet-classifiers) section. This will take a lot of time even when runnning on the GPU.
 
@@ -266,6 +275,10 @@ You can also provide your own pre-trained model. Specify the location of the ini
 
     ./bin/dream --model res/squeezenet_%_net.pb --layer fire9/concat --channel 100 --display
 
+We can also do some dreaming on MNIST. First train the [MNIST model](#mnist---create-a-cnn-from-scratch). Then run:
+
+    ./bin/dream --model tmp/mnist_%_net.pb --layer conv2 --size 28 --channel 0 --batch 50 --display
+
 See also:
 
 - [Pre-rendered Inception](http://storage.googleapis.com/deepdream/visualz/tensorflow_inception/index.html)
@@ -274,13 +287,9 @@ See also:
 
 ## Plots
 
-Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. This windows and plots mini framework is defined in [window.h](include/caffe2/util/window.h) and [plot.h](include/caffe2/util/plot.h). To see a short demo, run:
-
-    ./bin/plot
+Some of the examples have a `--display` option, which will show an OpenCV window with images and plots covering the training progress. These graphs are drawn using the [cvplot](https://github.com/leonardvandriel/cvplot) framework.
 
 <img src="script/plot.jpg" alt="Plot Examples" width="450"/>
-
-The style of windows and colors are intentionally pale and pixelated to give a dated feel to the whole thing.
 
 ## Troubleshooting
 

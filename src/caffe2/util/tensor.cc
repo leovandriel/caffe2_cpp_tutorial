@@ -52,13 +52,18 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
 void TensorUtil::ShowImage(const std::string &title, int index, float scale,
                            float mean, bool flush) {
   auto image = to_image(tensor_, index, scale, mean);
-  cvplot::imshow(title.c_str(), &image, flush);
+  cvplot::Window::current().view(title).drawImage(&image);
+  cvplot::Window::current().view(title).finish();
+  if (flush) {
+    cvplot::Window::current().view(title).flush();
+  }
 }
 
 void TensorUtil::ShowImages(const std::string &name, float scale, float mean,
                             bool flush) {
-  for (auto i = 0; i < tensor_.dim(0); i++) {
-    ShowImage(name + "-" + std::to_string(i), i, scale, mean, flush);
+  for (auto i = 0, e = (int)tensor_.dim(0); i != e; i++) {
+    ShowImage(name + "-" + std::to_string(i), i, scale, mean,
+              flush && (i + 1 == e));
   }
 }
 

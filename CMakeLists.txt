@@ -26,6 +26,11 @@ find_library(GFLAGS_LIB gflags)
 find_library(GTEST_LIB gtest)
 #find_library(NCCL_LIB nccl) # Somehow necessary to prevent "undefined reference to `ncclReduceScatter'"
 
+set(PB_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/caffe2/util")
+execute_process(
+  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=../caffe2 --proto_path=${PB_SOURCE_DIR} --cpp_out=${PB_SOURCE_DIR} "${PB_SOURCE_DIR}/model.proto"
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC ")
 
 if(NOT CAFFE2_LIB)
@@ -92,10 +97,12 @@ if (NOT DEFINED CAFFE2_CPP_TUTORIAL_LIB_ONLY)
     target_link_libraries(${name} ${ALL_LIBRARIES})
   endforeach()
 
-  file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/caffe2/util/*_test.cc")
-  foreach(filename ${TEST_SOURCES})
-    get_filename_component(name ${filename} NAME_WE)
-    add_executable(${name} ${filename})
-    target_link_libraries(${name} ${ALL_LIBRARIES} ${GTEST_LIB})
-  endforeach()
+  if(GTEST_LIB)
+    file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/caffe2/util/*_test.cc")
+    foreach(filename ${TEST_SOURCES})
+      get_filename_component(name ${filename} NAME_WE)
+      add_executable(${name} ${filename})
+      target_link_libraries(${name} ${ALL_LIBRARIES} ${GTEST_LIB})
+    endforeach()
+  endif()
 endif()

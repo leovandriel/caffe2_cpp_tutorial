@@ -9,7 +9,7 @@ const auto mark_size = 60;
 
 class Progress {
  public:
-  Progress(size_t size) : size(size) { reset(); }
+  Progress(size_t size = 0) : size(size) { reset(); }
   void reset() {
     index = 0;
     start_time = clock();
@@ -56,7 +56,7 @@ class Progress {
   float eta(float speed) const {
     return speed > 0 && size > 0 ? (size - index) / speed : -1.f;
   }
-  void update(int step = 1, float interval = 1);
+  bool update(int step = 1, float interval = 1);
   void wipe();
   void summarize();
   std::string report(bool past = false) const;

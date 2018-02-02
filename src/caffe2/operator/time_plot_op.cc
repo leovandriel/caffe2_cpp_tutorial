@@ -27,12 +27,9 @@ void time_plot(const TensorCPU &X, const std::string &label_,
     sq_sum_ = 0.f;
     index_sum_ = 0.f;
     step_count_ = 0;
-    auto color = figure.series(label_).add(index, mean).color();
-    figure.series(label_ + "_range")
-        .add(index, {mean - stdev, mean + stdev})
-        .type(cvplot::Plot::Range)
-        .color(color.alpha(64))
-        .legend(false);
+    figure.series(label_)
+        .add(index, {mean, mean - stdev, mean + stdev})
+        .type(cvplot::RangeLine);
     figure.show(true);
   }
 }

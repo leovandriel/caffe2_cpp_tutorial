@@ -4,6 +4,7 @@
 #include "caffe2/util/net.h"
 #include "caffe2/zoo/alexnet.h"
 #include "caffe2/zoo/googlenet.h"
+#include "caffe2/zoo/mobilenet.h"
 #include "caffe2/zoo/resnet.h"
 #include "caffe2/zoo/squeezenet.h"
 #include "caffe2/zoo/vgg.h"
@@ -157,16 +158,16 @@ class Keeper {
       GoogleNetModel(model.init.net, model.predict.net).Add(out_size);
     } else if (name_ == "squeezenet") {
       SqueezeNetModel(model.init.net, model.predict.net).Add(out_size);
-    } else if (name_ == "vgg16") {
-      VGGModel(model.init.net, model.predict.net).Add(16, out_size);
-    } else if (name_ == "vgg19") {
-      VGGModel(model.init.net, model.predict.net).Add(19, out_size);
-    } else if (name_ == "resnet50") {
-      ResNetModel(model.init.net, model.predict.net).Add(50, out_size);
-    } else if (name_ == "resnet101") {
-      ResNetModel(model.init.net, model.predict.net).Add(101, out_size);
-    } else if (name_ == "resnet152") {
-      ResNetModel(model.init.net, model.predict.net).Add(152, out_size);
+    } else if (name_.substr(0, 3) == "vgg") {
+      auto depth = (name_.size() > 3 ? std::stoi(name_.substr(3)) : 16);
+      VGGModel(model.init.net, model.predict.net).Add(depth, out_size);
+    } else if (name_.substr(0, 6) == "resnet") {
+      auto size = (name_.size() > 6 ? std::stoi(name_.substr(6)) : 50);
+      ResNetModel(model.init.net, model.predict.net).Add(size, out_size);
+    } else if (name_.substr(0, 9) == "mobilenet") {
+      auto alpha =
+          (name_.size() > 9 ? std::stoi(name_.substr(9)) / 100.f : 1.f);
+      MobileNetModel(model.init.net, model.predict.net).Add(alpha, out_size);
     } else {
       CAFFE_THROW("model " + name_ + " not implemented");
     }

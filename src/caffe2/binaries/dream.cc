@@ -112,16 +112,16 @@ void run() {
   if (FLAGS_display) {
     auto size =
         std::min(std::max(400, FLAGS_size), (int)sqrt(800000 / FLAGS_batch));
-    cvplot::window("Deep Dream Example");
-    cvplot::move("loss", 0, 0);
-    cvplot::resize("loss", size, size);
-    cvplot::title("loss", "loss");
+    cvplot::Window::current("Deep Dream Example");
+    cvplot::moveWindow("loss", 0, 0);
+    cvplot::resizeWindow("loss", size, size);
+    cvplot::setWindowTitle("loss", "loss");
     int x_offset = 1, y_offset = 0;
     for (int i = 0; i < FLAGS_batch; i++) {
       auto name = ("dream-" + std::to_string(i)).c_str();
-      cvplot::move(name, x_offset * size, y_offset * size);
-      cvplot::resize(name, size, size);
-      cvplot::title(
+      cvplot::moveWindow(name, x_offset * size, y_offset * size);
+      cvplot::resizeWindow(name, size, size);
+      cvplot::setWindowTitle(
           name,
           (FLAGS_layer + " " +
            (FLAGS_channel >= 0 ? std::to_string(FLAGS_channel + i) : "all"))
@@ -204,7 +204,7 @@ void run() {
     TensorUtil(image).ShowImages("dream");
 
     auto &figure = cvplot::figure("loss");
-    figure.series("rescale").type(cvplot::Plot::Vertical).color(cvplot::Gray);
+    figure.series("rescale").type(cvplot::Vertical).color(cvplot::Gray);
     figure.show();
   }
 

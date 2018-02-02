@@ -5,37 +5,34 @@
 
 namespace caffe2 {
 
+std::string tos(int i) { return std::to_string(i); }
+
 class ResNetModel : public ModelUtil {
  public:
   ResNetModel(NetDef &initnet, NetDef &predictnet)
       : ModelUtil(initnet, predictnet) {}
 
   OperatorDef *AddConvOps(const std::string &input, const std::string &output,
-                          int in_size, int out_size, int stride, int padding,
-                          int kernel, bool affine, bool train) {
-    init.AddXavierFillOp({out_size, in_size, kernel, kernel}, output + "_w");
-    predict.AddInput(output + "_w");
-    if (affine) {
-      init.AddConstantFillOp({out_size}, output + "_b");
-      predict.AddInput(output + "_b");
-    }
-    predict.AddConvOp(input, output + "_w", affine ? output + "_b" : "", output,
-                      stride, padding, kernel);
-    init.AddXavierFillOp({out_size}, output + "_scale");
-    predict.AddInput(output + "_scale");
-    init.AddConstantFillOp({out_size}, output + "_bias");
-    predict.AddInput(output + "_bias");
-    init.AddXavierFillOp({out_size}, output + "_mean");
-    predict.AddInput(output + "_mean");
-    init.AddXavierFillOp({out_size}, output + "_var");
-    predict.AddInput(output + "_var");
+                          const std::string &infix, int in_size, int out_size,
+                          int stride, int padding, int kernel, bool train) {
+    auto b = output + (infix.size() ? "_conv_" + infix : "");
+    init.AddMSRAFillOp({out_size, in_size, kernel, kernel}, b + "_w");
+    predict.AddInput(b + "_w");
+    predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel);
+    auto p = output + "_spatbn" + (infix.size() ? "_" + infix : "");
+    init.AddConstantFillOp({out_size}, 1.f, p + "_s");
+    predict.AddInput(p + "_s");
+    init.AddConstantFillOp({out_size}, 0.f, p + "_b");
+    predict.AddInput(p + "_b");
+    init.AddConstantFillOp({out_size}, 0.f, p + "_rm");
+    predict.AddInput(p + "_rm");
+    init.AddConstantFillOp({out_size}, 1.f, p + "_riv");
+    predict.AddInput(p + "_riv");
     return predict.AddSpatialBNOp(
-        {output, output + "_scale", output + "_bias", output + "_mean",
-         output + "_var"},
-        train ? std::vector<std::string>({output, output + "_mean",
-                                          output + "_var", output + "_est_mean",
-                                          output + "_est_var"})
-              : std::vector<std::string>({output}),
+        {b, p + "_s", p + "_b", p + "_rm", p + "_riv"},
+        train ? std::vector<std::string>(
+                    {p, p + "_rm", p + "_riv", p + "_sm", p + "_siv"})
+              : std::vector<std::string>({p}),
         0.001, 0.1, !train);
   }
 
@@ -49,38 +46,58 @@ class ResNetModel : public ModelUtil {
   }
 
   OperatorDef *AddFirst(const std::string &prefix, const std::string &input,
-                        int in_size, int out_size, bool affine, bool train) {
+                        int out_size, int stride, bool train) {
     auto output = "conv" + prefix;
     std::string layer = input;
-    layer = AddConvOps(layer, output, in_size, out_size, 2, 3, 7, affine, train)
+    layer = AddConvOps(layer, output, "relu", 3, out_size, stride, 3, 7, train)
                 ->output(0);
-    layer = predict.AddReluOp(output, output)->output(0);
+    layer = predict.AddReluOp(layer, layer)->output(0);
     return predict.AddMaxPoolOp(layer, "pool" + prefix, 2, 0, 3);
   }
 
-  OperatorDef *AddRes(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size, int stride, bool train) {
-    auto output = "res" + prefix;
+  OperatorDef *AddRes2(const std::string &prefix, const std::string &input,
+                       int in_size, int out_size, int stride, bool train) {
+    auto output = "comp_" + prefix;
     std::string layer = input;
-    std::string l = input;
+    layer = AddConvOps(layer, output, "1", in_size, out_size, 1, 1, 3, train)
+                ->output(0);
+    predict.AddReluOp(layer, layer);
+    layer =
+        AddConvOps(layer, output, "2", out_size, out_size, stride, 1, 3, train)
+            ->output(0);
+    auto in = input, out = output + "_sum_3";
     if (in_size != out_size) {
-      l = AddConvOps(layer, output + "_branch1", in_size, out_size, stride, 0,
-                     1, false, train)
-              ->output(0);
+      in = AddConvOps(input, "shortcut_projection_" + prefix, "", in_size,
+                      out_size, stride, 0, 1, train)
+               ->output(0);
     }
-    layer = AddConvOps(layer, output + "_branch2a", in_size, out_size / 4,
-                       stride, 0, 1, false, train)
+    predict.AddSumOp({in, layer}, out);
+    return predict.AddReluOp(out, out);
+  }
+
+  OperatorDef *AddRes3(const std::string &prefix, const std::string &input,
+                       int in_size, int out_size, int stride, bool train) {
+    auto output = "comp_" + prefix;
+    std::string layer = input;
+    layer =
+        AddConvOps(layer, output, "1", in_size, out_size / 4, 1, 0, 1, train)
+            ->output(0);
+    predict.AddReluOp(layer, layer);
+    layer = AddConvOps(layer, output, "2", out_size / 4, out_size / 4, stride,
+                       1, 3, train)
                 ->output(0);
     predict.AddReluOp(layer, layer);
-    layer = AddConvOps(layer, output + "_branch2b", out_size / 4, out_size / 4,
-                       1, 1, 3, false, train)
-                ->output(0);
-    predict.AddReluOp(layer, layer);
-    layer = AddConvOps(layer, output + "_branch2c", out_size / 4, out_size, 1,
-                       0, 1, false, train)
-                ->output(0);
-    predict.AddSumOp({l, layer}, output);
-    return predict.AddReluOp(output, output);
+    layer =
+        AddConvOps(layer, output, "3", out_size / 4, out_size, 1, 0, 1, train)
+            ->output(0);
+    auto in = input, out = output + "_sum_3";
+    if (in_size != out_size) {
+      in = AddConvOps(input, "shortcut_projection_" + prefix, "", in_size,
+                      out_size, stride, 0, 1, train)
+               ->output(0);
+    }
+    predict.AddSumOp({in, layer}, out);
+    return predict.AddReluOp(out, out);
   }
 
   OperatorDef *AddTrain(const std::string &input) {
@@ -93,52 +110,61 @@ class ResNetModel : public ModelUtil {
   }
 
   OperatorDef *AddEnd(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size) {
+                      int in_size, int out_size, int stride) {
     std::string layer = input;
     layer =
-        predict.AddAveragePoolOp(layer, "pool" + prefix, 1, 0, 7)->output(0);
-    return AddFcOps(layer, "fc1000", in_size, out_size);
+        predict.AddAveragePoolOp(layer, "final_avg", stride, 0, 7)->output(0);
+    return AddFcOps(layer, "last_out_L1000", in_size, out_size);
+  }
+
+  OperatorDef *AddBlock2(int &n, const std::string &layer, int in_size,
+                         int out_size, int stride, int depth, bool train) {
+    auto op = AddRes2(tos(n++), layer, in_size, out_size, stride, train);
+    for (int i = 1; i < depth; i++) {
+      op = AddRes2(tos(n++), op->output(0), out_size, out_size, 1, train);
+    }
+    return op;
+  }
+
+  OperatorDef *AddBlock3(int &n, const std::string &layer, int in_size,
+                         int out_size, int stride, int depth, bool train) {
+    auto op = AddRes3(tos(n++), layer, in_size, out_size, stride, train);
+    for (int i = 1; i < depth; i++) {
+      op = AddRes3(tos(n++), op->output(0), out_size, out_size, 1, train);
+    }
+    return op;
   }
 
   void Add(int type, int out_size, bool train = false) {
     predict.SetName("ResNet" + std::to_string(type));
     auto input = "data";
+    auto n = 0;
 
     std::string layer = input;
     predict.AddInput(layer);
 
-    layer = AddFirst("1", layer, 3, 64, type == 50, train)->output(0);
-    layer = AddRes("2a", layer, 64, 256, 1, train)->output(0);
-    layer = AddRes("2b", layer, 256, 256, 1, train)->output(0);
-    layer = AddRes("2c", layer, 256, 256, 1, train)->output(0);
-    layer = AddRes("3a", layer, 256, 512, 2, train)->output(0);
-    if (type == 50) {
-      layer = AddRes("3b", layer, 512, 512, 1, train)->output(0);
-      layer = AddRes("3c", layer, 512, 512, 1, train)->output(0);
-      layer = AddRes("3d", layer, 512, 512, 1, train)->output(0);
+    // <silly>
+    auto depth_2 = std::min(3, type / 16 + 1);
+    auto depth_3 = 1 << ((type + 170) / 100);
+    auto depth_4 = (type - 2) / (type < 50 ? 2 : 3) - (2 * depth_2 + depth_3);
+    auto depth_5 = depth_2;
+    // </silly>
+
+    if (type < 50) {
+      layer = AddFirst("1", layer, 64, 2, train)->output(0);
+      layer = AddBlock2(n, layer, 64, 64, 1, depth_2, train)->output(0);
+      layer = AddBlock2(n, layer, 64, 128, 2, depth_3, train)->output(0);
+      layer = AddBlock2(n, layer, 128, 256, 2, depth_4, train)->output(0);
+      layer = AddBlock2(n, layer, 256, 512, 2, depth_5, train)->output(0);
+      layer = AddEnd(tos(n++), layer, 512, out_size, 1)->output(0);
     } else {
-      for (int i = 1; i <= (type - 60) / 12; i++) {
-        layer = AddRes("3b" + std::to_string(i), layer, 512, 512, 1, train)
-                    ->output(0);
-      }
+      layer = AddFirst("1", layer, 64, 2, train)->output(0);
+      layer = AddBlock3(n, layer, 64, 256, 1, depth_2, train)->output(0);
+      layer = AddBlock3(n, layer, 256, 512, 2, depth_3, train)->output(0);
+      layer = AddBlock3(n, layer, 512, 1024, 2, depth_4, train)->output(0);
+      layer = AddBlock3(n, layer, 1024, 2048, 2, depth_5, train)->output(0);
+      layer = AddEnd(tos(n++), layer, 2048, out_size, 1)->output(0);
     }
-    layer = AddRes("4a", layer, 512, 1024, 2, train)->output(0);
-    if (type == 50) {
-      layer = AddRes("4b", layer, 1024, 1024, 1, train)->output(0);
-      layer = AddRes("4c", layer, 1024, 1024, 1, train)->output(0);
-      layer = AddRes("4d", layer, 1024, 1024, 1, train)->output(0);
-      layer = AddRes("4e", layer, 1024, 1024, 1, train)->output(0);
-      layer = AddRes("4f", layer, 1024, 1024, 1, train)->output(0);
-    } else {
-      for (int i = 1; i <= (type - 10) / 4; i++) {
-        layer = AddRes("4b" + std::to_string(i), layer, 1024, 1024, 1, train)
-                    ->output(0);
-      }
-    }
-    layer = AddRes("5a", layer, 1024, 2048, 2, train)->output(0);
-    layer = AddRes("5b", layer, 2048, 2048, 1, train)->output(0);
-    layer = AddRes("5c", layer, 2048, 2048, 1, train)->output(0);
-    layer = AddEnd("5", layer, 2048, out_size)->output(0);
 
     if (train) {
       layer = AddTrain(layer)->output(0);
