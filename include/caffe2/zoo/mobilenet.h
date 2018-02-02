@@ -17,19 +17,19 @@ class MobileNetModel : public ModelUtil {
                           int stride, int padding, int kernel, bool group,
                           bool train) {
     auto b = output + (infix.size() ? "_conv_" + infix : "");
-    init.AddMSRAFillOp({out_size, (group ? 1 : in_size), kernel, kernel},
+	if(train) init.AddMSRAFillOp({out_size, (group ? 1 : in_size), kernel, kernel},
                        b + "_w");
     predict.AddInput(b + "_w");
     auto op = predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel,
                                 (group ? in_size : 0));
     auto p = output + "_spatbn" + (infix.size() ? "_" + infix : "");
-    init.AddConstantFillOp({out_size}, 1.f, p + "_s");
+    if(train) init.AddConstantFillOp({out_size}, 1.f, p + "_s");
     predict.AddInput(p + "_s");
-    init.AddConstantFillOp({out_size}, 0.f, p + "_b");
+    if(train) init.AddConstantFillOp({out_size}, 0.f, p + "_b");
     predict.AddInput(p + "_b");
-    init.AddConstantFillOp({out_size}, 0.f, p + "_rm");
+    if(train) init.AddConstantFillOp({out_size}, 0.f, p + "_rm");
     predict.AddInput(p + "_rm");
-    init.AddConstantFillOp({out_size}, 1.f, p + "_riv");
+    if(train) init.AddConstantFillOp({out_size}, 1.f, p + "_riv");
     predict.AddInput(p + "_riv");
     return predict.AddSpatialBNOp(
         {b, p + "_s", p + "_b", p + "_rm", p + "_riv"},
@@ -41,9 +41,9 @@ class MobileNetModel : public ModelUtil {
 
   OperatorDef *AddFcOps(const std::string &input, const std::string &output,
                         int in_size, int out_size, bool train) {
-    init.AddXavierFillOp({out_size, in_size}, output + "_w");
+    if(train) init.AddXavierFillOp({out_size, in_size}, output + "_w");
     predict.AddInput(output + "_w");
-    init.AddConstantFillOp({out_size}, output + "_b");
+    if(train) init.AddConstantFillOp({out_size}, output + "_b");
     predict.AddInput(output + "_b");
     return predict.AddFcOp(input, output + "_w", output + "_b", output, !train);
   }
