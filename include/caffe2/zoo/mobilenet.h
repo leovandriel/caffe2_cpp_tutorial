@@ -40,12 +40,12 @@ class MobileNetModel : public ModelUtil {
   }
 
   OperatorDef *AddFcOps(const std::string &input, const std::string &output,
-                        int in_size, int out_size) {
+                        int in_size, int out_size, bool train) {
     init.AddXavierFillOp({out_size, in_size}, output + "_w");
     predict.AddInput(output + "_w");
     init.AddConstantFillOp({out_size}, output + "_b");
     predict.AddInput(output + "_b");
-    return predict.AddFcOp(input, output + "_w", output + "_b", output);
+    return predict.AddFcOp(input, output + "_w", output + "_b", output, !train);
   }
 
   OperatorDef *AddFirst(const std::string &prefix, const std::string &input,
@@ -83,11 +83,11 @@ class MobileNetModel : public ModelUtil {
   }
 
   OperatorDef *AddEnd(const std::string &prefix, const std::string &input,
-                      int in_size, int out_size, int stride, float alpha) {
+                      int in_size, int out_size, int stride, float alpha, bool train) {
     std::string layer = input;
     layer =
         predict.AddAveragePoolOp(layer, "final_avg", stride, 0, 7)->output(0);
-    return AddFcOps(layer, "last_out", in_size * alpha, out_size);
+    return AddFcOps(layer, "last_out", in_size * alpha, out_size, train);
   }
 
   void Add(float alpha, int out_size, bool train = false) {
@@ -110,7 +110,7 @@ class MobileNetModel : public ModelUtil {
     }
     layer = AddFilter(tos2(n++), layer, 512, 1024, 2, alpha, train)->output(0);
     layer = AddFilter(tos2(n++), layer, 1024, 1024, 1, alpha, train)->output(0);
-    layer = AddEnd("", layer, 1024, out_size, 1, alpha)->output(0);
+    layer = AddEnd("", layer, 1024, out_size, 1, alpha, train)->output(0);
 
     if (train) {
       layer = AddTrain(layer)->output(0);
