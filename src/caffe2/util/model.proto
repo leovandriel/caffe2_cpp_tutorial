@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package caffe2;
+
+import "external.proto";
+
+message InputInfo {
+  repeated uint32 dims = 1;
+}
+
+message OutputInfo {
+  repeated string labels = 1;
+}
+
+message ModelMeta {
+  optional InputInfo input = 1;
+  optional OutputInfo output = 2;
+}
+
+message ModelDef {
+  optional ModelMeta meta = 1;
+  optional NetDef init = 2;
+  optional NetDef predict = 3;
+}
+
