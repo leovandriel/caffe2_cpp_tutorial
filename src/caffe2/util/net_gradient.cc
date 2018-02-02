@@ -60,6 +60,7 @@ const std::set<std::string> non_trainable_ops({
 	"Print",
 	"ShowWorst",
 	"Save",
+	"Load",
 });
 
 const std::map<std::string, std::string> custom_gradient({

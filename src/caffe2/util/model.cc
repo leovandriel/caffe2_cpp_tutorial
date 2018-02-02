@@ -578,6 +578,11 @@ void ModelUtil::AddSaveOp(const std::vector<std::string>& inputs,const std::stri
 	predict.AddSaveOp(inputs,type,path);
 }
 
+void ModelUtil::AddLoadOp(const std::vector<std::string>& outputs,const std::string& type,
+						const std::string & path) {
+	predict.AddLoadOp(outputs,type,path);
+}
+
 void ModelUtil::Split(const std::string &layer, ModelUtil &firstModel,
                       ModelUtil &secondModel, bool force_cpu, bool inclusive) {
   std::set<std::string> static_inputs = predict.CollectLayers(layer);

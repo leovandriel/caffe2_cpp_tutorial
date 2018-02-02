@@ -149,6 +149,8 @@ class ModelUtil {
   void AddStopGradientOp(const std::string& param);
   void AddSaveOp(const std::vector<std::string>& inputs,const std::string& type,
 						const std::string & path);
+  void AddLoadOp(const std::vector<std::string>& outputs,const std::string& type,
+						const std::string & path);
 
   std::vector<std::string> Params() { return predict.CollectParams(); }
 
