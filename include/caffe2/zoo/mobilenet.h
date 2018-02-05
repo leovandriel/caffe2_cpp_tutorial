@@ -45,7 +45,7 @@ class MobileNetModel : public ModelUtil {
     predict.AddInput(output + "_w");
     if(train) init.AddConstantFillOp({out_size}, output + "_b");
     predict.AddInput(output + "_b");
-    return predict.AddFcOp(input, output + "_w", output + "_b", output, !train);
+    return predict.AddFcOp(input, output + "_w", output + "_b", output);
   }
 
   OperatorDef *AddFirst(const std::string &prefix, const std::string &input,
