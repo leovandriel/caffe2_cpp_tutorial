@@ -5,8 +5,6 @@
 
 namespace caffe2 {
 
-std::string tos2(int i) { return std::to_string(i); }
-
 class MobileNetModel : public ModelUtil {
  public:
   MobileNetModel(NetDef &initnet, NetDef &predictnet)
