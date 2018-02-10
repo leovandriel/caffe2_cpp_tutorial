@@ -97,17 +97,17 @@ class MobileNetModel : public ModelUtil {
     predict.AddInput(layer);
 
     layer = AddFirst("1", layer, 32, 2, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 32, 64, 1, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 64, 128, 2, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 128, 128, 1, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 128, 256, 2, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 256, 256, 1, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 256, 512, 2, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 32, 64, 1, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 64, 128, 2, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 128, 128, 1, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 128, 256, 2, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 256, 256, 1, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 256, 512, 2, alpha, train)->output(0);
     for (auto i = 0; i < 5; i++) {  // 6 - 10
-      layer = AddFilter(tos2(n++), layer, 512, 512, 1, alpha, train)->output(0);
+      layer = AddFilter(std::to_string(n++), layer, 512, 512, 1, alpha, train)->output(0);
     }
-    layer = AddFilter(tos2(n++), layer, 512, 1024, 2, alpha, train)->output(0);
-    layer = AddFilter(tos2(n++), layer, 1024, 1024, 1, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 512, 1024, 2, alpha, train)->output(0);
+    layer = AddFilter(std::to_string(n++), layer, 1024, 1024, 1, alpha, train)->output(0);
     layer = AddEnd("", layer, 1024, out_size, 1, alpha, train)->output(0);
 
     if (train) {
