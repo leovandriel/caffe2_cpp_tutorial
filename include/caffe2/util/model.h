@@ -135,6 +135,7 @@ class ModelUtil {
   void AddReduceTailSumOp(const std::string& input, const std::string& sum);
   void AddPowOp(const std::string & input, const std::string & output, float exponent);
   void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
+  void AddUpsampleNearestOp(const std::string & input,const std::string & output, float scale = 2);
   void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
 								const std::vector<std::string>& outputs,int axis = 1);
   void AddAveragedLossOp(const std::string& input,

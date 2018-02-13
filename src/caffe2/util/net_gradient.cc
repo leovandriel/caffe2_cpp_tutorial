@@ -47,6 +47,7 @@ const std::set<std::string> trainable_ops({
     "Sum",
 	"Tanh",
 	"Transpose",
+	"UpsampleNearest",
 });
 
 const std::set<std::string> non_trainable_ops({
