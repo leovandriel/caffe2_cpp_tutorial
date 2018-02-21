@@ -497,6 +497,11 @@ void ModelUtil::AddAddOp(const std::vector<std::string>& inputs,
 	predict.AddAddOp(inputs,output,broadcast,axis);
 }
 
+void ModelUtil::AddModOp(const std::string& input,
+						const std::string& output, int divisor) {
+	predict.AddModOp(input,output,divisor);
+}
+
 void ModelUtil::AddScaleOp(const std::string& input, const std::string& output,
                           float scale) {
 	predict.AddScaleOp(input,output,scale);

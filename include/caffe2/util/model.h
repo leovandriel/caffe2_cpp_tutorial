@@ -123,6 +123,8 @@ class ModelUtil {
   void AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);
+  void AddModOp(const std::string& input,
+						const std::string& output, int divisor);
   void AddScaleOp(const std::string& input, const std::string& output,
                           float scale);
   void AddWeightedSumOp(const std::vector<std::string>& inputs,

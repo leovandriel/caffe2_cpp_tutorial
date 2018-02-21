@@ -497,6 +497,15 @@ OperatorDef* NetUtil::AddAddOp(const std::vector<std::string>& inputs,
   return op;
 }
 
+OperatorDef* NetUtil::AddModOp(const std::string& input,
+						const std::string& output, int divisor) {
+  auto op = AddOp("Mod",{input},{output});
+  net_add_arg(*op, "divisor", divisor);
+  //can only run on CPU now
+  op->mutable_device_option()->set_device_type(CPU);
+  return op;
+}
+
 OperatorDef* NetUtil::AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output) {
 	auto op = AddOp("SquaredL2Distance",inputs,{output});

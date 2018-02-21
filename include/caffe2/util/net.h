@@ -123,6 +123,8 @@ class NetUtil {
   OperatorDef* AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);
+  OperatorDef* AddModOp(const std::string& input,
+						const std::string& output, int divisor);
   OperatorDef* AddSquaredL2DistanceOp(const std::vector<std::string> & inputs,
 						const std::string& output);
   OperatorDef* AddL1DistanceOp(const std::vector<std::string> & inputs,
