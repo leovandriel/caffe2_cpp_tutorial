@@ -17,6 +17,7 @@ const std::set<std::string> trainable_ops({
 	"CopyCPUToGPU",
 	"CopyGPUToCPU",
     "Diagonal",
+	"Div",
     "Dropout",
     "EnsureCPUOutput",
     "FC",

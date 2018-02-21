@@ -120,6 +120,9 @@ class NetUtil {
   OperatorDef* AddMulOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);
+  OperatorDef* AddDivOp(const std::vector<std::string>& inputs,
+						const std::string& output, int broadcast = 1,
+						int axis = 1);
   OperatorDef* AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);

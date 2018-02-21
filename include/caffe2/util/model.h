@@ -120,6 +120,9 @@ class ModelUtil {
   void AddMulOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);
+  void AddDivOp(const std::vector<std::string>& inputs,
+						const std::string& output, int broadcast = 1,
+						int axis = 1);
   void AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast = 1,
                         int axis = 1);

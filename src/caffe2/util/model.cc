@@ -491,6 +491,12 @@ void ModelUtil::AddMulOp(const std::vector<std::string>& inputs,
 	predict.AddMulOp(inputs,output,broadcast,axis);
 }
 
+void ModelUtil::AddDivOp(const std::vector<std::string>& inputs,
+						const std::string& output, int broadcast,
+						int axis) {
+	predict.AddDivOp(inputs,output,broadcast,axis);
+}
+
 void ModelUtil::AddAddOp(const std::vector<std::string>& inputs,
                         const std::string& output, int broadcast,
                         int axis) {

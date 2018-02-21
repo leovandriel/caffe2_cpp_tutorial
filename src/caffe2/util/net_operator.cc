@@ -488,6 +488,16 @@ OperatorDef* NetUtil::AddMulOp(const std::vector<std::string>& inputs,
   return op;
 }
 
+OperatorDef* NetUtil::AddDivOp(const std::vector<std::string>& inputs,
+						const std::string& output, int broadcast,
+						int axis) {
+  CAFFE_ENFORCE(2 == inputs.size());
+  auto op = AddOp("Div", inputs, {output});
+  net_add_arg(*op, "broadcast", broadcast);
+  if(broadcast) net_add_arg(*op, "axis", axis);
+  return op;
+}
+
 OperatorDef* NetUtil::AddAddOp(const std::vector<std::string>& inputs,
                                const std::string& output, int broadcast,
                                int axis) {
