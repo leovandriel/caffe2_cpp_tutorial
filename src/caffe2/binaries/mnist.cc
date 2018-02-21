@@ -109,7 +109,7 @@ void AddTrainingOperators(ModelUtil &model) {
 
   // >>> ONE = model.param_init_net.ConstantFill([], "ONE", shape=[1],
   // value=1.0)
-  model.init.AddConstantFillOp({1}, 1.f, "ONE");
+  model.init.AddConstantFloatFillOp({1}, 1.f, "ONE");
   model.predict.AddInput("ONE");
 
   // >>> for param in model.params:

@@ -21,13 +21,13 @@ class MobileNetModel : public ModelUtil {
     auto op = predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel,
                                 (group ? in_size : 0));
     auto p = output + "_spatbn" + (infix.size() ? "_" + infix : "");
-    if(train) init.AddConstantFillOp({out_size}, 1.f, p + "_s");
+    if(train) init.AddConstantFloatFillOp({out_size}, 1.f, p + "_s");
     predict.AddInput(p + "_s");
-    if(train) init.AddConstantFillOp({out_size}, 0.f, p + "_b");
+    if(train) init.AddConstantFloatFillOp({out_size}, 0.f, p + "_b");
     predict.AddInput(p + "_b");
-    if(train) init.AddConstantFillOp({out_size}, 0.f, p + "_rm");
+    if(train) init.AddConstantFloatFillOp({out_size}, 0.f, p + "_rm");
     predict.AddInput(p + "_rm");
-    if(train) init.AddConstantFillOp({out_size}, 1.f, p + "_riv");
+    if(train) init.AddConstantFloatFillOp({out_size}, 1.f, p + "_riv");
     predict.AddInput(p + "_riv");
     return predict.AddSpatialBNOp(
         {b, p + "_s", p + "_b", p + "_rm", p + "_riv"},

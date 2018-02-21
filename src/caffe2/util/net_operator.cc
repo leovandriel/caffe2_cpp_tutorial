@@ -185,8 +185,8 @@ OperatorDef* NetUtil::AddSummarizeOp(const std::string& param, bool to_file) {
 // Initialization
 
 OperatorDef* NetUtil::AddConstantFillOp(const std::vector<int>& shape,
-                                        const std::string& param) {
-  auto op = AddOp("ConstantFill", {}, {param});
+                                        const std::string& output) {
+  auto op = AddOp("ConstantFill", {}, {output});
   net_add_arg(*op, "shape", shape);
   return op;
 }
@@ -223,18 +223,27 @@ OperatorDef * NetUtil::AddGaussianFillOp(const std::vector<int>& shape, float me
 	return op;
 }
 
-OperatorDef* NetUtil::AddConstantFillOp(const std::vector<int>& shape,
-                                        float value, const std::string& param) {
-  auto op = AddOp("ConstantFill", {}, {param});
+OperatorDef* NetUtil::AddConstantFloatFillOp(const std::vector<int>& shape,
+                                        float value, const std::string& output) {
+  auto op = AddOp("ConstantFill", {}, {output});
   net_add_arg(*op, "shape", shape);
   net_add_arg(*op, "value", value);
+  net_add_arg(*op, "dtype", TensorProto_DataType_FLOAT);
   return op;
 }
 
-OperatorDef* NetUtil::AddConstantFillOp(const std::vector<int>& shape,
-                                        int64_t value,
-                                        const std::string& param) {
-  auto op = AddOp("ConstantFill", {}, {param});
+OperatorDef* NetUtil::AddConstantIntFillOp(const std::vector<int>& shape, int value,
+								const std::string& output) {
+  auto op = AddOp("ConstantFill", {}, {output});
+  net_add_arg(*op, "shape", shape);
+  net_add_arg(*op, "value", value);
+  net_add_arg(*op, "dtype", TensorProto_DataType_INT32);
+  return op;
+}
+
+OperatorDef* NetUtil::AddConstantLongFillOp(const std::vector<int>& shape,
+                                        int64_t value, const std::string& output) {
+  auto op = AddOp("ConstantFill", {}, {output});
   net_add_arg(*op, "shape", shape);
   net_add_arg(*op, "value", (int)value);
   net_add_arg(*op, "dtype", TensorProto_DataType_INT64);

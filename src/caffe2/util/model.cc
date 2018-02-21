@@ -83,7 +83,7 @@ void ModelUtil::AddXentOps(const std::string &output) {
 }
 
 void ModelUtil::AddIterOps() {
-  init.AddConstantFillOp({1}, (int64_t)0, iter_name)
+  init.AddConstantLongFillOp({1}, 0, iter_name)
       ->mutable_device_option()
       ->set_device_type(CPU);
   predict.AddInput(iter_name);
@@ -91,7 +91,7 @@ void ModelUtil::AddIterOps() {
 }
 
 void ModelUtil::AddSgdOps() {
-  init.AddConstantFillOp({1}, 1.f, one_name);
+  init.AddConstantFloatFillOp({1}, 1.f, one_name);
   predict.AddInput(one_name);
   for (auto &param : predict.CollectParams()) {
     predict.AddWeightedSumOp(
@@ -100,7 +100,7 @@ void ModelUtil::AddSgdOps() {
 }
 
 void ModelUtil::AddSgdOps(ModelUtil & model) {
-  model.init.AddConstantFillOp({1}, 1.f, one_name);
+  model.init.AddConstantFloatFillOp({1}, 1.f, one_name);
   model.predict.AddInput(one_name);
   for (auto &param : predict.CollectParams()) {
     model.predict.AddWeightedSumOp(
@@ -114,7 +114,7 @@ void ModelUtil::AddMomentumOps() {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
     auto size = sizes[param];
-    init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    init.AddConstantFloatFillOp({size}, 0.f, param + moment_suffix);
     predict.AddInput(param + moment_suffix);
     predict.AddMomentumSgdOp(param, param + moment_suffix,
                              param + gradient_suffix, lr_name);
@@ -125,7 +125,7 @@ void ModelUtil::AddMomentumOps(ModelUtil & model) {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
     auto size = sizes[param];
-    model.init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    model.init.AddConstantFloatFillOp({size}, 0.f, param + moment_suffix);
     model.predict.AddInput(param + moment_suffix);
     model.predict.AddMomentumSgdOp(param, param + moment_suffix,
                              param + gradient_suffix, lr_name);
@@ -138,7 +138,7 @@ void ModelUtil::AddAdagradOps() {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
     auto size = sizes[param];
-    init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    init.AddConstantFloatFillOp({size}, 0.f, param + moment_suffix);
     predict.AddInput(param + moment_suffix);
     predict.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix,
                          lr_name);
@@ -149,7 +149,7 @@ void ModelUtil::AddAdagradOps(ModelUtil & model) {
   auto sizes = init.CollectParamSizes();
   for (auto &param : predict.CollectParams()) {
     auto size = sizes[param];
-    init.AddConstantFillOp({size}, 0.f, param + moment_suffix);
+    init.AddConstantFloatFillOp({size}, 0.f, param + moment_suffix);
     model.predict.AddInput(param + moment_suffix);
     model.predict.AddAdagradOp(param, param + moment_suffix, param + gradient_suffix,
                          lr_name);
@@ -166,7 +166,7 @@ void ModelUtil::AddAdamOps() {
     auto i = 0;
     for (auto &moment : moments) {
       moment = param + moment_suffix + "_" + std::to_string(++i);
-      init.AddConstantFillOp({size}, 0.f, moment);
+      init.AddConstantFloatFillOp({size}, 0.f, moment);
       predict.AddInput(moment);
     }
     predict.AddAdamOp(param, moments, param + gradient_suffix, lr_name,
@@ -182,7 +182,7 @@ void ModelUtil::AddAdamOps(ModelUtil & model) {
 		auto i = 0;
 		for (auto &moment : moments) {
 			moment = param + moment_suffix + "_" + std::to_string(++i);
-			model.init.AddConstantFillOp({size}, 0.f, moment);
+			model.init.AddConstantFloatFillOp({size}, 0.f, moment);
 			model.predict.AddInput(moment);
 		}
 		model.predict.AddAdamOp(param, moments, param + gradient_suffix, lr_name,
@@ -198,8 +198,8 @@ void ModelUtil::AddRmsPropOps() {
     auto size = sizes[param];
     auto moment_name = param + moment_suffix;
     auto meansq_name = param + meansq_suffix;
-    init.AddConstantFillOp({size}, 0.f, moment_name);
-    init.AddConstantFillOp({size}, 0.f, meansq_name);
+    init.AddConstantFloatFillOp({size}, 0.f, moment_name);
+    init.AddConstantFloatFillOp({size}, 0.f, meansq_name);
     predict.AddInput(moment_name);
     predict.AddInput(meansq_name);
     predict.AddRmsPropOp(param + gradient_suffix, meansq_name, moment_name,
@@ -214,8 +214,8 @@ void ModelUtil::AddRmsPropOps(ModelUtil & model) {
     auto size = sizes[param];
     auto moment_name = param + moment_suffix;
     auto meansq_name = param + meansq_suffix;
-    init.AddConstantFillOp({size}, 0.f, moment_name);
-    init.AddConstantFillOp({size}, 0.f, meansq_name);
+    init.AddConstantFloatFillOp({size}, 0.f, moment_name);
+    init.AddConstantFloatFillOp({size}, 0.f, meansq_name);
     model.predict.AddInput(moment_name);
     model.predict.AddInput(meansq_name);
     model.predict.AddRmsPropOp(param + gradient_suffix, meansq_name, moment_name,
@@ -317,10 +317,10 @@ void ModelUtil::AddConvTransposeOps(const std::string &input, const std::string 
  void ModelUtil::AddSpatialBNOps(const std::string & input, const std::string &output,
 				int size, float epsilon, float momentum, bool test) {
 	if(!test) {
-		init.AddConstantFillOp({size},1.0f, output + "_scale");
-		init.AddConstantFillOp({size},0.0f, output + "_bias");
-		init.AddConstantFillOp({size},0.0f, output + "_mean");
-		init.AddConstantFillOp({size},1.0f, output + "_var");
+		init.AddConstantFloatFillOp({size},1.0f, output + "_scale");
+		init.AddConstantFloatFillOp({size},0.0f, output + "_bias");
+		init.AddConstantFloatFillOp({size},0.0f, output + "_mean");
+		init.AddConstantFloatFillOp({size},1.0f, output + "_var");
 	}
 	predict.AddInput(output + "_scale");
 	predict.AddInput(output + "_bias");
@@ -355,8 +355,8 @@ void ModelUtil::AddGradientOps(const std::string & loss, ModelUtil & model) {
 }
  
 void ModelUtil::AddConstantFillOp(const std::vector<int>& shape,
-                                 const std::string& param) {
-	predict.AddConstantFillOp(shape,param);
+                                 const std::string& output) {
+	predict.AddConstantFillOp(shape,output);
 }
 
 void ModelUtil::AddXavierFillOp(const std::vector<int>& shape,
@@ -374,14 +374,19 @@ void ModelUtil::AddGaussianFillOp(const std::vector<int>& shape, float mean,
 	predict.AddGaussianFillOp(shape,mean,std,param);
 }
 
-void ModelUtil::AddConstantFillOp(const std::vector<int>& shape, float value,
-                                 const std::string& param) {
-	predict.AddConstantFillOp(shape,value,param);
+void ModelUtil::AddConstantFloatFillOp(const std::vector<int>& shape, float value,
+                                 const std::string& output) {
+	predict.AddConstantFloatFillOp(shape,value,output);
 }
 
-void ModelUtil::AddConstantFillOp(const std::vector<int>& shape, int64_t value,
-                                 const std::string& param) {
-	predict.AddConstantFillOp(shape,value,param);
+void ModelUtil::AddConstantIntFillOp(const std::vector<int>& shape, int value,
+								const std::string& output) {
+	predict.AddConstantIntFillOp(shape,value,output);
+}
+
+void ModelUtil::AddConstantLongFillOp(const std::vector<int>& shape, int64_t value,
+                                 const std::string& output) {
+	predict.AddConstantLongFillOp(shape,value,output);
 }
 
 void ModelUtil::AddConstantFillWithOp(float value, const std::string& input,

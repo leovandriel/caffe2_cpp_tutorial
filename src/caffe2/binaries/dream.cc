@@ -60,7 +60,7 @@ void AddNaive(ModelUtil &dream, NetUtil &display, int size, int colors) {
                                  input + "_grad", true);
 
   // apply gradient to input data
-  dream.init.AddConstantFillOp({1}, 1.f, "one");
+  dream.init.AddConstantFloatFillOp({1}, 1.f, "one");
   dream.predict.AddInput("one");
   dream.predict.AddWeightedSumOp({input, "one", input + "_grad", "one"}, input);
 

@@ -20,13 +20,13 @@ class ResNetModel : public ModelUtil {
     predict.AddInput(b + "_w");
     predict.AddConvOp(input, b + "_w", "", b, stride, padding, kernel);
     auto p = output + "_spatbn" + (infix.size() ? "_" + infix : "");
-    init.AddConstantFillOp({out_size}, 1.f, p + "_s");
+    init.AddConstantFloatFillOp({out_size}, 1.f, p + "_s");
     predict.AddInput(p + "_s");
-    init.AddConstantFillOp({out_size}, 0.f, p + "_b");
+    init.AddConstantFloatFillOp({out_size}, 0.f, p + "_b");
     predict.AddInput(p + "_b");
-    init.AddConstantFillOp({out_size}, 0.f, p + "_rm");
+    init.AddConstantFloatFillOp({out_size}, 0.f, p + "_rm");
     predict.AddInput(p + "_rm");
-    init.AddConstantFillOp({out_size}, 1.f, p + "_riv");
+    init.AddConstantFloatFillOp({out_size}, 1.f, p + "_riv");
     predict.AddInput(p + "_riv");
     return predict.AddSpatialBNOp(
         {b, p + "_s", p + "_b", p + "_rm", p + "_riv"},

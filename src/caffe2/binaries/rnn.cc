@@ -53,7 +53,7 @@ void AddSGD(ModelUtil &model, float base_learning_rate,
   model.predict.AddAtomicIterOp("iteration_mutex", "optimizer_iteration")
       ->mutable_device_option()
       ->set_device_type(CPU);
-  model.init.AddConstantFillOp({1}, (int64_t)0, "optimizer_iteration")
+  model.init.AddConstantLongFillOp({1}, 0, "optimizer_iteration")
       ->mutable_device_option()
       ->set_device_type(CPU);
   model.init.AddCreateMutexOp("iteration_mutex")
@@ -61,7 +61,7 @@ void AddSGD(ModelUtil &model, float base_learning_rate,
       ->set_device_type(CPU);
   model.predict.AddInput("iteration_mutex");
   model.predict.AddInput("optimizer_iteration");
-  model.init.AddConstantFillOp({1}, 1.f, "ONE");
+  model.init.AddConstantFloatFillOp({1}, 1.f, "ONE");
   model.predict.AddInput("ONE");
   model.predict.AddLearningRateOp("optimizer_iteration", "lr",
                                   base_learning_rate, gamma);

@@ -62,17 +62,19 @@ class ModelUtil {
   void AddGradientOps(const std::string & loss, ModelUtil & model);
   //operators without initializable parameters
   void AddConstantFillOp(const std::vector<int>& shape,
-                                 const std::string& param);
+                                 const std::string& output);
   void AddXavierFillOp(const std::vector<int>& shape,
                                const std::string& param);
   void AddUniformFillOp(const std::vector<int>& shape, float min,
                                 float max, const std::string& param);
   void AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param);
-  void AddConstantFillOp(const std::vector<int>& shape, float value,
-                                 const std::string& param);
-  void AddConstantFillOp(const std::vector<int>& shape, int64_t value,
-                                 const std::string& param);
+  void AddConstantFloatFillOp(const std::vector<int>& shape, float value,
+                                 const std::string& output);
+  void AddConstantIntFillOp(const std::vector<int>& shape, int value,
+								const std::string& output);
+  void AddConstantLongFillOp(const std::vector<int>& shape, int64_t value,
+                                 const std::string& output);
   void AddConstantFillWithOp(float value, const std::string& input,
                                      const std::string& output);
   void AddVectorFillOp(const std::vector<int>& values,

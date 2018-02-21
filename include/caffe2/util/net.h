@@ -45,7 +45,7 @@ class NetUtil {
   OperatorDef* AddSummarizeOp(const std::string& param, bool to_file = false);
 
   OperatorDef* AddConstantFillOp(const std::vector<int>& shape,
-                                 const std::string& param);
+                                 const std::string& output);
   OperatorDef* AddXavierFillOp(const std::vector<int>& shape,
                                const std::string& param);
   OperatorDef* AddMSRAFillOp(const std::vector<int>& shape,
@@ -54,10 +54,12 @@ class NetUtil {
                                 float max, const std::string& param);
   OperatorDef * AddGaussianFillOp(const std::vector<int>& shape, float mean,
 										float std, const std::string& param);
-  OperatorDef* AddConstantFillOp(const std::vector<int>& shape, float value,
-                                 const std::string& param);
-  OperatorDef* AddConstantFillOp(const std::vector<int>& shape, int64_t value,
-                                 const std::string& param);
+  OperatorDef* AddConstantFloatFillOp(const std::vector<int>& shape, float value,
+                                 const std::string& output);
+  OperatorDef* AddConstantIntFillOp(const std::vector<int>& shape, int value,
+								const std::string& output);
+  OperatorDef* AddConstantLongFillOp(const std::vector<int>& shape, int64_t value,
+                                 const std::string& output);
   OperatorDef* AddConstantFillWithOp(float value, const std::string& input,
                                      const std::string& output);
   OperatorDef* AddVectorFillOp(const std::vector<int>& values,

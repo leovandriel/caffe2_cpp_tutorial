@@ -46,17 +46,17 @@ void run() {
   }
 
   // >>> ONE = init_net.ConstantFill([], "ONE", shape=[1], value=1.)
-  model_helper.init.AddConstantFillOp({1},1.0f,"ONE");
+  model_helper.init.AddConstantFloatFillOp({1},1.0f,"ONE");
 
   // >>> ITER = init_net.ConstantFill([], "ITER", shape=[1], value=0,
   // dtype=core.DataType.INT32)
-  model_helper.init.AddConstantFillOp({1},(int64_t)0,"ITER");
+  model_helper.init.AddConstantLongFillOp({1},0,"ITER");
 
   // >>> W = init_net.UniformFill([], "W", shape=[1, 2], min=-1., max=1.)
   model_helper.init.AddUniformFillOp({1,2},-1,1,"W");
 
   // >>> B = init_net.ConstantFill([], "B", shape=[1], value=0.0)
-  model_helper.init.AddConstantFillOp({1},0.0f,"B");
+  model_helper.init.AddConstantFloatFillOp({1},0.0f,"B");
 
   // print(initModel);
   model_helper.init.Print();
