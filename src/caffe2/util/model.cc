@@ -415,6 +415,11 @@ void ModelUtil::AddTransposeOp(const std::string& input, const std::string& outp
 	predict.AddTransposeOp(input,output,axes);
 }
 
+void ModelUtil::AddFlattenOp(const std::string& input, const std::string& output,
+							int axis) {
+	predict.AddFlattenOp(input,output,axis);
+}
+
 void ModelUtil::AddReluOp(const std::string& input, const std::string& output) {
 	predict.AddReluOp(input,output);
 }

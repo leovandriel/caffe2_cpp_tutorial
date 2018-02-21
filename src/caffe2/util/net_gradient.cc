@@ -21,6 +21,7 @@ const std::set<std::string> trainable_ops({
     "Dropout",
     "EnsureCPUOutput",
     "FC",
+	"Flatten",
     "LabelCrossEntropy",
     "LRN",
     "MaxPool",

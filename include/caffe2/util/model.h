@@ -86,6 +86,8 @@ class ModelUtil {
                                     const std::string& name);
   void AddTransposeOp(const std::string& input, const std::string& output,
 							  const std::vector<int>& axes);
+  void AddFlattenOp(const std::string& input, const std::string& output,
+							int axis = 1);
   void AddReluOp(const std::string& input, const std::string& output);
   void AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha);

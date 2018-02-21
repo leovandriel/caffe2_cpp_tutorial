@@ -297,6 +297,13 @@ OperatorDef* NetUtil::AddTransposeOp(const std::string& input, const std::string
 	return op;
 }
 
+OperatorDef* NetUtil::AddFlattenOp(const std::string& input, const std::string& output,
+							int axis) {
+	auto op = AddOp("Flatten",{input},{output});
+	net_add_arg(*op, "axis", axis);
+	return op;
+}
+
 // Prediction
 
 OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
