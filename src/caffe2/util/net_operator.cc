@@ -382,6 +382,22 @@ OperatorDef* NetUtil::AddMaxPoolOp(const std::string& input,
   return op;
 }
 
+OperatorDef* NetUtil::AddMaxPoolWithIndexOp(const std::string& input, const std::string& output, const std::string& index,
+                            std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels,
+                            const std::string& order) {
+  CAFFE_ENFORCE(strides.size() == kernels.size());
+  CAFFE_ENFORCE(kernels.size() * 2 == pads.size());
+  auto op = AddOp("MaxPoolWithIndex", {input},{output,index});
+  auto arg = net_add_arg(*op, "strides");
+  for(auto stride : strides) arg->add_ints(stride);
+  arg = net_add_arg(*op, "pads");
+  for(auto pad : pads) arg->add_ints(pad);
+  arg = net_add_arg(*op, "kernels");
+  for(auto kernel : kernels) arg->add_ints(kernel);
+  net_add_arg(*op, "order", order);
+  return op;
+}
+
 OperatorDef* NetUtil::AddAveragePoolOp(const std::string& input,
                                        const std::string& output, int stride,
                                        int padding, int kernel,

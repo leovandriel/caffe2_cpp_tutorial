@@ -91,6 +91,9 @@ class NetUtil {
   OperatorDef* AddMaxPoolOp(const std::string& input, const std::string& output,
                             int stride, int padding, int kernel,
                             const std::string& order = "NCHW");
+  OperatorDef* AddMaxPoolWithIndexOp(const std::string& input, const std::string& output, const std::string& index,
+                            std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels,
+                            const std::string& order = "NCHW");
   OperatorDef* AddAveragePoolOp(const std::string& input,
                                 const std::string& output, int stride,
                                 int padding, int kernel,
