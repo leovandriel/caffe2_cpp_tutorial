@@ -41,6 +41,9 @@ class ModelUtil {
                                         const std::string& data,
                                         const std::string& label,
                                         int batch_size);
+  void AddTensorProtosDbInputOp(const std::string& reader,
+										const std::vector<std::string>& outputs,
+										int batch_size);
 	//operators with initializable parameters
   void AddFcOps(const std::string &input, const std::string &output,
                 int in_size, int out_size, bool test = false);

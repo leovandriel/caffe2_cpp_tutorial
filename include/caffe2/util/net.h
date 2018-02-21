@@ -24,6 +24,9 @@ class NetUtil {
                                         const std::string& data,
                                         const std::string& label,
                                         int batch_size);
+  OperatorDef* AddTensorProtosDbInputOp(const std::string& reader,
+										const std::vector<std::string>& outputs,
+										int batch_size);
   OperatorDef* AddCoutOp(const std::vector<std::string>& params);
   OperatorDef* AddZeroOneOp(const std::string& pred, const std::string& label);
   OperatorDef* AddShowWorstOp(const std::string& pred, const std::string& label,

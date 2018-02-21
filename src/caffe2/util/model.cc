@@ -71,6 +71,12 @@ void ModelUtil::AddTensorProtosDbInputOp(const std::string& reader,
 	predict.AddTensorProtosDbInputOp(reader,data,label,batch_size);
 }
 
+void ModelUtil::AddTensorProtosDbInputOp(const std::string& reader,
+										const std::vector<std::string>& outputs,
+										int batch_size) {
+	predict.AddTensorProtosDbInputOp(reader,outputs,batch_size);
+}
+
 void ModelUtil::AddTestOps(const std::string &output) {
   AddXentOps(output);
   predict.AddInput(iter_name);

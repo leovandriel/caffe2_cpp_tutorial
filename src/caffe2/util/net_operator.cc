@@ -97,6 +97,14 @@ OperatorDef* NetUtil::AddTensorProtosDbInputOp(const std::string& reader,
   return op;
 }
 
+OperatorDef* NetUtil::AddTensorProtosDbInputOp(const std::string& reader,
+										const std::vector<std::string>& outputs,
+										int batch_size) {
+  auto op = AddOp("TensorProtoDBInput", {reader}, outputs);
+  net_add_arg(*op, "batch_size", batch_size);
+  return op;
+}
+
 OperatorDef* NetUtil::AddCoutOp(const std::vector<std::string>& params) {
   return AddOp("Cout", params, {});
 }
