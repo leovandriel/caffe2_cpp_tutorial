@@ -517,6 +517,7 @@ OperatorDef* NetUtil::AddUpsampleNearestOp(const std::string & input,const std::
 {
 	auto op = AddOp("UpsampleNearest",{input},{output});
 	net_add_arg(*op, "scale", scale);
+	op->mutable_device_option()->set_device_type(CUDA);
 	return op;
 }
 
