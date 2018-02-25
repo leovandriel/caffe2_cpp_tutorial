@@ -7,4 +7,4 @@ namespace protobuf_external_2eproto {
 
 namespace caffe2 {
   void protobuf_AddDesc_external_2eproto() {}
-}
+} 
