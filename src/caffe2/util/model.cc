@@ -265,7 +265,7 @@ void ModelUtil::AddOptimizerOps(std::string &optimizer,ModelUtil & model) {
 }
 
 void ModelUtil::AddFcOps(const std::string &input, const std::string &output,
-                         int in_size, int out_size, bool test) {
+                         int in_size, int out_size, int axis, bool test) {
   if (!test) {
     init.AddXavierFillOp({out_size, in_size}, output + "_w");
     init.AddConstantFillOp({out_size}, output + "_b");
@@ -427,6 +427,31 @@ void ModelUtil::AddReluOp(const std::string& input, const std::string& output) {
 void ModelUtil::AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha) {
 	predict.AddLeakyReluOp(input,output,alpha);
+}
+
+void ModelUtil::AddLSTMOps(
+	                                 const std::string& input,
+                                     const std::string& scope,
+                                     const std::string& seq_lengths,
+                                     const std::string& hidden_init,
+                                     const std::string& cell_init,
+                                     const std::string& hidden_state,
+                                     const std::string& cell_state,
+						             int in_size,
+				                     int hidden_size,
+                                     bool force_cpu) {
+	//calculate inputs for 4 gates of LSTM
+	AddFcOps(input,scope + "/i2h",in_size,4 * hidden_size);
+	//add 4 gates for LSTM
+	init.AddXavierFillOp({4 * hidden_size,hidden_size}, scope + "/gates_t_w");
+	init.AddConstantFillOp({4 * hidden_size}, scope + "/gates_t_b");
+	init.AddXavierFillOp({hidden_size},scope + "/" + hidden_init);
+	init.AddXavierFillOp({hidden_size},scope + "/" + cell_init);
+	predict.AddInput(scope + "/gates_t_w");
+	predict.AddInput(scope + "/gates_t_b");
+	predict.AddInput(scope + "/" + hidden_init);
+	predict.AddInput(scope + "/" + cell_init);
+	predict.AddRecurrentNetworkOp(scope + "/" + seq_lengths,scope + "/" + hidden_init,scope + "/" + cell_init,scope,scope + "/" + hidden_state,scope + "/" + cell_state,force_cpu);
 }
 
 void ModelUtil::AddSliceOp(
