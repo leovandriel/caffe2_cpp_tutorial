@@ -46,7 +46,7 @@ class ModelUtil {
 										int batch_size);
 	//operators with initializable parameters
   void AddFcOps(const std::string &input, const std::string &output,
-                int in_size, int out_size, bool test = false);
+                int in_size, int out_size, int axis = 1, bool test = false);
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, int group = 0, bool test = false);
@@ -91,6 +91,17 @@ class ModelUtil {
   void AddReluOp(const std::string& input, const std::string& output);
   void AddLeakyReluOp(const std::string& input,
 								const std::string& output, float alpha);
+  void AddLSTMOps(
+	                                 const std::string& input,
+                                     const std::string& scope,		//scope is a prefix add to following blob names to distinguish among different LSTM operators
+                                     const std::string& seq_lengths,
+                                     const std::string& hidden_init,
+                                     const std::string& cell_init,
+                                     const std::string& hidden_output,
+                                     const std::string& cell_state,
+						             int in_size,
+				                     int hidden_size,
+                                     bool force_cpu);
   void AddSliceOp(
     const std::string& input, const std::string& output,
     const std::vector<std::pair<int, int>>& ranges);
