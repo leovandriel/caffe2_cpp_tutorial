@@ -556,7 +556,7 @@ OperatorDef* NetUtil::AddSubOp(const std::vector<std::string> & inputs, const st
 	return op;
 }
 
-OperatorDef* NetUtil::AddUpsampleNearestOp(const std::string & input,const std::string & output, float scale)
+OperatorDef* NetUtil::AddUpsampleNearestOp(const std::string & input,const std::string & output, int scale)
 {
 	auto op = AddOp("UpsampleNearest",{input},{output});
 	net_add_arg(*op, "scale", scale);

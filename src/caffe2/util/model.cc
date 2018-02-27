@@ -575,7 +575,7 @@ void ModelUtil::AddSubOp(const std::vector<std::string> & inputs, const std::str
 	predict.AddSubOp(inputs,output,broadcast,axis);
 }
 
-void ModelUtil::AddUpsampleNearestOp(const std::string & input,const std::string & output, float scale) {
+void ModelUtil::AddUpsampleNearestOp(const std::string & input,const std::string & output, int scale) {
 	predict.AddUpsampleNearestOp(input,output,scale);
 }
 

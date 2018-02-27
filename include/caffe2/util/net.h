@@ -139,7 +139,7 @@ class NetUtil {
                         const std::string& output);
   OperatorDef* AddPowOp(const std::string & input, const std::string & output, float exponent);
   OperatorDef* AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
-  OperatorDef* AddUpsampleNearestOp(const std::string & input,const std::string & output, float scale = 2);
+  OperatorDef* AddUpsampleNearestOp(const std::string & input,const std::string & output, int scale = 2);
 
   OperatorDef* AddLSTMUnitOp(const std::vector<std::string>& inputs,
                              const std::vector<std::string>& outputs,
