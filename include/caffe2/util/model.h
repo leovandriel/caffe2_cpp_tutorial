@@ -13,7 +13,7 @@ class ModelUtil {
   ModelUtil(NetDef &init_net, NetDef &predict_net,
             const std::string &name = "");
   ModelUtil(NetUtil &init, NetUtil &predict);
-  ~ModelUtil();
+  virtual ~ModelUtil();
 
   void AddDatabaseOps(const std::string &name, const std::string &data,
                       const std::string &db, const std::string &db_type,

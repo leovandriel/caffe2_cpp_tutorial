@@ -272,7 +272,7 @@ void ModelUtil::AddFcOps(const std::string &input, const std::string &output,
   }
   predict.AddInput(output + "_w");
   predict.AddInput(output + "_b");
-  predict.AddFcOp(input, output + "_w", output + "_b", output);
+  predict.AddFcOp(input, output + "_w", output + "_b", output, axis);
 }
 
 void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
