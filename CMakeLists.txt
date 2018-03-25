@@ -17,9 +17,10 @@ endif()
 if(CUDA_LIBRARIES)
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
-include_directories(~/opt/caffe2/include)
 
-find_library(DETECTRON_GPU_LIB caffe2_detectron_ops_gpu)
+set(Caffe2_DIR "/home/sys411/opt/caffe2")
+include_directories("${Caffe2_DIR}/include")
+
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
 find_library(GTEST_LIB gtest)
@@ -59,17 +60,17 @@ if(CUDA_LIBRARIES)
 endif()
 
 list(APPEND ALL_LIBRARIES
-	~/opt/caffe2/lib/libcaffe2.so
-	~/opt/caffe2/lib/libcaffe2_observers.so
-	~/opt/caffe2/lib/libcaffe2_protos.so
-	~/opt/caffe2/lib/libcpuinfo.so
-	~/opt/caffe2/lib/libnnpack.so
-	~/opt/caffe2/lib/libthreadpool.so
+	"${Caffe2_DIR}/lib/libcaffe2.so"
+	"${Caffe2_DIR}/lib/libcaffe2_observers.so"
+	"${Caffe2_DIR}/lib/libcaffe2_protos.so"
+	"${Caffe2_DIR}/lib/libcpuinfo.a"
+	"${Caffe2_DIR}/lib/libnnpack.a"
+	"${Caffe2_DIR}/lib/libpthreadpool.a"
 )
 
 list(APPEND ALL_LIBRARIES
-	~/opt/caffe2/lib/libcaffe2_gpu.so
-	~/opt/caffe2/lib/libcaffe2_detectron_ops_gpu.so
+	"${Caffe2_DIR}/lib/libcaffe2_gpu.so"
+	"${Caffe2_DIR}/lib/libcaffe2_detectron_ops_gpu.so"
 )
 add_definitions(-DWITH_GPU)
 
