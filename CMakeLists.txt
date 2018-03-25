@@ -17,10 +17,8 @@ endif()
 if(CUDA_LIBRARIES)
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
-include_directories(/home/xieyi/opt/caffe2/include)
+include_directories(~/opt/caffe2/include)
 
-find_library(CAFFE2_LIB caffe2)
-find_library(CAFFE2_GPU_LIB caffe2_gpu)
 find_library(DETECTRON_GPU_LIB caffe2_detectron_ops_gpu)
 find_library(GLOG_LIB glog)
 find_library(GFLAGS_LIB gflags)
@@ -33,10 +31,6 @@ execute_process(
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC ")
-
-if(NOT CAFFE2_LIB)
-  message(FATAL_ERROR "Caffe2 lib not found")
-endif()
 
 set(ALL_LIBRARIES)
 set(CMAKE_CXX_STANDARD 11)
@@ -64,12 +58,20 @@ if(CUDA_LIBRARIES)
   link_whole_archive(caffe2_cpp_gpu)
 endif()
 
-list(APPEND ALL_LIBRARIES ${CAFFE2_LIB})
+list(APPEND ALL_LIBRARIES
+	~/opt/caffe2/lib/libcaffe2.so
+	~/opt/caffe2/lib/libcaffe2_observers.so
+	~/opt/caffe2/lib/libcaffe2_protos.so
+	~/opt/caffe2/lib/libcpuinfo.so
+	~/opt/caffe2/lib/libnnpack.so
+	~/opt/caffe2/lib/libthreadpool.so
+)
 
-if(CAFFE2_GPU_LIB)
-  list(APPEND ALL_LIBRARIES ${CAFFE2_GPU_LIB})
-  add_definitions(-DWITH_GPU)
-endif()
+list(APPEND ALL_LIBRARIES
+	~/opt/caffe2/lib/libcaffe2_gpu.so
+	~/opt/caffe2/lib/libcaffe2_detectron_ops_gpu.so
+)
+add_definitions(-DWITH_GPU)
 
 if(DETECTRON_GPU_LIB)
   list(APPEND ALL_LIBRARIES ${DETECTRON_GPU_LIB})
