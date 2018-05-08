@@ -1,5 +1,6 @@
 *.swp
 .vimrc
+.workon
 
 build
 bin
