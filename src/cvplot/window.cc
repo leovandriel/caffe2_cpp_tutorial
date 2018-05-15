@@ -359,18 +359,18 @@ void Window::current(Window &window) { shared_window = &window; }
 // Util
 
 void Util::sleep(float seconds) {
-  cvWaitKey(std::max(1, (int)(seconds * 1000)));
+  cv::waitKey(std::max(1, (int)(seconds * 1000)));
 }
 
 char Util::key(float timeout) {
-  return cvWaitKey(std::max(0, (int)(timeout * 1000)));
+  return cv::waitKey(std::max(0, (int)(timeout * 1000)));
 }
 
 std::string Util::line(float timeout) {
   std::stringstream stream;
   auto ms = (timeout > 0 ? std::max(1, (int)(timeout * 1000)) : -1);
   while (ms != 0) {
-    auto key = cvWaitKey(1);
+    auto key = cv::waitKey(1);
     if (key == -1) {
       ms--;
       continue;

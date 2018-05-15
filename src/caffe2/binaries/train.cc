@@ -247,7 +247,7 @@ void run() {
 
   if (FLAGS_display) {
     std::cout << "press Ctrl+C to quit" << std::endl;
-    cvWaitKey(0);
+    cv::waitKey(0);
   }
 }
 

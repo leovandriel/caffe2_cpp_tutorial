@@ -32,7 +32,7 @@ cv::Mat to_image(const Tensor<CPUContext> &tensor, int index, float scale,
   cv::Mat image;
   cv::merge(channels, image);
   if (depth == 1) {
-    cvtColor(image, image, CV_GRAY2RGB);
+    cvtColor(image, image, cv::COLOR_GRAY2RGB);
   }
   return image;
 }
@@ -80,7 +80,7 @@ void TensorUtil::WriteImage(const std::string &name, int index, float mean,
                             bool lossy) {
   auto image = to_image(tensor_, index, 1.0, mean);
   auto filename = name + (lossy ? ".jpg" : ".png");
-  vector<int> params({CV_IMWRITE_JPEG_QUALITY, 90});
+  vector<int> params({cv::IMWRITE_JPEG_QUALITY, 90});
   CAFFE_ENFORCE(cv::imwrite(filename, image, params),
                 "unable to write to " + filename);
 }

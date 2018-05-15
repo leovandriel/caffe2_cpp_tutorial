@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 project (caffe2_cpp_tutorial)
 
 find_package(Protobuf REQUIRED)
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(cURL QUIET)
 find_package(CUDA QUIET)
@@ -18,7 +18,7 @@ if(CUDA_LIBRARIES)
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
 
-set(Caffe2_DIR "/home/sys411/opt/caffe2")
+set(Caffe2_DIR "/home/xieyi/opt/pytorch")
 include_directories("${Caffe2_DIR}/include")
 
 find_library(GLOG_LIB glog)
@@ -28,7 +28,7 @@ find_library(GTEST_LIB gtest)
 
 set(PB_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/caffe2/util")
 execute_process(
-  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=../caffe2 --proto_path=${PB_SOURCE_DIR} --cpp_out=${PB_SOURCE_DIR} "${PB_SOURCE_DIR}/model.proto"
+  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=${PB_SOURCE_DIR} --cpp_out=${PB_SOURCE_DIR} "${PB_SOURCE_DIR}/model.proto"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC ")
@@ -62,10 +62,11 @@ endif()
 list(APPEND ALL_LIBRARIES
 	"${Caffe2_DIR}/lib/libcaffe2.so"
 	"${Caffe2_DIR}/lib/libcaffe2_observers.so"
-	"${Caffe2_DIR}/lib/libcaffe2_protos.so"
+#	"${Caffe2_DIR}/lib/libcaffe2_protos.so"
 	"${Caffe2_DIR}/lib/libcpuinfo.a"
 	"${Caffe2_DIR}/lib/libnnpack.a"
 	"${Caffe2_DIR}/lib/libpthreadpool.a"
+	"${Caffe2_DIR}/lib/libprotobuf.a"
 )
 
 list(APPEND ALL_LIBRARIES

@@ -309,7 +309,7 @@ void Series::bounds(float &x_min, float &x_max, float &y_min, float &y_max,
 
 void Series::dot(void *b, int x, int y, int r) const {
   Trans trans(b);
-  cv::circle(trans.with(color_), {x, y}, r, color2scalar(color_), -1, CV_AA);
+  cv::circle(trans.with(color_), {x, y}, r, color2scalar(color_), -1, cv::LINE_AA);
 }
 
 void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
@@ -343,7 +343,7 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
                 {(int)(last_x * xs + xd), (int)(last_y * ys + yd)},
             };
             cv::fillConvexPoly(trans.with(color_.a / 2), points, 4, color,
-                               CV_AA);
+                               cv::LINE_AA);
           } else {
             has_last = true;
           }
@@ -366,7 +366,7 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
                 {(int)(last_x * xs + xd), (int)(last_y1 * ys + yd)},
             };
             cv::fillConvexPoly(trans.with(color_.a / 2), points, 4, color,
-                               CV_AA);
+                               cv::LINE_AA);
           } else {
             has_last = true;
           }
@@ -386,13 +386,13 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
               type_ == RangeLine) {
             cv::line(trans.with(color_),
                      {(int)(last_x * xs + xd), (int)(last_y * ys + yd)}, point,
-                     color, 1, CV_AA);
+                     color, 1, cv::LINE_AA);
           }
         } else {
           has_last = true;
         }
         if (type_ == DotLine || type_ == Dots) {
-          cv::circle(trans.with(color_), point, 2, color, 1, CV_AA);
+          cv::circle(trans.with(color_), point, 2, color, 1, cv::LINE_AA);
         }
         last_x = x, last_y = y;
       }
@@ -410,12 +410,12 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
           cv::rectangle(trans.with(color_),
                         {(int)(x * xs + xd) - u + o, (int)(y_axis * ys + yd)},
                         {(int)(x * xs + xd) + u + o, (int)(y * ys + yd)}, color,
-                        -1, CV_AA);
+                        -1, cv::LINE_AA);
         } else if (type_ == Vistogram) {
           cv::rectangle(trans.with(color_),
                         {(int)(x_axis * xs + xd), (int)(x * ys + yd) - u + o},
                         {(int)(y * xs + xd), (int)(x * ys + yd) + u + o}, color,
-                        -1, CV_AA);
+                        -1, cv::LINE_AA);
         }
       }
 
@@ -430,11 +430,11 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
         if (type_ == Horizontal) {
           cv::line(
               trans.with(color_), {(int)(x_min * xs + xd), (int)(y * ys + yd)},
-              {(int)(x_max * xs + xd), (int)(y * ys + yd)}, color, 1, CV_AA);
+              {(int)(x_max * xs + xd), (int)(y * ys + yd)}, color, 1, cv::LINE_AA);
         } else if (type_ == Vertical) {
           cv::line(
               trans.with(color_), {(int)(y * xs + xd), (int)(y_min * ys + yd)},
-              {(int)(y * xs + xd), (int)(y_max * ys + yd)}, color, 1, CV_AA);
+              {(int)(y * xs + xd), (int)(y_max * ys + yd)}, color, 1, cv::LINE_AA);
         }
       }
     } break;
@@ -450,7 +450,7 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
         cv::Point point_b((int)(x * xs + xd), (int)(y_b * ys + yd));
         if (has_last) {
           cv::Point points[4] = {point_a, point_b, last_b, last_a};
-          cv::fillConvexPoly(trans.with(color_), points, 4, color, CV_AA);
+          cv::fillConvexPoly(trans.with(color_), points, 4, color, cv::LINE_AA);
         } else {
           has_last = true;
         }
@@ -464,7 +464,7 @@ void Series::draw(void *b, float x_min, float x_max, float y_min, float y_max,
           color = color2scalar(Color::cos(data_[e + dims_ + 2]));
         }
         cv::Point point((int)(x * xs + xd), (int)(y * ys + yd));
-        cv::circle(trans.with(color_), point, r, color, -1, CV_AA);
+        cv::circle(trans.with(color_), point, r, color, -1, cv::LINE_AA);
       }
     } break;
   }
@@ -550,10 +550,10 @@ void Figure::draw(void *b, float x_min, float x_max, float y_min, float y_max,
   // draw background and sub axis square
   cv::rectangle(trans.with(background_color_), {0, 0},
                 {buffer.cols, buffer.rows}, color2scalar(background_color_), -1,
-                CV_AA);
+		cv::LINE_AA);
   cv::rectangle(trans.with(sub_axis_color_), {border_size_, border_size_},
                 {buffer.cols - border_size_, buffer.rows - border_size_},
-                color2scalar(sub_axis_color_), 1, CV_AA);
+                color2scalar(sub_axis_color_), 1, cv::LINE_AA);
 
   // size of the plotting area
   auto w_plot = buffer.cols - 2 * border_size_;
@@ -611,12 +611,12 @@ void Figure::draw(void *b, float x_min, float x_max, float y_min, float y_max,
   for (auto x = ceil(x_min / x_grid) * x_grid; x <= x_max; x += x_grid) {
     cv::line(trans.with(sub_axis_color_), {(int)(x * xs + xd), border_size_},
              {(int)(x * xs + xd), buffer.rows - border_size_},
-             color2scalar(sub_axis_color_), 1, CV_AA);
+             color2scalar(sub_axis_color_), 1, cv::LINE_AA);
   }
   for (auto y = ceil(y_min / y_grid) * y_grid; y <= y_max; y += y_grid) {
     cv::line(trans.with(sub_axis_color_), {border_size_, (int)(y * ys + yd)},
              {buffer.cols - border_size_, (int)(y * ys + yd)},
-             color2scalar(sub_axis_color_), 1, CV_AA);
+             color2scalar(sub_axis_color_), 1, cv::LINE_AA);
   }
   if (std::abs(x_grid * xs) < 30) {
     x_grid *= ceil(30.f / std::abs(x_grid * xs));
@@ -649,10 +649,10 @@ void Figure::draw(void *b, float x_min, float x_max, float y_min, float y_max,
   // draw axis
   cv::line(trans.with(text_color_), {border_size_, (int)(y_axis * ys + yd)},
            {buffer.cols - border_size_, (int)(y_axis * ys + yd)},
-           color2scalar(text_color_), 1, CV_AA);
+           color2scalar(text_color_), 1, cv::LINE_AA);
   cv::line(trans.with(axis_color_), {(int)(x_axis * xs + xd), border_size_},
            {(int)(x_axis * xs + xd), buffer.rows - border_size_},
-           color2scalar(axis_color_), 1, CV_AA);
+           color2scalar(axis_color_), 1, cv::LINE_AA);
 
   // draw plot
   auto index = 0;
@@ -689,7 +689,7 @@ void Figure::draw(void *b, float x_min, float x_max, float y_min, float y_max,
                 (shadow ? 1.f : 2.f));
     cv::circle(trans.with(background_color_),
                {buffer.cols - border_size_ - 10 + 1, org.y - 3 + 1}, 3,
-               color2scalar(background_color_), -1, CV_AA);
+               color2scalar(background_color_), -1, cv::LINE_AA);
     cv::putText(trans.with(text_color_), name.c_str(), org,
                 cv::FONT_HERSHEY_SIMPLEX, 0.4f, color2scalar(text_color_), 1.f);
     s.dot(&trans.with(s.color()), buffer.cols - border_size_ - 10, org.y - 3,
