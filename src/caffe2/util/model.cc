@@ -288,6 +288,24 @@ void ModelUtil::AddConvOps(const std::string &input, const std::string &output,
                     padding, kernel, group);
 }
 
+void ModelUtil::AddConv1DOps(const std::string& input, const std::string& output,
+					int in_size, int out_size,
+					std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels, bool test) {
+	CAFFE_ENFORCE(strides.size() == 1);
+	CAFFE_ENFORCE(pads.size() == 2);
+	CAFFE_ENFORCE(kernels.size() == 1);
+	if(!test) {
+		std::vector<int> w_dims = {out_size,in_size};
+		w_dims.insert(w_dims.end(),kernels.begin(),kernels.end());
+		init.AddXavierFillOp(w_dims, output + "_w");
+		init.AddConstantFillOp({out_size}, output + "_b");
+	}
+	predict.AddInput(output + "_w");
+	predict.AddInput(output + "_b");
+	predict.AddConv1DOp(input,output + "_w", output + "_b", output, strides,
+					pads,kernels);
+}
+
 void ModelUtil::AddConv3DOps(const std::string& input, const std::string& output, 
 					int in_size, int out_size, 
 					std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels, 

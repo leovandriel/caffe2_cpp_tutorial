@@ -322,6 +322,25 @@ OperatorDef* NetUtil::AddConvOp(const std::string& input, const std::string& w,
   return op;
 }
 
+OperatorDef* NetUtil::AddConv1DOp(const std::string& input, const std::string& w,
+						const std::string& b, const std::string& output,
+						std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels) {
+	CAFFE_ENFORCE(strides.size() == 1);
+	CAFFE_ENFORCE(pads.size() == 2);
+	CAFFE_ENFORCE(kernels.size() == 1);
+	auto op = AddOp("Conv1D",
+			b.size() ? std::vector<std::string>({input,w,b})
+				:std::vector<std::string>({input,w}),
+				{output});
+	auto arg = net_add_arg(*op, "strides");
+	for(auto stride : strides) arg->add_ints(stride);
+	arg = net_add_arg(*op, "pads");
+	for(auto pad : pads) arg->add_ints(pad);
+	arg = net_add_arg(*op, "kernels");
+	for(auto kernel : kernels) arg->add_ints(kernel);
+	return op;
+}
+
 OperatorDef* NetUtil::AddConv3DOp(const std::string& input, const std::string& w,
 						const std::string& b, const std::string& output,
 						std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels) {

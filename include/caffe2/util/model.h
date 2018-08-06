@@ -50,6 +50,7 @@ class ModelUtil {
   void AddConvOps(const std::string &input, const std::string &output,
                   int in_size, int out_size, int stride, int padding,
                   int kernel, int group = 0, bool test = false);
+  void AddConv1DOps(const std::string& input, const std::string& output,                                                                     int in_size, int out_size,                                                                                    std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels, bool test = false);
   void AddConv3DOps(const std::string& input, const std::string& output, 
 					int in_size, int out_size, 
 					std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels, 

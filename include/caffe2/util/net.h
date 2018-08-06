@@ -78,6 +78,11 @@ class NetUtil {
                          const std::string& b, const std::string& output,
                          int stride, int padding, int kernel, int group = 0,
                          const std::string& order = "NCHW");
+
+  OperatorDef* AddConv1DOp(const std::string& input, const std::string& w,
+		  				const std::string& b, const std::string& output,
+						std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels);
+
   OperatorDef* AddConv3DOp(const std::string& input, const std::string& w,
 						const std::string& b, const std::string& output,
 						std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels);
