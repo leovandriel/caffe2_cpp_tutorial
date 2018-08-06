@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 project (caffe2_cpp_tutorial)
 
 find_package(Protobuf REQUIRED)
-#find_package(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(cURL QUIET)
 find_package(CUDA QUIET)
@@ -75,6 +75,18 @@ list(APPEND ALL_LIBRARIES
 )
 add_definitions(-DWITH_GPU)
 
+list(APPEND ALL_LIBRARIES
+	"/usr/lib/x86_64-linux-gnu/liblapack.so"
+)
+
+list(APPEND ALL_LIBRARIES
+	"/usr/local/cuda-9.0/lib64/libcublas.so"
+	"/usr/local/cuda-9.0/lib64/libcurand.so"
+	"/home/xieyi/opt/mkl/lib/libmkl_gf_lp64.so"
+	"/home/xieyi/opt/mkl/lib/libmkl_gnu_thread.so"
+	"/home/xieyi/opt/nccl2/lib/libnccl.so"
+)
+
 if(DETECTRON_GPU_LIB)
   list(APPEND ALL_LIBRARIES ${DETECTRON_GPU_LIB})
   ADD_DEFINITIONS(-DWITH_GPU)
@@ -116,3 +128,4 @@ if (NOT DEFINED CAFFE2_CPP_TUTORIAL_LIB_ONLY)
     endforeach()
   endif()
 endif()
+
