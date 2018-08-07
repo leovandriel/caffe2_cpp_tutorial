@@ -429,6 +429,9 @@ OperatorDef* NetUtil::AddMaxPool1DOp(const std::string& input,
 					const std::string& output, vector<int> strides,
 					vector<int> pads,vector<int> kernels,
 					const std::string& order) {
+  CAFFE_ENFORCE(strides.size() == 1);
+  CAFFE_ENFORCE(pads.size() == 2);
+  CAFFE_ENFORCE(kernels.size() == 1);
   auto op = AddOp("MaxPool1D",{input},{output});
   auto arg = net_add_arg(*op, "strides");
   for(auto stride : strides) arg->add_ints(stride);
