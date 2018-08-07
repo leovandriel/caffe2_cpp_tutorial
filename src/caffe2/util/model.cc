@@ -505,6 +505,12 @@ void ModelUtil::AddMaxPoolOp(const std::string& input, const std::string& output
 	predict.AddMaxPoolOp(input,output,stride,padding,kernel,order);
 }
 
+void ModelUtil::AddMaxPool1DOp(const std::string& input, const std::string& output,
+		            std::vector<int> strides,std::vector<int> pads,std::vector<int> kernels,
+			    const std::string& order) {
+	predict.AddMaxPool1DOp(input,output,strides,pads,kernels,order);
+}
+
 void ModelUtil::AddMaxPoolWithIndexOp(const std::string& input, const std::string& output, const std::string& index,
                             std::vector<int> strides, std::vector<int> pads, std::vector<int> kernels,
                             const std::string& order) {

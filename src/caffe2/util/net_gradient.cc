@@ -26,6 +26,7 @@ const std::set<std::string> trainable_ops({
     "LabelCrossEntropy",
     "LRN",
     "MaxPool",
+    "MaxPool1D",
     "MaxPoolWithIndex",
     "Mul",
     "Pow",
