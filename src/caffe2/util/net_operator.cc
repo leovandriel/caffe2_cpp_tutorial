@@ -425,6 +425,14 @@ OperatorDef* NetUtil::AddMaxPoolOp(const std::string& input,
   return op;
 }
 
+OperatorDef* NetUtil::AddGlobalMaxPoolOp(const std::string& input,
+					const std::string& output, const std::string& order) {
+  auto op = AddOp("MaxPool", {input}, {output});
+  net_add_arg(*op, "global_pooling",1);
+  net_add_arg(*op, "order",order);
+  return op;
+}
+
 OperatorDef* NetUtil::AddMaxPool1DOp(const std::string& input,
 					const std::string& output, vector<int> strides,
 					vector<int> pads,vector<int> kernels,
@@ -439,6 +447,14 @@ OperatorDef* NetUtil::AddMaxPool1DOp(const std::string& input,
   for(auto pad : pads) arg->add_ints(pad);
   arg = net_add_arg(*op, "kernels");
   for(auto kernel : kernels) arg->add_ints(kernel);
+  net_add_arg(*op, "order", order);
+  return op;
+}
+
+OperatorDef* NetUtil::AddGlobalMaxPool1DOp(const std::string& input,
+					const std::string& output,const std::string& order) {
+  auto op = AddOp("MaxPool1D",{input},{output});
+  net_add_arg(*op, "global_pooling",1);
   net_add_arg(*op, "order", order);
   return op;
 }
