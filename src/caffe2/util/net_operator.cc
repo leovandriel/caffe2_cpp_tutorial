@@ -644,6 +644,12 @@ OperatorDef* NetUtil::AddLabelCrossEntropyOp(const std::string& pred,
   return AddOp("LabelCrossEntropy", {pred, label}, {xent});
 }
 
+OperatorDef* NetUtil::AddSigmoidCrossEntropyWithLogits(const std::string& logits,
+		                                const std::string& label,
+						const std::string& xent) {
+  return AddOp("SigmoidCrossEntropyWithLogits", {logits,label},{xent});
+}
+
 OperatorDef* NetUtil::AddAveragedLossOp(const std::string& input,
                                         const std::string& loss) {
   return AddOp("AveragedLoss", {input}, {loss});

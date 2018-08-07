@@ -637,6 +637,14 @@ void ModelUtil::AddUpsampleNearestOp(const std::string & input,const std::string
 	predict.AddUpsampleNearestOp(input,output,scale);
 }
 
+void ModelUtil::AddLabelCrossEntropyOp(const std::string& pred,const std::string& label,const std::string& xent) {
+	predict.AddLabelCrossEntropyOp(pred,label,xent);
+}
+
+void ModelUtil::AddSigmoidCrossEntropyWithLogits(const std::string& logits,const std::string& label,const std::string& xent) {
+	predict.AddSigmoidCrossEntropyWithLogits(logits,label,xent);
+}
+
 void ModelUtil::AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
 								const std::vector<std::string>& outputs, int axis) {
 	predict.AddSoftmaxWithLossOp(inputs,outputs,axis);

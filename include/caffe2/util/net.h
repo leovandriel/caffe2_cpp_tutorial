@@ -170,6 +170,9 @@ class NetUtil {
   OperatorDef* AddLabelCrossEntropyOp(const std::string& pred,
                                       const std::string& label,
                                       const std::string& xent);
+  OperatorDef* AddSigmoidCrossEntropyWithLogits(const std::string& logits,
+		  				const std::string& label,
+						const std::string& xent);
   OperatorDef* AddAveragedLossOp(const std::string& input,
                                  const std::string& loss);
   OperatorDef* AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,

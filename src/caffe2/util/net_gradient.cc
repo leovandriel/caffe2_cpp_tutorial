@@ -23,6 +23,7 @@ const std::set<std::string> trainable_ops({
     "EnsureCPUOutput",
     "FC",
     "Flatten",
+    "SigmoidCrossEntropyWithLogits",
     "LabelCrossEntropy",
     "LRN",
     "MaxPool",
