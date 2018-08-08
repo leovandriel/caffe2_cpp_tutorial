@@ -42,7 +42,7 @@ class Trans {
 
   Trans(cv::Mat &buffer, int alpha) : Trans(buffer) { setup(alpha); }
 
-  virtual ~Trans() { flush(); }
+  ~Trans() { flush(); }
 
   cv::Mat &get() const { return (interim_ != NULL ? *interim_ : original_); }
 

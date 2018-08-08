@@ -110,7 +110,8 @@ void run() {
   CAFFE_ENFORCE(workspace.RunNetOnce(predict_net));
 
   // >>> results = p.run([img])
-  auto output = workspace.GetBlob("softmaxout")->Get<TensorCPU>();
+  auto &output_name = predict_net.external_output(0);
+  auto output = workspace.GetBlob(output_name)->Get<TensorCPU>();
 
   // sort top results
   const auto &probs = output.data<float>();
