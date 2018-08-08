@@ -637,6 +637,10 @@ void ModelUtil::AddUpsampleNearestOp(const std::string & input,const std::string
 	predict.AddUpsampleNearestOp(input,output,scale);
 }
 
+void ModelUtil::AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k) {
+	predict.AddAccuracyOp(pred,label,accuracy,top_k);
+}
+
 void ModelUtil::AddLabelCrossEntropyOp(const std::string& pred,const std::string& label,const std::string& xent) {
 	predict.AddLabelCrossEntropyOp(pred,label,xent);
 }

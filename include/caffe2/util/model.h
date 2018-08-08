@@ -170,18 +170,12 @@ class ModelUtil {
   void AddPowOp(const std::string & input, const std::string & output, float exponent);
   void AddSubOp(const std::vector<std::string> & inputs, const std::string & output, int broadcast = 1, int axis = 1);
   void AddUpsampleNearestOp(const std::string & input,const std::string & output, int scale = 2);
-  void AddLabelCrossEntropyOp(const std::string& pred,
-		              const std::string& label,
-			      const std::string& xent);
-  void AddSigmoidCrossEntropyWithLogits(const std::string& logits,                                                                                                       const std::string& label,
-		                 const std::string& xent);
-  void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs,
-				const std::vector<std::string>& outputs,int axis = 1);
-  void AddAveragedLossOp(const std::string& input,
-                                 const std::string& loss);
-  void AddLearningRateOp(const std::string& iter,
-                                 const std::string& rate, float base_rate,
-                                 float gamma = 0.999f,  int stepsize = 1.0);
+  void AddAccuracyOp(const std::string& pred, const std::string& label, const std::string& accuracy, int top_k = 0);
+  void AddLabelCrossEntropyOp(const std::string& pred,const std::string& label,const std::string& xent);
+  void AddSigmoidCrossEntropyWithLogits(const std::string& logits, const std::string& label, const std::string& xent);
+  void AddSoftmaxWithLossOp(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs,int axis = 1);
+  void AddAveragedLossOp(const std::string& input, const std::string& loss);
+  void AddLearningRateOp(const std::string& iter, const std::string& rate, float base_rate, float gamma = 0.999f,  int stepsize = 1.0);
   //TODO:
   void AddCastOp(const std::string& input,
                                 const std::string& output,
