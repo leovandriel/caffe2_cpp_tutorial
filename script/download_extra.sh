@@ -14,7 +14,7 @@ test -f res/googlenet_init_net.pb || curl --progress-bar --location --output res
 
 test -f res/squeezenet_init_net.pb || echo "downloading SqueezeNet model (2)"
 test -f res/squeezenet_predict_net.pb || curl --progress-bar --location --output res/squeezenet_predict_net.pb https://github.com/caffe2/models/raw/master/squeezenet/predict_net.pb
-test -f res/squeezenet_init_net.pb || curl --progress-bar --location --output res/squeezenet_init_net.pb https://github.com/caffe2/models/raw/master/squeezenet/exec_net.pb
+test -f res/squeezenet_init_net.pb || curl --progress-bar --location --output res/squeezenet_init_net.pb https://github.com/caffe2/models/raw/master/squeezenet/init_net.pb
 
 test -f res/vgg16_init_net.pb || echo "downloading VGG16 model (2)"
 test -f res/vgg16_predict_net.pb || curl --progress-bar --location --output res/vgg16_predict_net.pb https://github.com/leonardvandriel/caffe2_models/raw/master/model/vgg16_predict_net.pb
