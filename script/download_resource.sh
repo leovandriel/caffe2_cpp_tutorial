@@ -11,7 +11,7 @@ test -f res/imagenet_classes.txt || curl --progress-bar --location https://raw.g
 
 test -f res/squeezenet_init_net.pb || echo "downloading Squeezenet model (2)"
 test -f res/squeezenet_predict_net.pb || curl --progress-bar --location --output res/squeezenet_predict_net.pb https://github.com/caffe2/models/raw/master/squeezenet/predict_net.pb
-test -f res/squeezenet_init_net.pb || curl --progress-bar --location --output res/squeezenet_init_net.pb https://github.com/caffe2/models/raw/master/squeezenet/exec_net.pb
+test -f res/squeezenet_init_net.pb || curl --progress-bar --location --output res/squeezenet_init_net.pb https://github.com/caffe2/models/raw/master/squeezenet/init_net.pb
 
 test -d res/mnist-train-nchw-leveldb || echo "downloading MNIST train data (2)"
 test -f res/train-images-idx3-ubyte || curl --progress-bar http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz | gunzip > res/train-images-idx3-ubyte
